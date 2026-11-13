@@ -12,20 +12,20 @@
 /* layout: sticky schematic map on top (left on wide screens), numbered stop list below; tram-red route on harbour-teal water */
 :root{
   --bg:#fff6ee; --surface:#ffffff; --ink:#3a2f35; --muted:#8a7a80; --line:#f3dfd4;
-  --water:#cdeeea; --land:#fdf0e6; --accent:#ff6f91; --accent-ink:#ffffff; --done:#c9bcc0; --alt:#24a99a;
+  --water:#cdeeea; --lab:#c0637f; --sea:#3b8f85; --land:#fdf0e6; --accent:#ff6f91; --accent-ink:#ffffff; --done:#c9bcc0; --alt:#24a99a;
   --display:"Jua","Gowun Dodum",sans-serif;
   --body:"Gowun Dodum","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --bg:#221a1e; --surface:#2d2429; --ink:#fbeff2; --muted:#b9a6ad; --line:#45373d;
-    --water:#1d4a47; --land:#2d2429; --accent:#ff86a3; --accent-ink:#2a0f17; --done:#6d6064; --alt:#5fd3c4;
+    --water:#1d4a47; --lab:#ff9fb6; --sea:#7fd6cb; --land:#2d2429; --accent:#ff86a3; --accent-ink:#2a0f17; --done:#6d6064; --alt:#5fd3c4;
     color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
   --bg:#221a1e; --surface:#2d2429; --ink:#fbeff2; --muted:#b9a6ad; --line:#45373d;
-  --water:#1d4a47; --land:#2d2429; --accent:#ff86a3; --accent-ink:#2a0f17; --done:#6d6064; --alt:#5fd3c4;
+  --water:#1d4a47; --lab:#ff9fb6; --sea:#7fd6cb; --land:#2d2429; --accent:#ff86a3; --accent-ink:#2a0f17; --done:#6d6064; --alt:#5fd3c4;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
@@ -106,6 +106,16 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .routebox{margin-top:6px;border:2px solid #1a73e8;background:var(--surface);border-radius:16px;padding:8px 10px;font-size:13.5px;max-height:220px;overflow:auto}
 .routebox[hidden]{display:none}
 #map.routing .leaflet-overlay-pane{opacity:.3}
+.dlab,.slab{pointer-events:none}
+.dlab span{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;font:400 15px var(--display);color:var(--lab);letter-spacing:.08em;text-shadow:0 0 2px var(--land),0 0 3px var(--land),0 0 6px var(--land)}
+.dlab.big span{font-size:19px}
+.dlab.sea span{color:var(--sea);font-size:17px;letter-spacing:.4em}
+#map:not(.z-area) .dlab,#map:not(.z-dot) .slab,#map:not(.z-sta) .slab span,#map:not(.z-lm) .lmk,#map:not(.z-lmn) .lmk span{display:none}
+.slab i{position:absolute;left:-5px;top:-5px;width:10px;height:10px;box-sizing:border-box;border-radius:50%;background:#fff;border:2.5px solid}
+.slab span{position:absolute;left:8px;top:-9px;white-space:nowrap;font:700 11.5px "Gowun Dodum",sans-serif;color:var(--ink);text-shadow:0 0 2px var(--land),0 0 3px var(--land),0 0 5px var(--land)}
+.lmk b{display:grid;place-items:center;width:38px;height:38px;box-sizing:border-box;border-radius:13px;background:var(--surface);border:2.5px solid var(--accent);font-size:20px;font-weight:400;box-shadow:0 2px 0 var(--accent),0 3px 8px rgba(90,40,60,.25);transform:rotate(-5deg)}
+.lmk.r b{transform:rotate(4deg);border-color:var(--alt);box-shadow:0 2px 0 var(--alt),0 3px 8px rgba(30,80,70,.25)}
+.lmk span{position:absolute;left:50%;top:42px;transform:translateX(-50%);white-space:nowrap;font:400 12.5px var(--display);color:var(--ink);text-shadow:0 0 2px var(--land),0 0 3px var(--land),0 0 6px var(--land)}
 .routebox .rh{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .routebox .rh b{font:400 15.5px var(--display);color:#1a73e8}
 .routebox .rh button{flex:0 0 auto;border:2px solid var(--line);background:var(--bg);border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700}
@@ -386,11 +396,20 @@ const fmt = m => m>=1000 ? (m/1000).toFixed(1)+'km' : Math.round(m/10)*10+'m';
 const map = L.map('map', {zoomControl:true, maxZoom:19}); map.attributionControl.setPrefix(false);
 const DARK = matchMedia('(prefers-color-scheme: dark)').matches;
 const PAL = DARK
-  ? {land:'#2a2125', land2:'#2f252a', park:'#2d3b2d', water:'#1d4744', waterText:'#86d6cc', sand:'#3a3424', bldg:'#3a2e33', bldgLine:'#463840', road:'#46383e', casing:'#2a2125', major:'#5e3f4b', majCasing:'#2a2125', path:'#55464c', rail:'#6a5a60', text:'#f2e4e9', halo:'#221a1e', poi:'#d6bcc6'}
-  : {land:'#fdf4ec', land2:'#fbeee3', park:'#d9f0cf', water:'#bde6df', waterText:'#3b8f85', sand:'#fbf0cf', bldg:'#f4e1d4', bldgLine:'#ead0c0', road:'#ffffff', casing:'#efd9cc', major:'#ffe2ea', majCasing:'#f4b9c8', path:'#ffffff', rail:'#d6c3c9', text:'#5b4a51', halo:'#ffffff', poi:'#8a6f78'};
+  ? {land:'#2a2125', land2:'#2f252a', park:'#2d3b2d', water:'#1d4744', waterText:'#86d6cc', sand:'#3a3424', bldg:'#3a2e33', bldgLine:'#463840', road:'#46383e', casing:'#2a2125', major:'#6a4352', majCasing:'#2a2125', waterEdge:'#2f6b66', path:'#55464c', rail:'#6a5a60', text:'#f2e4e9', halo:'#221a1e', poi:'#d6bcc6'}
+  : {land:'#fdf4ec', land2:'#fbeee3', park:'#d9f0cf', water:'#bde6df', waterText:'#3b8f85', sand:'#fbf0cf', bldg:'#f4e1d4', bldgLine:'#ead0c0', road:'#ffffff', casing:'#efd9cc', major:'#ffe4eb', majCasing:'#f6c3d1', waterEdge:'#8fd3c8', path:'#ffffff', rail:'#d6c3c9', text:'#5b4a51', halo:'#ffffff', poi:'#8a6f78'};
 function rasterBase(){ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19, attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(map); }
 function restyle(st){
-  st.layers = st.layers.filter(l => l.type !== 'fill-extrusion' && l.id !== 'natural_earth');
+  const drop = /^(natural_earth|poi_|airport|label_|water_name|waterway_line_label|highway-shield|boundary|park_outline|road_area_pattern)|rail|transit|one_way/;
+  st.layers = st.layers.filter(l => l.type !== 'fill-extrusion' && !drop.test(l.id));
+  const wi = st.layers.findIndex(l => l.id === 'water'), w = st.layers[wi];
+  st.layers.splice(wi + 1, 0, {id:'water_edge', type:'line', source:w.source, 'source-layer':'water', filter:w.filter,
+    paint:{'line-color':PAL.waterEdge, 'line-width':['interpolate', ['linear'], ['zoom'], 10, .6, 16, 2.2]}});
+  for(const l of st.layers){ if(l.id === 'building'){ l.minzoom = 15.5; (l.paint = l.paint || {})['fill-opacity'] = .7; }
+    if(/^highway-name/.test(l.id)) l.minzoom = l.id === 'highway-name-major' ? 14.5 : 15.5;
+    // zoomed out = picture map: only big roads, small streets appear from 14.5
+    if(/minor|service_track|path_pedestrian/.test(l.id)) l.minzoom = Math.max(l.minzoom || 0, 14.5);
+    if(/secondary_tertiary/.test(l.id)) l.minzoom = Math.max(l.minzoom || 0, 13); }
   const name = ['coalesce', ['get','name:ko'], ['get','name:en'], ['get','name']];
   for(const l of st.layers){ const p = l.paint = l.paint || {}, id = l.id, major = /motorway|trunk|primary|secondary|link/.test(id);
     if(l.type === 'background') p['background-color'] = PAL.land;
@@ -719,6 +738,27 @@ async function importPlan(){
 function fit(){ const pts = mapStops(day).map(s => [s.lat,s.lng]); if(!pts.length) return;
   map.invalidateSize(); if(pts.length===1) map.setView(pts[0], 16); else map.fitBounds(pts, {padding:[36,36], maxZoom:16}); }
 function focus(s){ if(s.lat) map.setView([s.lat,s.lng], Math.max(map.getZoom()||0, 16)); }
+
+// ---- our illustrated layer: Korean district/sea names, MTR lines and stations ----
+map.createPane('base').style.zIndex = 350; map.getPane('base').style.pointerEvents = 'none';
+const AREAS = [['침사추이',22.2988,114.1722,1],['홍함',22.3045,114.1868,0],['조던',22.3048,114.1683,0],['야우마테이',22.3118,114.1712,0],['몽콕',22.3196,114.1694,1],['삼수이포',22.3307,114.1619,0],
+  ['서구룡',22.3025,114.1598,0],['토콰완',22.3168,114.1878,0],['카이탁',22.3238,114.2025,0],['센트럴',22.2812,114.1585,1],['셩완',22.2866,114.1502,0],['애드미럴티',22.2785,114.1652,0],
+  ['완차이',22.2772,114.1735,1],['코즈웨이베이',22.2798,114.1842,1],['해피밸리',22.2695,114.1830,0],['노스포인트',22.2912,114.2005,0],['미드레벨',22.2775,114.1495,0],['빅토리아 피크',22.2648,114.1468,1]];
+const SEAS = [['빅토리아 하버',22.2893,114.1668]];
+const baseLayer = L.layerGroup().addTo(map);
+const lab = (cls, html, lat, lng) => L.marker([lat, lng], {pane:'base', interactive:false, keyboard:false, icon:L.divIcon({className:cls, html, iconSize:null})}).addTo(baseLayer);
+(() => {
+  for(const [k, seq] of Object.entries(MSEQ)){ const ln = k.split('-')[0];
+    L.polyline(seq.map(c => [ST[c].lat, ST[c].lng]), {pane:'base', color:LINES[ln][1], weight:3, opacity:.3, lineCap:'round', interactive:false}).addTo(baseLayer); }
+  for(const s of MTR){ const ls = s[2].split('/'), c = ls.length > 1 ? '#3a2f35' : LINES[ls[0]][1];
+    lab('slab', `<i style="border-color:${c}"></i><span>${stKo(s[0])}</span>`, s[3], s[4]); }
+  for(const [n, lat, lng, big] of AREAS) lab('dlab' + (big ? ' big' : ''), `<span>${n}</span>`, lat, lng);
+  for(const [n, lat, lng] of SEAS) lab('dlab sea', `<span>${n}</span>`, lat, lng);
+})();
+const LM = {ferry:'⛴️', aos:'🌃', wheel:'🎡', st428:'🚡', temple:'🏮', ladies:'🛍️', manmo:'🛕', mplus:'🖼️', palace:'🏯', harbourcity:'🛳️', goldfish:'🐠', bluehouse:'🏠', lugard:'🌉'};
+function zoomCls(){ const z = map.getZoom(), c = map.getContainer().classList;
+  c.toggle('z-area', z >= 12 && z < 17); c.toggle('z-dot', z >= 14); c.toggle('z-sta', z >= 15); c.toggle('z-lm', z >= 14); c.toggle('z-lmn', z >= 15); }
+map.on('zoomend', zoomCls);
 function drawMap(){
   layer.clearLayers(); const rs = routeStops(day), nx = nextStop(day);
   for(let i = 1; i < rs.length; i++){ const a = rs[i-1], b = rs[i];
@@ -731,10 +771,12 @@ function drawMap(){
     m.bindTooltip(s.name, {direction:'top', offset:[0,-14]});
     m.on('click', () => select(grp.includes(sel) ? grp[(grp.indexOf(sel)+1)%grp.length] : s, true));
   }
-  recLayer.clearLayers(); if(!showRec) return;
-  const inDay = new Set(day.stops.map(s => s.rec));
-  for(const p of poolFor(day)){ if(inDay.has(p.id)) continue;
-    const m = L.marker([p.lat,p.lng], {icon: L.divIcon({className:'', html:`<div class="rpin">${CATS[p.c][0]}</div>`, iconSize:[26,26], iconAnchor:[13,13]}), title:p.n, zIndexOffset:-500}).addTo(recLayer);
+  recLayer.clearLayers();
+  const inDay = new Set(day.stops.map(s => s.rec)); let li = 0;
+  for(const p of poolFor(day)){ if(inDay.has(p.id) || (!showRec && !LM[p.id])) continue;
+    const icon = LM[p.id] ? L.divIcon({className:'lmk' + (li++ % 2 ? ' r' : ''), html:`<b>${LM[p.id]}</b><span>${p.n.split(' · ')[0]}</span>`, iconSize:[40,40], iconAnchor:[20,20]})
+      : L.divIcon({className:'', html:`<div class="rpin">${CATS[p.c][0]}</div>`, iconSize:[26,26], iconAnchor:[13,13]});
+    const m = L.marker([p.lat,p.lng], {icon, title:p.n, zIndexOffset:LM[p.id] ? -400 : -500}).addTo(recLayer);
     m.bindPopup(() => { const box = h('div','pop'); box.append(h('b',null,p.n), h('div','m',recMeta(p)));
       const b = h('button',null,'＋ '+day.tab.replace(/^\S+\s/,'')+'에 추가'); b.type = 'button';
       b.addEventListener('click', () => { map.closePopup(); addPlace(p); }); box.append(b); return box; });
@@ -967,7 +1009,7 @@ document.getElementById('q').addEventListener('input', () => {
 });
 window.addEventListener('resize', () => map.invalidateSize());
 window.addEventListener('hashchange', () => setDay(location.hash.slice(1), false));
-setDay(location.hash.slice(1) || 'day1', false);
+setDay(location.hash.slice(1) || 'day1', false); zoomCls();
 importPlan().then(ch => { if(ch) setDay('day1', false); });
 loadWx();
 </script>

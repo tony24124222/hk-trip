@@ -162,7 +162,7 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .flag{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;pointer-events:none}
 .flag span{background:#3b2a33;color:#fff;font:700 11px/1.3 var(--body);border-radius:7px;padding:2px 7px;white-space:nowrap;box-shadow:0 2px 4px rgba(0,0,0,.3)}
 .flag::after{content:"";width:2px;height:13px;background:#3b2a33;border-radius:0 0 2px 2px}
-#map:not(.z-dot) .flag{display:none}
+#map:not(.z-dot) .flag,.flag.off{display:none}
 .lmk::after{content:"";position:absolute;left:50%;top:38px;width:30px;height:10px;margin-left:-15px;border-radius:50%;background:rgba(40,20,30,.32);filter:blur(2px);z-index:-1}
 .lmk b{position:relative;top:-6px}
 .lmk.r b{transform:rotate(4deg);border-color:var(--alt);box-shadow:0 2px 0 var(--alt),0 3px 8px rgba(30,80,70,.25)}
@@ -189,6 +189,10 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .newer[hidden]{display:none}
 .routebox .rh{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .routebox .rh b{font:400 15.5px var(--display);color:#1a73e8}
+.rpick{display:flex;align-items:flex-end;gap:6px;margin:6px 0 4px}
+.rpick label{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:2px;font-size:11.5px;font-weight:700;color:var(--muted)}
+.rpick select{width:100%;min-width:0;font:16px var(--body);padding:4px 6px;border:2px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+.rpick button{flex:0 0 auto;width:36px;height:36px;border:2px solid var(--line);background:var(--bg);color:var(--ink);border-radius:50%;font-size:16px}
 .routebox .rh button{flex:0 0 auto;border:2px solid var(--line);background:var(--bg);border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700}
 .steps{list-style:none;margin:4px 0 0;padding:0;display:flex;flex-direction:column;gap:3px}
 .steps li{padding:3px 0 3px 2px;border-bottom:1px dashed var(--line)}
@@ -461,6 +465,7 @@ html.mm .dayhead h2{display:none}
       <div id="herert"></div>
       <div class="routebox" id="routebox" hidden>
         <div class="rh"><b id="routetxt"></b><button type="button" id="routeclr">닫기</button></div>
+        <div class="rpick"><label>출발<select id="rpa"></select></label><button type="button" id="rswap" aria-label="출발·도착 바꾸기">⇅</button><label>도착<select id="rpb"></select></label></div>
         <div class="m" id="routefrom"></div>
         <ol class="steps" id="routesteps"></ol>
       </div>
@@ -779,12 +784,6 @@ function restyle(st){
       p['text-color'] = /water/.test(id) ? PAL.waterText : /poi/.test(id) ? PAL.poi : PAL.text; p['text-halo-color'] = PAL.halo; p['text-halo-width'] = 1.4;
     }
   }
-  { const b = st.layers.find(l => l.id === 'building'), at = st.layers.findIndex(l => l.type === 'symbol'), dark = PAL === PALS[1],
-      hgt = ['coalesce', ['get', 'render_height'], 8], c = dark ? ['#4b3b45', '#6b5361', '#93707f', '#c08a9c'] : ['#f6e3d8', '#f3cfd3', '#eda9bb', '#e2809d'];
-    if(b) st.layers.splice(at < 0 ? st.layers.length : at, 0, {id:'bldg3d', type:'fill-extrusion', source:b.source, 'source-layer':'building', minzoom:13.5,
-      filter:['any', ['>=', ['zoom'], 15.5], ['>=', hgt, 60]],   // from far away only the towers
-      paint:{'fill-extrusion-color':['interpolate', ['linear'], hgt, 0, c[0], 40, c[1], 120, c[2], 300, c[3]], 'fill-extrusion-height':['*', 1.25, hgt],
-        'fill-extrusion-base':['*', 1.25, ['coalesce', ['get', 'render_min_height'], 0]], 'fill-extrusion-opacity':.92, 'fill-extrusion-vertical-gradient':true}}); }
   return st;
 }
 // custom pastel vector map with Korean labels; falls back to plain OSM tiles
@@ -954,22 +953,23 @@ function legText0(leg){
     return `🚇 ${stKo(r[0].codes[0])} → ` + r.map((x, i) => lineKo(x.line) + ' → ' + stKo(x.codes[x.codes.length-1]) + (i < r.length - 1 ? ' 환승 → ' : '')).join('') + ` · 약 ${leg.min}분`; }
   return '';
 }
-function legSteps(leg){
+function legSteps(leg, a, b){
+  const way = (p, q) => p && q && dist(p.lat, p.lng, q.lat, q.lng) > 40 ? toward(p, q) + ' ' : '', near = (q, r) => { const n = q && lmNear(q, r || 220, q); return n ? ' · 근처 ' + n : ''; };
   if(leg.mode === 'mtr'){ const m = leg.m, S = [];
     const exPh = (c, ex) => STEN[c] ? {name:STEN[c], ex, qs:[ex && STEN[c] + ' Station Exit ' + ex, STEN[c] + ' Station exit'].filter(Boolean)} : null;
-    S.push({t:`🚶 ${stKo(m.from.c)}역${m.from.exit ? ' '+m.from.exit+' 출구로 들어가기' : '까지'} · 도보 ${Math.max(1, Math.round(WALKM(m.from.d)))}분 · ${fmt(m.from.d)}`, ph:exPh(m.from.c, m.from.exit)});
+    { const n = lmNear(m.from, 160); S.push({t:`🚶 ${way(a, m.from)}${fmt(m.from.d)} · 도보 ${Math.max(1, Math.round(WALKM(m.from.d)))}분 → ${stKo(m.from.c)}역${m.from.exit ? ' '+m.from.exit+' 출구로 들어가기' : ''}${n ? ' · ' + n + ' 옆' : ''}`, ph:exPh(m.from.c, m.from.exit)}); }
     m.rides.forEach((r, i) => { const dir = rideDir(r), n = r.codes.length - 1;
       if(i){ const pc = m.rides[i-1].codes[m.rides[i-1].codes.length-1];
         S.push({t: pc === r.codes[0] ? `🔁 ${stKo(pc)}역에서 ${lineKo(r.line)}으로 환승` : `🔁 ${stKo(pc)} → ${stKo(r.codes[0])}역 연결 통로로 환승`}); }
       S.push({t:`🚇 ${lineKo(r.line)} ${stKo(dir.term)}행 · ${n}정거장 → ${stKo(r.codes[n])}`, line:r.line, sta:r.codes[0], up:dir.up}); });
     { const lr = m.rides[m.rides.length - 1], tc = lr.codes[lr.codes.length - 1];
-      S.push({t:`🚶 ${stKo(tc)}역 ${m.to.exit ? m.to.exit+' 출구로 나가서 ' : '에서 '}도보 ${Math.max(1, Math.round(WALKM(m.to.d)))}분 · ${fmt(m.to.d)}`, ph:exPh(tc, m.to.exit)}); }
+      S.push({t:`🚶 ${stKo(tc)}역 ${m.to.exit ? m.to.exit+' 출구로 나가서 ' : '에서 '}${way(m.to, b)}${fmt(m.to.d)} · 도보 ${Math.max(1, Math.round(WALKM(m.to.d)))}분${near(b)}`, ph:exPh(tc, m.to.exit)}); }
     return S; }
   if(leg.mode === 'taxi') return [{t:`🚕 택시 약 ${leg.min}분 · ${fmt(leg.d)}`}];
   if(leg.bus){ const u = leg.bus; return [{t:`🚶 ${u.s0} 정류장까지 도보 ${u.wa}분`}, {t:leg.mode === 'tram' ? `🚋 트램 ${u.no}행 · ${u.n}정거장 · 약 ${u.ride}분` : `🚌 ${u.no}번${u.alt.length ? ' (또는 ' + u.alt.join('·') + ')' : ''} · ${u.n}정거장 · 약 ${u.ride}분`}, {t:`🚶 ${u.s1}에서 내려 도보 ${u.wb}분`}]; }
   if(leg.mode === 'sf') return [{t:`🚶 ${leg.fromK ? '침사추이' : '센트럴 7번'} 부두까지 도보 ${leg.wa}분`}, {t:'⛴️ 스타페리 약 10분 · 6~12분 간격 · 옥토퍼스'}, {t:`🚶 ${leg.fromK ? '센트럴 7번' : '침사추이'} 부두에서 도보 ${leg.wb}분`}];
   if(leg.mode === 'boat') return [leg.fromHk ? leg.pier && {t:'🚕 셩완 홍콩마카오 페리터미널까지 택시'} : {t:'🚌 타이파 페리터미널까지 셔틀·택시 약 15분'}, {t:`⛴️ 코타이 워터젯 ${leg.fromHk ? '셩완 → 타이파' : '타이파 → 셩완'} 약 60분 · 30분 전 도착 · 여권`}, {t:'🕒 ' + boats(leg.fromHk, false).map(hm).join(' ')}, leg.fromHk ? {t:'🚌 타이파 터미널 → 숙소 무료 셔틀·택시 약 15분'} : leg.pier && {t:'🚕 셩완 터미널 → 다음 장소 택시'}].filter(Boolean);
-  if(leg.mode === 'walk') return [{t:`🚶 도보 약 ${leg.min}분 · ${fmt(leg.d)}`}];
+  if(leg.mode === 'walk') return [{t:`🚶 ${way(a, b)}${fmt(leg.d)} · 도보 약 ${leg.min}분${near(b)}`}];
   if(leg.mode === 'same') return [{t:'📍 같은 곳'}];
   return [{t:`약 ${leg.min}분`}];
 }
@@ -1117,7 +1117,8 @@ function redrawRoute(fitIt){
   if(s.id === 'wc') L.marker([s.lat, s.lng], {icon:L.divIcon({className:'', html:'<div class="tpin">🚻</div>', iconSize:[22,22], iconAnchor:[11,11]}), interactive:false, zIndexOffset:1500}).addTo(routeLayer);
   box.hidden = false;
   document.getElementById('routetxt').textContent = `🧭 ${s.name}까지 약 ${leg.min}분`;
-  document.getElementById('routefrom').textContent = '출발: ' + lbl + (leg.wk ? ` · 도보 ${leg.wk}분 + ${MODE[leg.mode]} ${Math.max(1, leg.min - leg.wk)}분` : '');
+  fillPick('rpa', from, lbl); fillPick('rpb', s, s.name);
+  document.getElementById('routefrom').textContent = leg.wk ? `도보 ${leg.wk}분 + ${MODE[leg.mode]} ${Math.max(1, leg.min - leg.wk)}분` : '';
   const ol = document.getElementById('routesteps'); ol.textContent = '';
   if(opts.length > 1 || leg.cost){ const li = h('li', 'alts cmp');
     opts.forEach((o, n) => { const b = h('button', 'cmpr'); b.type = 'button'; b.setAttribute('aria-pressed', o.mode === leg.mode);
@@ -1125,7 +1126,7 @@ function redrawRoute(fitIt){
       if(!n && opts.length > 1) b.append(h('span', 'tag next', '추천'));
       b.addEventListener('click', () => { routeCur.mode = o.mode; routeCur.run = true; redrawRoute(true); }); li.append(b); });
     ol.append(li); }
-  for(const st of legSteps(leg)){ const li = h('li', null, st.t); ol.append(li);
+  for(const st of legSteps(leg, from, s)){ const li = h('li', null, st.t); ol.append(li);
     if(st.ph){ const box = h('div', 'sph'); li.append(box); exitPhotos(st.ph).then(list => { if(!list.length){ box.remove(); return; }
         for(const x of list.slice(0, 4)){ const a = h('a'), im = h('img'); a.href = x.page; a.target = '_blank'; a.rel = 'noopener'; a.title = x.credit; im.src = x.thumb; im.alt = x.title; im.loading = 'lazy'; im.addEventListener('error', () => a.remove()); a.append(im); box.append(a); } }); }
     if(!st.line) continue;
@@ -1137,6 +1138,28 @@ function redrawRoute(fitIt){
     ol.append(li); }
   if(fitIt){ const pts = shapes.flatMap(x => x.pts); pts.push([from.lat, from.lng]); map.fitBounds(pts, fitOpt(30, {maxZoom:17, animate:false}, mm && !wide() ? Math.min(document.querySelector('.mapinfo').offsetHeight + 24, innerHeight * .3) : 0)); }
 }
+// every place you might start from or go to: me, the hotel, today's stops, the recommended places, the flag buildings
+function pickList(){ const out = [], hm0 = home();
+  if(me && nearHK(me)) out.push(['me', '📍 내 위치', me, '내 위치', '']);
+  out.push(['home', '🏨 ' + hm0.name, hm0, hm0.name, '']);
+  for(const x of routeStops(day)) if(x.lat && !isHome(x)) out.push(['s:' + x.id, label(day, x) + '. ' + x.name, x, x.name, '오늘 일정']);
+  const rec = poolFor(day).filter(q => q.lat).map(q => ['r:' + q.id, q.n, {id:'rec-' + q.id, name:q.n, lat:q.lat, lng:q.lng}, q.n, inMacau(q) ? '마카오' : '홍콩']);
+  const fl = TOWERS.map(t => ['t:' + t[2], t[2], {id:'pt', name:t[2], lat:t[0], lng:t[1]}, t[2], inMacau({lat:t[0], lng:t[1]}) ? '마카오' : '홍콩']);
+  const mac = day.id === 'macau', rk = x => (x[4] === '마카오') === mac ? 0 : 1;
+  return out.concat(rec.concat(fl).sort((x, y) => rk(x) - rk(y) || x[1].localeCompare(y[1], 'ko'))); }
+function fillPick(id, p, nm){ const el = document.getElementById(id), key = day.id + '|' + p.lat + ',' + p.lng + '|' + (me ? 1 : 0);
+  if(el._key === key) return; el._key = key; el.textContent = ''; const os = el._os = pickList();
+  const hit = os.find(o => dist(o[2].lat, o[2].lng, p.lat, p.lng) < 8);
+  if(!hit) el.append(new Option(nm, 'cur', true, true));
+  let g = el; for(const o of os){ if(o[4] && (g === el || g.label !== o[4])){ g = document.createElement('optgroup'); g.label = o[4]; el.append(g); } g.append(new Option(o[1], o[0], false, o === hit)); } }
+function pickSet(end, v){ const el = document.getElementById(end ? 'rpb' : 'rpa'), o = (el._os || []).find(x => x[0] === v); if(!o || !routeCur) return;
+  if(end) routeCur.s = o[2].id ? o[2] : {id:'pt', name:o[3], lat:o[2].lat, lng:o[2].lng}; else { routeCur.from = {lat:o[2].lat, lng:o[2].lng}; routeCur.lbl = o[3]; }
+  routeCur.mode = null; routeCur.alts = null; routeCur.nt = {}; stopRun(); redrawRoute(true); }
+document.getElementById('rpa').addEventListener('change', e => pickSet(false, e.target.value));
+document.getElementById('rpb').addEventListener('change', e => pickSet(true, e.target.value));
+document.getElementById('rswap').addEventListener('click', () => { if(!routeCur) return; const {from, lbl, s} = routeCur;
+  routeCur.from = {lat:s.lat, lng:s.lng}; routeCur.lbl = s.name; routeCur.s = {id:'pt', name:lbl, lat:from.lat, lng:from.lng};
+  routeCur.mode = null; routeCur.alts = null; routeCur.nt = {}; stopRun(); redrawRoute(true); });
 async function nextTrain(st, k, rc){
   try{ const r = await getJ(`https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=${st.line}&sta=${st.sta}`);
     const d = r.data && r.data[st.line + '-' + st.sta], arr = d && d[st.up ? 'UP' : 'DOWN']; if(!arr || !arr.length) return;
@@ -1164,9 +1187,14 @@ function drawToilets(){
 const SMOKE = [[22.31773,113.93009,"공항 흡연실 · 출국 심사 후"],[22.3372,114.17543,"흡연 구역"],[22.31307,113.91665,"공항 흡연실 · 출국 심사 후"],[22.31002,113.91714,"공항 흡연실 · 출국 심사 후"],[22.3095,113.91735,"공항 흡연실 · 출국 심사 후"],[22.30722,113.91884,"공항 흡연실 · 출국 심사 후"],[22.33734,114.17532,"흡연 구역"],[22.31389,114.04047,"흡연 구역"],[22.39036,114.20954,"흡연 구역"],[22.14696,113.56542,"런더너 카지노 안 흡연실"],[22.14494,113.5654,"런더너 그랜드 카지노 안 흡연실"],[22.14442,113.57439,"그랜드 리스보아 팰리스 카지노 안 흡연실"],[22.1463,113.56795,"MGM 코타이 카지노 안 흡연실"],[22.14568,113.55184,"브로드웨이 카지노 안 흡연실"],[22.1413,113.56167,"스튜디오 시티 카지노 안 흡연실"],[22.14789,113.57209,"윈 팰리스 카지노 안 흡연실"],[22.14853,113.56049,"베네시안 카지노 안 흡연실"],[22.14838,113.55432,"갤럭시 카지노 안 흡연실"],[22.14543,113.56267,"플라자 마카오 카지노 안 흡연실"],[22.31512,113.93303,"공항 흡연실 · 출국 심사 후"],[22.30368,114.16493,"서구룡역 흡연실 · 개찰 후 B3"],[22.18817,113.55147,"NAPE 야외 흡연 부스·흡연 지점 (카를로스 공원 주변 9곳)"],[22.15744,113.57434,"마카오 공항 흡연 라운지 · 출국 심사 후"],[22.14917,113.56651,"시티 오브 드림스 카지노 안 흡연실"],[22.18581,113.54788,"MGM 마카오 카지노 안 흡연실"]], smokeLayer = L.layerGroup().addTo(map);
 for(const t of SMOKE) L.marker([t[0], t[1]], {icon:L.divIcon({className:'', html:'<div class="tpin sm">🚬</div>', iconSize:[22,22], iconAnchor:[11,11]}), zIndexOffset:-200, title:t[2]})
   .bindPopup(() => { const box = h('div','pop'), bt = h('button', null, '🧭 길찾기'); bt.type = 'button'; bt.addEventListener('click', () => { map.closePopup(); showRoute({id:'smoke', name:t[2], lat:t[0], lng:t[1]}, originNear()); }); box.append(h('b', null, t[2]), bt); return box; }).addTo(smokeLayer);
-// big buildings to get your bearings by: a name flag standing on each (coordinates from OpenStreetMap, 2026-11-14)
-const TOWERS = [[22.2853,114.15927,'IFC'],[22.30337,114.16022,'ICC'],[22.27924,114.16158,'중국은행타워'],[22.28025,114.15951,'HSBC'],[22.28016,114.17349,'센트럴 플라자'],[22.28262,114.17306,'컨벤션센터'],[22.28461,114.15472,'더 센터'],[22.29372,114.17045,'문화센터·시계탑']];
-for(const t of TOWERS) L.marker([t[0], t[1]], {icon:L.divIcon({className:'flag', html:'<span>' + t[2] + '</span>', iconSize:[100,32], iconAnchor:[50,32]}), interactive:false, keyboard:false, zIndexOffset:-150}).addTo(map);
+// big buildings to get your bearings by: a name flag standing on each, none where a pin already names it (OpenStreetMap, 2026-11-14)
+const TOWERS = [[22.30337,114.16022,"ICC"],[22.27924,114.16158,"중국은행타워"],[22.28025,114.15951,"HSBC"],[22.28016,114.17349,"센트럴 플라자"],[22.28262,114.17306,"컨벤션센터"],[22.28461,114.15472,"더 센터"],[22.29372,114.17045,"문화센터·시계탑"],[22.30267,114.17754,"폴리텍대"],[22.30131,114.18198,"콜리세움"],[22.30093,114.17752,"과학관"],[22.30193,114.17725,"역사박물관"],[22.29506,114.17178,"페닌슐라 호텔"],[22.29535,114.16994,"1881 헤리티지"],[22.29694,114.17185,"아이스퀘어"],[22.29637,114.17284,"청킹맨션"],[22.30053,114.17011,"구룡공원"],[22.29875,114.17199,"구룡 모스크"],[22.30088,114.17258,"미라 플레이스"],[22.30374,114.16273,"엘리먼츠"],[22.30368,114.16492,"서구룡 고속철역"],[22.29416,114.17186,"우주박물관"],[22.29389,114.17383,"리젠트 호텔"],[22.29705,114.177,"샹그릴라"],[22.28122,114.15831,"랜드마크"],[22.28393,114.1581,"익스체인지 스퀘어"],[22.28234,114.16157,"시청"],[22.278,114.16527,"퍼시픽 플레이스"],[22.27935,114.16349,"리포센터"],[22.27741,114.1615,"홍콩공원"],[22.2842,114.17377,"골든 보히니아 광장"],[22.27463,114.17164,"호프웰 센터"],[22.28122,114.18911,"빅토리아 파크"],[22.28397,114.15514,"센트럴 마켓"],[22.28606,114.15989,"센트럴 부두"],[22.3311,114.15979,"드래곤 센터"],[22.33201,114.16203,"골든 컴퓨터 아케이드"],[22.16307,113.57361,"타이파 페리터미널"],[22.14992,113.58936,"마카오 공항"],[22.14588,113.568,"MGM 코타이"],[22.14408,113.5742,"그랜드 리스보아 팰리스"],[22.18802,113.54741,"윈 마카오"],[22.18579,113.54804,"MGM 마카오"],[22.19169,113.55479,"샌즈 마카오"],[22.19746,113.55747,"외항 페리터미널"],[22.19275,113.55603,"피셔맨스 워프"]];
+const flagMk = TOWERS.map(t => L.marker([t[0], t[1]], {icon:L.divIcon({className:'flag', html:'<span>' + t[2] + '</span>', iconSize:[140,32], iconAnchor:[70,32]}), interactive:false, keyboard:false, zIndexOffset:-150, fname:t[2]}).addTo(map));
+// which way to walk, in words, and a big building near a point to check you are on the right side
+const DIR8 = ['북', '북동', '동', '남동', '남', '남서', '서', '북서'];
+const toward = (a, b) => DIR8[Math.round(((Math.atan2((b.lng - a.lng) * Math.cos(a.lat * Math.PI / 180), b.lat - a.lat) * 180 / Math.PI + 360) % 360) / 45) % 8] + '쪽';
+function lmNear(p, r, skip){ let best = null, bd = r; const look = (la, lo, n) => { const d = dist(p.lat, p.lng, la, lo); if(d < bd && !(skip && (dist(skip.lat, skip.lng, la, lo) < 60 || (skip.name || '').includes(n)))){ bd = d; best = n; } };
+  for(const t of TOWERS) look(t[0], t[1], t[2]); for(const q of REC) if(LM[q.id]) look(q.lat, q.lng, q.n.split(' · ')[0]); return best; }
 async function toggleToilet(){
   const btn = document.getElementById('ztoilet'); showToilet = !showToilet; btn.setAttribute('aria-pressed', showToilet);
   if(!showToilet){ toiletLayer.clearLayers(); if(routeCur && routeCur.s.id === 'wc') clearRoute(); return; }
@@ -1521,11 +1549,13 @@ function declutter(){ if(!map._loaded) return;
   const z = map.getZoom(), boxes = [], hit = b => boxes.some(o => b[0] < o[2] && b[2] > o[0] && b[1] < o[3] && b[3] > o[1]);
   const [pw, ph] = z >= 17 ? [96, 72] : [64, 48];
   for(const k of mkList.slice().sort((a, b) => a.pri - b.pri)){ const el = k.m.getElement(); if(!el) continue;
-    const p = map.latLngToLayerPoint(k.m.getLatLng()), r = k.r, ex = [];
+    const p = map.latLngToLayerPoint(k.m.getLatLng()).subtract([0, k.day ? 28 : 0]), r = k.r, ex = [];
     if(z >= (k.day ? 14 : 15)){ const w = tw(k.name); ex.push([p.x - w/2, p.y + r, p.x + w/2, p.y + r + 17]); }
     if(z >= 16 && k.ph) ex.push([p.x - pw/2 - 3, p.y - r - ph - 9, p.x + pw/2 + 3, p.y - r]);
     const ok = !ex.some(hit); el.classList.toggle('nolab', !ok);
     boxes.push([p.x - r, p.y - r, p.x + r, p.y + r]); if(ok) boxes.push(...ex); }
+  for(const m of flagMk){ const el = m.getElement(); if(!el) continue; const p = map.latLngToLayerPoint(m.getLatLng()), w = tw(m.options.fname) * .92 + 8, b = [p.x - w/2, p.y - 34, p.x + w/2, p.y - 12];
+    const ok = !hit(b); el.classList.toggle('off', !ok); if(ok) boxes.push(b); }
 }
 const LM = {ferry:'⛴️', aos:'🌃', wheel:'🎡', st428:'🚡', temple:'🏮', ladies:'🛍️', manmo:'🛕', mplus:'🖼️', palace:'🏯', harbourcity:'🛳️', goldfish:'🐠', bluehouse:'🏠', lugard:'🌉'};
 const staHit = L.layerGroup();

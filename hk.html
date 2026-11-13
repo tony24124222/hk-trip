@@ -54,13 +54,14 @@ button{font:inherit;color:inherit;cursor:pointer}
 button,a,summary,label,select{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 @media (hover:hover){ button:not(:disabled):hover,.tab:hover,summary:hover{filter:brightness(.96)} }
 
-.wrap{max-width:1080px;margin:0 auto;padding:env(safe-area-inset-top) 16px 48px}
-header{position:relative;display:flex;align-items:flex-start;justify-content:space-between;gap:8px;min-height:104px;margin:14px 0 10px;padding:14px 14px 12px 16px;border-radius:22px;overflow:hidden;border:3px solid var(--surface);box-shadow:0 0 0 2px var(--line);background:var(--land) url(banner.jpg) right center/cover no-repeat}
-header::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,var(--bg) 0%,color-mix(in srgb,var(--bg) 82%,transparent) 36%,transparent 74%)}
-header>*{position:relative}
-.hero{display:flex;flex-direction:column;gap:2px;align-self:center}
-h1{font-family:var(--display);font-weight:400;font-size:28px;color:var(--accent);letter-spacing:.01em;margin:0;text-wrap:balance}
-.stay{color:var(--muted);font-size:13px}
+:root{--nav:calc(54px + env(safe-area-inset-bottom))}
+.wrap{max-width:1080px;margin:0 auto;padding:calc(10px + env(safe-area-inset-top)) 16px calc(var(--nav) + 28px)}
+.nav{position:fixed;z-index:2400;left:0;right:0;bottom:0;display:flex;justify-content:center;background:var(--surface);border-top:2px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+.nav button{flex:1;max-width:160px;height:52px;display:grid;place-items:center;align-content:center;gap:3px;border:0;background:none;color:var(--muted);font:700 10.5px/1 var(--body)}
+.nav b{font-size:19px;font-weight:400;line-height:1;filter:grayscale(.6);opacity:.75}
+.nav button[aria-pressed="true"],.nav button[aria-expanded="true"]{color:var(--accent)}
+.nav button[aria-pressed="true"] b,.nav button[aria-expanded="true"] b{filter:none;opacity:1}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
 
 .tabs{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
 .tab{flex:0 0 auto;border:2px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px;font-family:var(--display);font-size:15px}
@@ -137,7 +138,6 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--surface);color:var(--ink)}
 .leaflet-container a.leaflet-popup-close-button{color:var(--muted)}
 #gps[aria-pressed="true"]{background:#1a73e8;color:#fff;border-color:#1a73e8}
-#zfull[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
 .gpsmsg{font-size:12.5px;color:var(--muted);padding:6px 2px 0}
 .routebox{margin-top:6px;border:2px solid #1a73e8;background:var(--surface);border-radius:16px;padding:8px 10px;font-size:13.5px;max-height:220px;overflow:auto}
 .routebox[hidden]{display:none}
@@ -188,7 +188,6 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .tpin.sm{background:#7d6b72}
 .tab .wx{margin-left:4px;font-size:12px}
 .dwx{font-size:12.5px;color:var(--muted)}
-.share{margin-left:auto;font-size:12.5px;font-weight:700;border:2px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 11px}
 .pin{width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-ink);border:3px solid #fff;display:grid;place-items:center;font:13px var(--display);box-shadow:0 1px 4px rgba(0,0,0,.4)}
 .pin.alt{background:#fff;color:#24a99a;border-color:#24a99a}
 .pin.done{background:var(--done)}
@@ -256,8 +255,8 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .nowline{list-style:none;display:flex;align-items:center;gap:8px;color:var(--accent);font:400 13px var(--display);font-variant-numeric:tabular-nums}
 .nowline::before,.nowline::after{content:"";flex:1;height:2px;border-radius:2px;background:var(--accent);opacity:.45}
 .busl{margin-top:8px;font-weight:700;font-variant-numeric:tabular-nums}
-.guide{display:flex;flex-wrap:wrap;gap:6px;margin-top:18px}
-.gi{position:fixed;z-index:2500;left:0;right:0;bottom:0;max-height:62vh;display:flex;flex-direction:column;background:var(--bg);border-radius:22px 22px 0 0;box-shadow:0 -6px 24px rgba(60,30,40,.25);padding-bottom:env(safe-area-inset-bottom)}
+.guide:empty{display:none}
+.gi{position:fixed;z-index:2500;left:0;right:0;bottom:var(--nav);max-height:62vh;display:flex;flex-direction:column;background:var(--bg);border-radius:22px 22px 0 0;box-shadow:0 -6px 24px rgba(60,30,40,.25)}
 .gi[hidden],.gib>[hidden]{display:none}
 .gih{display:flex;align-items:center;gap:8px;padding:10px 10px 8px 12px;flex:0 0 auto}
 .gih .cats{flex:1;min-width:0;display:flex;gap:6px;overflow-x:auto;padding:2px 0 4px;scrollbar-width:none}
@@ -302,7 +301,7 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .spend li b{margin-left:auto;font-variant-numeric:tabular-nums}
 .spend button{border:0;background:none;color:var(--muted);font-size:13px;padding:2px 6px}
 .spsum{display:block;font:400 16px var(--display);color:var(--accent);margin-bottom:12px}
-@media (min-width:820px){ .gi{left:auto;right:16px;bottom:16px;width:440px;max-height:70vh;border-radius:22px} .gih{align-items:flex-start} .gih .cats{flex-wrap:wrap;overflow:visible} }
+@media (min-width:820px){ .gi{left:auto;right:16px;bottom:calc(var(--nav) + 16px);width:440px;max-height:70vh;border-radius:22px} .gih{align-items:flex-start} .gih .cats{flex-wrap:wrap;overflow:visible} }
 .gd{border:2px solid var(--line);background:var(--surface);border-radius:16px;padding:0 12px}
 .gd dl{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;margin:0 0 12px;font-size:13px;line-height:1.45}
 .gd dt{font-weight:700;white-space:nowrap}
@@ -327,14 +326,14 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .rpin{width:26px;height:26px;border-radius:50%;background:#fff;display:grid;place-items:center;font-size:15px;box-shadow:0 1px 4px rgba(0,0,0,.35)}
 #map:not(.z-dot) .rpin{transform:scale(.46);box-shadow:0 0 0 2px rgba(255,111,145,.55)}
 #zrec[aria-pressed="true"]{background:#f5c04a;border-color:#f5c04a;color:#3a2f35}
-.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;max-width:calc(100% - 32px);background:var(--ink);color:var(--surface);border-radius:999px;padding:8px 16px;font-size:14px;font-weight:700;z-index:3000;box-shadow:0 4px 12px rgba(0,0,0,.25)}
+.toast{position:fixed;left:50%;bottom:calc(var(--nav) + 14px);transform:translateX(-50%);display:flex;align-items:center;gap:10px;max-width:calc(100% - 32px);background:var(--ink);color:var(--surface);border-radius:999px;padding:8px 16px;font-size:14px;font-weight:700;z-index:3000;box-shadow:0 4px 12px rgba(0,0,0,.25)}
 .toast[hidden]{display:none}
 .toast button{border:0;background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:3px 10px;font-weight:700;flex:0 0 auto}
 /* map mode: map fills the screen, the itinerary is a bottom sheet (peek / half / full) */
 .grip,.peekact,.peekact[hidden]{display:none}
 html.mm #panel[data-st="peek"] .peekact:not([hidden]){display:flex;justify-content:center;flex-wrap:nowrap;margin:0;padding:0 14px 12px;flex:0 0 auto}
 html.mm,html.mm body{height:100%;overflow:hidden}
-html.mm header,html.mm .progress{display:none}
+html.mm .progress{display:none}
 html.mm .wrap{max-width:none;padding:0}
 html.mm .grid{display:block}
 html.mm .tabs{position:fixed;z-index:30;left:0;right:0;top:0;padding:calc(8px + env(safe-area-inset-top)) 10px 10px;background:linear-gradient(var(--bg) 55%,transparent)}
@@ -342,24 +341,24 @@ html.mm .mapbox{position:fixed;inset:0;z-index:1;padding:0;background:var(--land
 html.mm .map{height:100%;border:0;border-radius:0;box-shadow:none}
 html.mm .map{--ctop:calc(60px + env(safe-area-inset-top))}
 html.mm .leaflet-top{top:calc(var(--ctop) - 8px)}
-html.mm .leaflet-bottom{bottom:var(--sh,64px)}
-html.mm .mapinfo{position:absolute;z-index:600;left:8px;right:8px;bottom:calc(var(--sh,64px) + 24px);max-height:40%;overflow:auto;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+html.mm .leaflet-bottom{bottom:calc(var(--sh,64px) + var(--nav))}
+html.mm .mapinfo{position:absolute;z-index:600;left:8px;right:8px;bottom:calc(var(--sh,64px) + var(--nav) + 24px);max-height:40%;overflow:auto;display:flex;flex-direction:column;gap:6px;pointer-events:none}
 html.mm .mapinfo>*{pointer-events:auto;margin:0}
 html.mm .mapinfo .gpsmsg{align-self:flex-start;background:var(--surface);border:2px solid var(--line);border-radius:999px;padding:3px 10px}
 html.mm .mapinfo .nomap{background:var(--surface)}
-html.mm #panel{position:fixed;z-index:20;left:0;right:0;bottom:0;height:var(--sh,64px);background:var(--bg);border-radius:22px 22px 0 0;box-shadow:0 -6px 24px rgba(60,30,40,.2);display:flex;flex-direction:column;overflow:hidden;transition:height .28s cubic-bezier(.2,.8,.2,1)}
+html.mm #panel{position:fixed;z-index:20;left:0;right:0;bottom:var(--nav);height:var(--sh,64px);background:var(--bg);border-radius:22px 22px 0 0;box-shadow:0 -6px 24px rgba(60,30,40,.2);display:flex;flex-direction:column;overflow:hidden;transition:height .28s cubic-bezier(.2,.8,.2,1)}
 html.mm #panel.drag{transition:none}
 html.mm .grip{display:flex;flex-direction:column;align-items:center;gap:7px;width:100%;flex:0 0 auto;border:0;background:none;padding:9px 16px 10px;touch-action:none;cursor:grab}
 .grip i{width:44px;height:5px;border-radius:99px;background:var(--line)}
 .grip span{max-width:100%;font:400 15.5px var(--display);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-html.mm .pbody{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:2px 14px calc(28px + env(safe-area-inset-bottom))}
+html.mm .pbody{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:2px 14px 28px}
 html.mm #panel[data-st="peek"] .pbody{visibility:hidden}
-html.mm .toast{bottom:calc(var(--sh,64px) + 12px)}
+html.mm .toast{bottom:calc(var(--sh,64px) + var(--nav) + 12px)}
 html.mm .dayhead h2{display:none}
 @media (min-width:820px){
   html.mm #panel{left:max(16px, env(safe-area-inset-left));right:auto;width:440px}
-  html.mm .mapinfo{left:472px;right:auto;width:min(420px,calc(100% - 560px));bottom:16px}
-  html.mm .leaflet-bottom{bottom:0}
+  html.mm .mapinfo{left:472px;right:auto;width:min(420px,calc(100% - 560px));bottom:calc(var(--nav) + 16px)}
+  html.mm .leaflet-bottom{bottom:var(--nav)}
   html.mm .tabs{left:16px;right:auto;background:none}
   html.mm .leaflet-top.leaflet-left{left:456px}
   html.mm .lay{left:464px}
@@ -389,21 +388,16 @@ html.mm .dayhead h2{display:none}
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <div class="hero"><h1>홍콩 동선 지도</h1><span class="stay">🏨 호텔 아이콘 · 11/16~19</span></div>
-    <button type="button" class="share" id="bshare">🔗 일정 공유</button>
-  </header>
+  <h1 class="sr">홍콩 동선 지도</h1>
   <div class="tabs" role="tablist" id="tabs"></div>
   <div class="grid">
     <div class="mapbox">
       <div class="map" id="mapwrap">
         <div id="map"></div>
         <div class="zoom">
-          <button type="button" id="zfull" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><span>크게</span></button>
           <button type="button" id="gps" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4"/></svg><span>내 위치</span></button>
           <button type="button" id="zfit"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="6" r="2.2"/><path d="M8 17c5 0 3-10 8-10" stroke-dasharray="2.5 2.5"/></svg><span>전체</span></button>
           <button type="button" id="zhotel"><b>🏨</b><span>호텔로</span></button>
-          <button type="button" id="zinfo" aria-expanded="false" aria-controls="gi"><b>📒</b><span>정보</span></button>
         </div>
         <div class="catp" id="catp" hidden></div>
         <div class="lay">
@@ -411,7 +405,6 @@ html.mm .dayhead h2{display:none}
           <button type="button" id="ztoilet" aria-pressed="false"><b>🚻</b><span>화장실</span></button>
           <button type="button" id="zsmoke" aria-pressed="false"><b>🚬</b><span>흡연</span></button>
           <button type="button" id="zrt"><b>🚏</b><span>실시간</span></button>
-          <button type="button" id="zask" aria-controls="memo"><b>💬</b><span>질문</span></button>
         </div>
       </div>
       <div class="mapinfo">
@@ -441,6 +434,7 @@ html.mm .dayhead h2{display:none}
         <button type="button" class="chip" id="bopt">🔀 순서 추천</button>
         <button type="button" class="chip" id="badd" aria-pressed="false">➕ 장소 추가</button>
         <button type="button" class="chip" id="bmemo" aria-expanded="false" aria-controls="memo">📝 메모</button>
+        <button type="button" class="chip" id="bshare">🔗 공유</button>
         <button type="button" class="chip" id="breset" hidden>↺ 원래 일정</button>
         <span class="dsum" id="dsum"></span>
         <div class="newer" id="newer" hidden></div>
@@ -476,6 +470,12 @@ html.mm .dayhead h2{display:none}
   </div>
 </div>
 
+<nav class="nav" aria-label="화면 전환">
+  <button type="button" id="nlist" aria-pressed="true"><b>📋</b><span>일정</span></button>
+  <button type="button" id="nmap" aria-pressed="false"><b>🗺️</b><span>지도</span></button>
+  <button type="button" id="zinfo" aria-expanded="false" aria-controls="gi"><b>📒</b><span>정보</span></button>
+  <button type="button" id="zask" aria-expanded="false" aria-controls="memo"><b>💬</b><span>질문</span></button>
+</nav>
 <div class="gi" id="memo" role="dialog" aria-label="메모 · 질문" hidden>
   <div class="gih"><b class="mt">📝 메모 · 질문</b><button type="button" id="memox" class="gx" aria-label="닫기">✕</button></div>
   <div class="gib">
@@ -1098,7 +1098,7 @@ async function importPlan(){
 let mm = false, shState = 'peek';
 const wide = () => innerWidth >= 820;
 const peekSel = () => sel && sel.lat && sel.kind !== 'plain';
-const shH = st => st === 'peek' ? 64 + sab + (peekSel() ? 46 : 0) : st === 'half' ? Math.round(innerHeight * .5) : innerHeight - 64;
+const NAVH = 54, shH = st => st === 'peek' ? 64 + (peekSel() ? 46 : 0) : st === 'half' ? Math.round((innerHeight - NAVH - sab) * .5) : innerHeight - 64 - NAVH - sab;
 const ins = () => !mm ? {t:0, l:0, b:0, r:0} : wide() ? {t:56, l:456, b:0, r:0} : {t:56, l:0, b:Math.min(shH(shState), innerHeight * .55), r:0};
 const fitOpt = (pad, o, extraB) => { const i = ins(); return Object.assign({paddingTopLeft:[pad + i.l + 30, pad + i.t], paddingBottomRight:[pad + i.r + 30, pad + i.b + (extraB || 0)]}, o); };
 function centerOn(lat, lng, z){ const i = ins(), dx = (i.l - i.r) / 2, dy = (i.t - i.b) / 2;
@@ -1719,7 +1719,7 @@ function placeNow(){ const list = document.getElementById('list'); for(const x o
 setInterval(placeNow, 60000);
 function drawProg(){ const rs = routeStops(day), nx = nextStop(day), n = rs.filter(s=>done[s.id]).length, pr = document.getElementById('prog'); pr.textContent = '';
   pr.append('진행 ', h('b',null, n+' / '+rs.length), nx ? ' · 다음: '+nx.name + (me && nx.lat && nearHK(me) ? ' (직선 '+fmt(dist(me.lat,me.lng,nx.lat,nx.lng))+')' : '') : ' · 모두 완료'); }
-function render(){ const nm = !!day.nomap; document.querySelector('.stay').textContent = day.id === 'macau' ? '🏨 윈 팰리스 · 11/19~' : '🏨 호텔 아이콘 · 11/16~19';
+function render(){ const nm = !!day.nomap;
   document.getElementById('mapwrap').hidden = nm; const nb = document.getElementById('nomap'); nb.hidden = !nm; nb.textContent = day.nomap || '';
   if(!nm) drawMap(); drawList(); drawEvents(); drawSheet();
   document.getElementById('bedit').setAttribute('aria-pressed', editMode); document.getElementById('breset').hidden = !editMode; }
@@ -1749,11 +1749,12 @@ const sab = (() => { const d = h('div'); d.style.cssText = 'position:fixed;visib
 const root = document.documentElement, panel = document.getElementById('panel'), grip = document.getElementById('grip');
 function setSheet(st){ const b0 = ins().b; shState = st; const db = ins().b - b0; if(db && map._loaded) map.panBy([0, db / 2], {animate:true, duration:.28}); // keep what was centred above the sheet centred
   root.style.setProperty('--sh', shH(st) + 'px'); panel.dataset.st = st; grip.setAttribute('aria-expanded', st !== 'peek'); }
-function setMM(on){ mm = on; root.classList.toggle('mm', on); const b = document.getElementById('zfull'); b.setAttribute('aria-pressed', on); b.lastElementChild.textContent = on ? '작게' : '크게';
+function setMM(on){ mm = on; root.classList.toggle('mm', on); document.getElementById('nlist').setAttribute('aria-pressed', !on); document.getElementById('nmap').setAttribute('aria-pressed', on);
   try{ localStorage.setItem('hk-mm', on ? '1' : ''); }catch(e){}
   if(on) setSheet(wide() ? 'half' : 'peek'); else { root.style.removeProperty('--sh'); delete panel.dataset.st; }
   scrollTo(0, 0); map.invalidateSize(); map.closePopup(); drawMap(); if(sel) focus(sel); else if(routeCur) redrawRoute(true); else fit(); }
-document.getElementById('zfull').addEventListener('click', () => setMM(!mm));
+document.getElementById('nlist').addEventListener('click', () => { closeGi(); closeMemo(); if(mm) setMM(false); else scrollTo({top:0, behavior:'smooth'}); });
+document.getElementById('nmap').addEventListener('click', () => { closeGi(); closeMemo(); if(!mm) setMM(true); else setSheet('peek'); });
 document.getElementById('zhotel').addEventListener('click', () => { const o = originNear(); const t = home(); showRoute({id:'hotel', name:t.name, lat:t.lat, lng:t.lng}, o); });
 document.getElementById('pgo').addEventListener('click', () => { if(sel) routeTo(sel); });
 document.getElementById('pmore').addEventListener('click', () => { if(!sel) return; const id = 'stop-' + sel.id; setSheet('half'); setTimeout(() => { const li = document.getElementById(id); if(li) li.scrollIntoView({block:'start'}); }, 60); });
@@ -1768,8 +1769,8 @@ document.getElementById('pdone').addEventListener('click', () => { if(!sel) retu
     gd = null; };
   grip.addEventListener('pointerup', end); grip.addEventListener('pointercancel', end);
   grip.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); setSheet(shState === 'peek' ? 'half' : 'peek'); } }); }
-let ovSkip = 0, closeGi = () => {};
-function ovPush(){ try{ history.pushState({ov:((history.state && history.state.ov) || 0) + 1}, ''); }catch(e){} }
+let ovSkip = 0, ovKeep = false, closeGi = () => {};
+function ovPush(){ if(ovKeep){ ovKeep = false; return; } try{ history.pushState({ov:((history.state && history.state.ov) || 0) + 1}, ''); }catch(e){} }
 function ovPop(){ try{ if(history.state && history.state.ov){ ovSkip++; history.back(); } }catch(e){} }
 let closeMemo = () => {}, askAbout = () => {};
 addEventListener('popstate', () => { if(ovSkip){ ovSkip--; return; } const zc = document.getElementById('zc'); if(!zc.hidden) zc.hidden = true; else if(lbId) closeLb(true); else if(!document.getElementById('memo').hidden) closeMemo(true); else closeGi(true); });
@@ -1844,10 +1845,10 @@ const GUIDE = [["📅 여행 4일 휴관·행사", [["11/16 월", "M+ 휴관"], 
   const show = i => { cur = i; secs.forEach((d, k) => { d.hidden = k !== i; }); [...tabs.children].forEach((b, k) => b.setAttribute('aria-pressed', k === i)); gib.scrollTop = 0;
     if(gi.hidden){ gi.hidden = false; zi.setAttribute('aria-expanded', true); ovPush(); } tabs.children[i].scrollIntoView({block:'nearest', inline:'center'}); if(secs[i].onshow) secs[i].onshow(); };
   secs.forEach((d, i) => { d.hidden = true; gib.append(d);
-    for(const box of [tabs, g]){ const b = h('button','chip', d.dataset.t); b.type = 'button'; b.addEventListener('click', () => show(i)); box.append(b); } });
+    { const b = h('button','chip', d.dataset.t); b.type = 'button'; b.addEventListener('click', () => show(i)); tabs.append(b); } });
   closeGi = fromBack => { if(gi.hidden) return; gi.hidden = true; zi.setAttribute('aria-expanded', false); if(fromBack !== true) ovPop(); };
   document.getElementById('gix').addEventListener('click', () => closeGi());
-  zi.addEventListener('click', () => { if(gi.hidden) show(cur); else closeGi(); }); }
+  zi.addEventListener('click', () => { if(gi.hidden){ if(!document.getElementById('memo').hidden){ closeMemo(true); ovKeep = true; } show(cur); } else closeGi(); }); }
 { const MEMO_URL = 'https://hk-trip-memo.4032979.workers.dev', box = document.getElementById('memo'), bt = document.getElementById('bmemo'),
     pass = document.getElementById('mpass'), txt = document.getElementById('mtext'), go = document.getElementById('mgo'), msg = document.getElementById('mmsg'), res = document.getElementById('mres');
   let saved = ''; try{ saved = localStorage.getItem('hk-pass') || ''; }catch(e){}
@@ -1864,9 +1865,10 @@ const GUIDE = [["📅 여행 4일 휴관·행사", [["11/16 월", "M+ 휴관"], 
     return {name:shortName(nm), c:r.c || s.c || (/차찬탱|딤섬|국수|완탕|카페|요리|맛집|식당|타르트|거위|해산물|디저트|빵|저녁|점심/.test([nm, s.sub, s.note].join(' ')) ? 'food' : ''), text:[nm, s.sub || r.sub, hrs && '영업 ' + hrs, cl && cl + ' 휴무', inf.d, inf.t, inf.p && '가격 ' + inf.p, s.note && '메모: ' + s.note,
       info && `일정: ${day.id} ${hm(info.arr)} 도착`, wq > 0 && `앱 예상 웨이팅 약 ${wq}분 (방문 후기 기준)`, lg.mode !== 'same' && `${shortName(o[1])}에서 ${legShort(lg)}`, `좌표 ${s.lat.toFixed(5)},${s.lng.toFixed(5)}`].filter(Boolean).join(' · ').slice(0, 900)}; };
   const open = c => { if((c ? c.text : '') !== (ctx ? ctx.text : '')){ plan = null; res.textContent = ''; msg.textContent = ''; txt.value = c ? '' : stored(); } setCtx(c); pass.hidden = !!saved;
-    if(box.hidden){ box.hidden = false; bt.setAttribute('aria-expanded', true); ovPush(); } if(!pass.hidden) pass.focus(); else if(!c) txt.focus(); };
+    if(box.hidden){ if(!document.getElementById('gi').hidden){ closeGi(true); ovKeep = true; } box.hidden = false; bt.setAttribute('aria-expanded', true); ovPush(); } za.setAttribute('aria-expanded', true); if(!pass.hidden) pass.focus(); else if(!c) txt.focus(); };
   askAbout = s => open(placeCtx(s));
-  closeMemo = fromBack => { if(box.hidden) return; box.hidden = true; bt.setAttribute('aria-expanded', false); if(fromBack !== true) ovPop(); };
+  const za = document.getElementById('zask');
+  closeMemo = fromBack => { if(box.hidden) return; box.hidden = true; bt.setAttribute('aria-expanded', false); za.setAttribute('aria-expanded', false); if(fromBack !== true) ovPop(); };
   for(const b of [bt, document.getElementById('zask')]) b.addEventListener('click', () => box.hidden || ctx ? open() : closeMemo());
   document.getElementById('mctxx').addEventListener('click', () => open());
   document.getElementById('memox').addEventListener('click', () => closeMemo());

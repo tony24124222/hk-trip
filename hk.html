@@ -144,6 +144,10 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .leaflet-container a.leaflet-popup-close-button{color:var(--muted)}
 #gps[aria-pressed="true"]{background:#1a73e8;color:#fff;border-color:#1a73e8}
 .gpsmsg{font-size:12.5px;color:var(--muted);padding:6px 2px 0}
+.trk{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);padding:6px 2px 0}
+.trk[hidden]{display:none}
+.trk span{color:#6a52e0;font-weight:700}
+.trk button{border:0;background:none;text-decoration:underline;color:var(--muted);font-size:12px;padding:2px 4px}
 .routebox{margin-top:6px;border:2px solid #1a73e8;background:var(--surface);border-radius:16px;padding:8px 10px;font-size:13.5px;max-height:220px;overflow:auto}
 .routebox[hidden]{display:none}
 #map.routing .leaflet-overlay-pane{opacity:.3}
@@ -375,7 +379,7 @@ html.mm .leaflet-top{top:calc(var(--ctop) - 8px)}
 html.mm .leaflet-bottom{bottom:calc(var(--sh,64px) + var(--nav))}
 html.mm .mapinfo{position:absolute;z-index:600;left:8px;right:8px;bottom:calc(var(--sh,64px) + var(--nav) + 24px);max-height:40%;overflow:auto;display:flex;flex-direction:column;gap:6px;pointer-events:none}
 html.mm .mapinfo>*{pointer-events:auto;margin:0}
-html.mm .mapinfo .gpsmsg{align-self:flex-start;background:var(--surface);border:2px solid var(--line);border-radius:999px;padding:3px 10px}
+html.mm .mapinfo .gpsmsg,html.mm .mapinfo .trk{align-self:flex-start;background:var(--surface);border:2px solid var(--line);border-radius:999px;padding:3px 10px}
 html.mm .mapinfo .nomap{background:var(--surface)}
 html.mm #panel{position:fixed;z-index:20;left:0;right:0;bottom:var(--nav);height:var(--sh,64px);background:var(--bg);border-radius:22px 22px 0 0;box-shadow:0 -6px 24px rgba(60,30,40,.2);display:flex;flex-direction:column;overflow:hidden;transition:height .28s cubic-bezier(.2,.8,.2,1)}
 html.mm #panel.drag{transition:none}
@@ -442,6 +446,7 @@ html.mm .dayhead h2{display:none}
       </div>
       <div class="mapinfo">
       <div class="gpsmsg" id="gpsmsg" hidden></div>
+      <div class="trk" id="trk" hidden><span id="trkt"></span><button type="button" id="trkx">지우기</button></div>
       <div id="herert"></div>
       <div class="routebox" id="routebox" hidden>
         <div class="rh"><b id="routetxt"></b><button type="button" id="routeclr">닫기</button></div>
@@ -498,6 +503,7 @@ html.mm .dayhead h2{display:none}
         <span>가격·영업시간: 2025~26년 공식 페이지·여행 자료 기준 · 현지에서 다를 수 있음</span>
         <span>마카오 배 시간표: 코타이 워터젯 공식 (11/14 확인)</span>
         <span>MTR 요금: MTR 공개 자료 · 버스·트램 노선과 요금: 홍콩 교통국 공개 자료 (11/14)</span>
+        <span>🐾 지나온 길 = 「내 위치」를 켜고 이 페이지를 열어 둔 동안만 기록 · 이 폰에만 저장</span>
         <span>편집 내용: 이 폰 브라우저에만 저장</span>
       </div>
       </div>
@@ -1555,10 +1561,10 @@ function toggleGps(){ const b = document.getElementById('gps');
   if(!window.isSecureContext){ gpsMsg('위치는 https 주소에서만 켜집니다. 이 파일을 https 사이트에 올려서 열어 주세요.'); return; }
   b.setAttribute('aria-pressed','true'); gpsMsg('위치 찾는 중…'); let first = true; startCompass();
   watchId = navigator.geolocation.watchPosition(p => { me = {lat:p.coords.latitude, lng:p.coords.longitude, acc:p.coords.accuracy};
-      gpsMsg(nearHK(me) ? '내 위치 · 오차 약 '+Math.round(me.acc)+'m' : '지금은 홍콩 밖 · 도착하면 지도에 표시'); drawMe();
+      gpsMsg(nearHK(me) ? '내 위치 · 오차 약 '+Math.round(me.acc)+'m' : '지금은 홍콩 밖 · 도착하면 지도에 표시'); drawMe(); trackAdd();
       if(DATES[day.id] === hkIso()){ const nx0 = nextStop(day), rng = 60 + Math.min(me.acc, 60),
           nx = routeStops(day).filter(s => s.lat && !done[s.id] && !arrived.has(s.id) && (s === nx0 || !isHome(s))).map(s => [dist(me.lat, me.lng, s.lat, s.lng), s]).filter(x => x[0] < rng).sort((a, b) => a[0] - b[0]).map(x => x[1])[0];
-        if(nx){ arrived.add(nx.id);
+        if(nx){ arrived.add(nx.id); noteArr(nx.id);
           toast(`📍 ${nx.name} 도착`, () => { done[nx.id] = true; save(); render(); }, '완료 체크'); } } drawProg();
       if(pendingRoute){ const s = pendingRoute; pendingRoute = null; first = false; routeTo(s); }
       else if(first){ first = false; if(nearHK(me)) centerOn(me.lat, me.lng, Math.max(map.getZoom(), 15)); } },
@@ -1752,6 +1758,7 @@ function drawList(){
     if(s.opt) nm.append(h('span','tag opt','선택'));
     if(s.approx) nm.append(h('span','tag','대략 위치'));
     if(s.fixed != null) nm.append(h('span','tag','⏰ '+hm(s.fixed)));
+    if(ARR[s.id] && ARR[s.id][0] === DATES[day.id]) nm.append(h('span','tag','📍 '+hm(ARR[s.id][1])+' 도착'));
     body.append(nm);
     if(s.sub) body.append(h('div','hours',s.sub));
     { const pid = phId(s); if(pid && !editMode && (pid !== 'hotel' || s === day.stops.find(x => phId(x) === 'hotel'))) body.append(phStrip(pid, s.name)); } // hotel photos once per day
@@ -1779,7 +1786,7 @@ function drawList(){
       if(zhOf(s)){ const zb = h('button', null, '🀄 한자'); zb.type = 'button'; zb.title = zhOf(s); zb.addEventListener('click', () => showZh(s)); acts.append(zb); }
       if(s.lat){ const qb = h('button', null, '💬 질문'); qb.type = 'button'; qb.addEventListener('click', () => askAbout(s)); acts.append(qb); }
       if(s.kind!=='alt'){ const ck = h('button',null, done[s.id] ? '완료됨' : '완료 체크'); ck.type='button'; ck.id='done-'+s.id; ck.setAttribute('aria-pressed', !!done[s.id]);
-        ck.addEventListener('click', () => { done[s.id] = !done[s.id]; save(); render(); }); acts.append(ck); }
+        ck.addEventListener('click', () => { done[s.id] = !done[s.id]; if(done[s.id]) noteArr(s.id); save(); render(); }); acts.append(ck); }
       body.append(acts); }
     if(editMode){ const ed = h('div','edit');
       const btn = (t, f, cls) => { const b = h('button', cls || null, t); b.type = 'button'; b.addEventListener('click', f); ed.append(b); };
@@ -1805,9 +1812,32 @@ function placeNow(){ const list = document.getElementById('list'); for(const x o
 setInterval(placeNow, 60000);
 function drawProg(){ const rs = routeStops(day), nx = nextStop(day), n = rs.filter(s=>done[s.id]).length, pr = document.getElementById('prog'); pr.textContent = '';
   pr.append('진행 ', h('b',null, n+' / '+rs.length), nx ? ' · 다음: '+nx.name + (me && nx.lat && nearHK(me) ? ' (직선 '+fmt(dist(me.lat,me.lng,nx.lat,nx.lng))+')' : '') : ' · 모두 완료'); }
+// a browser only gets positions while this page is open and "내 위치" is on, so the track has gaps (drawn dotted) where the phone slept
+const TRK = 'hk-track-', trackLayer = L.layerGroup().addTo(map); let trackPts = null, trackDay = '';
+function trackLoad(iso){ try{ const v = JSON.parse(localStorage.getItem(TRK + iso)); return Array.isArray(v) ? v.filter(x => Array.isArray(x) && x.length === 3) : []; }catch(e){ return []; } }
+function trackAdd(){ if(!me || !nearHK(me) || me.acc > 80) return; const iso = hkIso(); if(trackDay !== iso){ trackDay = iso; trackPts = trackLoad(iso); }
+  const last = trackPts[trackPts.length - 1]; if(last && dist(last[0], last[1], me.lat, me.lng) < 25) return;
+  trackPts.push([+me.lat.toFixed(5), +me.lng.toFixed(5), hkMin()]); if(trackPts.length > 4000) trackPts.splice(0, trackPts.length - 4000);
+  try{ localStorage.setItem(TRK + iso, JSON.stringify(trackPts)); }catch(e){}
+  if(DATES[day.id] === iso) drawTrack(); }
+function drawTrack(){ trackLayer.clearLayers(); const iso = DATES[day.id], pts = !iso ? [] : iso === trackDay && trackPts ? trackPts : trackLoad(iso), el = document.getElementById('trk');
+  if(pts.length < 2){ el.hidden = true; return; }
+  let m = 0, seg = [[pts[0][0], pts[0][1]]]; const o = {interactive:false, pane:'overlayPane'},
+    flush = () => { if(seg.length > 1){ L.polyline(seg, {...o, color:'#fff', weight:7, opacity:.9}).addTo(trackLayer); L.polyline(seg, {...o, color:'#7b61ff', weight:4, opacity:.95}).addTo(trackLayer); } };
+  for(let i = 1; i < pts.length; i++){ const a = pts[i - 1], b = pts[i], d = dist(a[0], a[1], b[0], b[1]);
+    if(b[2] - a[2] > 6 || d > 600){ flush(); L.polyline([[a[0], a[1]], [b[0], b[1]]], {...o, color:'#7b61ff', weight:2.5, opacity:.7, dashArray:'2 7'}).addTo(trackLayer); seg = [[b[0], b[1]]]; }
+    else { m += d; seg.push([b[0], b[1]]); } }
+  flush(); L.circleMarker([pts[0][0], pts[0][1]], {...o, radius:5, color:'#fff', weight:2, fillColor:'#7b61ff', fillOpacity:1}).addTo(trackLayer);
+  el.hidden = false; document.getElementById('trkt').textContent = `🐾 지나온 길 ${(m / 1000).toFixed(1)}km · ${hm(pts[0][2])}~${hm(pts[pts.length - 1][2])}`; }
+document.getElementById('trkx').addEventListener('click', () => { const iso = DATES[day.id]; if(!iso) return; const old = localStorage.getItem(TRK + iso); if(!old) return;
+  localStorage.removeItem(TRK + iso); if(trackDay === iso) trackPts = []; drawTrack();
+  toast('기록 지움', () => { try{ localStorage.setItem(TRK + iso, old); }catch(e){} if(trackDay === iso) trackPts = trackLoad(iso); drawTrack(); }); });
+// the time we really got to a stop (GPS arrival or the check button), shown on its card
+let ARR = {}; try{ ARR = JSON.parse(localStorage.getItem('hk-arr')) || {}; }catch(e){}
+function noteArr(id){ const iso = hkIso(); if(DATES[day.id] !== iso || (ARR[id] && ARR[id][0] === iso)) return; ARR[id] = [iso, hkMin()]; try{ localStorage.setItem('hk-arr', JSON.stringify(ARR)); }catch(e){} }
 function render(){ const nm = !!day.nomap;
   document.getElementById('mapwrap').hidden = nm; const nb = document.getElementById('nomap'); nb.hidden = !nm; nb.textContent = day.nomap || '';
-  if(!nm) drawMap(); drawList(); drawEvents(); drawSheet();
+  if(!nm){ drawMap(); drawTrack(); } drawList(); drawEvents(); drawSheet();
   document.getElementById('bedit').setAttribute('aria-pressed', editMode); document.getElementById('breset').hidden = !editMode; }
 function stopPop(s){ const box = h('div','pop'), info = schedule(day).out.get(s), pid = phId(s); if(pid) box.append(phBox(pid, s.name));
   box.append(h('b', null, s.name));
@@ -1848,7 +1878,7 @@ function step(d){ const rs = routeStops(day).filter(x => x.lat); if(!rs.length) 
 for(const b of document.querySelectorAll('.pstep')) b.addEventListener('click', () => step(+b.dataset.d));
 document.getElementById('pgo').addEventListener('click', () => { if(sel) routeTo(sel); });
 document.getElementById('pmore').addEventListener('click', () => { if(!sel) return; const id = 'stop-' + sel.id; setSheet('half'); setTimeout(() => { const li = document.getElementById(id); if(li) li.scrollIntoView({block:'start'}); }, 60); });
-document.getElementById('pdone').addEventListener('click', () => { if(!sel) return; done[sel.id] = !done[sel.id]; save(); render(); });
+document.getElementById('pdone').addEventListener('click', () => { if(!sel) return; done[sel.id] = !done[sel.id]; if(done[sel.id]) noteArr(sel.id); save(); render(); });
 { let gd = null;
   grip.addEventListener('pointerdown', e => { gd = {y:e.clientY, h:panel.offsetHeight, moved:false}; grip.setPointerCapture(e.pointerId); });
   grip.addEventListener('pointermove', e => { if(!gd) return; const dy = e.clientY - gd.y; if(Math.abs(dy) > 6) gd.moved = true;

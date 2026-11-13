@@ -1009,7 +1009,7 @@ function legText0(leg){
 function legSteps(leg, a, b){
   const way = (p, q) => p && q && dist(p.lat, p.lng, q.lat, q.lng) > 40 ? toward(p, q) + ' ' : '', near = (q, r) => { const n = q && lmNear(q, r || 220, q); return n ? ' · 근처 ' + n : ''; };
   if(leg.mode === 'mtr'){ const m = leg.m, S = [];
-    const exPh = (c, ex) => STEN[c] ? {name:STEN[c], ex, qs:[ex && STEN[c] + ' Station Exit ' + ex, STEN[c] + ' Station exit'].filter(Boolean)} : null;
+    const exPh = (c, ex) => STEN[c] ? {name:STEN[c], ko:stKo(c), ex, qs:[ex && STEN[c] + ' Station Exit ' + ex, STEN[c] + ' Station exit'].filter(Boolean)} : null;
     { const n = lmNear(m.from, 160); S.push({t:`🚶 ${way(a, m.from)}${fmt(m.from.d)} · 도보 ${Math.max(1, Math.round(WALKM(m.from.d)))}분 → ${stKo(m.from.c)}역${m.from.exit ? ' '+m.from.exit+' 출구로 들어가기' : ''}${n ? ' · ' + n + ' 옆' : ''}`, ph:exPh(m.from.c, m.from.exit)}); }
     m.rides.forEach((r, i) => { const dir = rideDir(r), n = r.codes.length - 1;
       if(i){ const pc = m.rides[i-1].codes[m.rides[i-1].codes.length-1];
@@ -1216,7 +1216,7 @@ function redrawRoute(fitIt){
     ol.append(li); }
   for(const st of legSteps(leg, from, s)){ const li = h('li', null, st.t); ol.append(li);
     if(st.ph){ const box = h('div', 'sph'); li.append(box); exitPhotos(st.ph).then(list => { if(!list.length){ box.remove(); return; }
-        for(const x of list.slice(0, 4)){ const a = h('a'), im = h('img'); a.href = x.page; a.target = '_blank'; a.rel = 'noopener'; a.title = x.credit; im.src = x.thumb; im.alt = x.title; im.loading = 'lazy'; im.addEventListener('error', () => a.remove()); a.append(im); box.append(a); } }); }
+        const four = list.slice(0, 4); for(const x of four){ const a = h('a'), im = h('img'); a.href = x.page; a.title = x.credit; a.addEventListener('click', e => { e.preventDefault(); lbList(four, four.indexOf(x), st.ph.ko + '역 출구'); }); im.src = x.thumb; im.alt = x.title; im.loading = 'lazy'; im.addEventListener('error', () => a.remove()); a.append(im); box.append(a); } }); }
     if(!st.line) continue;
     const k = st.line + st.sta + st.up, nt = routeCur.nt[k];
     if(nt) li.append(h('span', 'nt', ' · 다음 열차 ' + nt)); else if(nt === undefined){ routeCur.nt[k] = null; nextTrain(st, k, routeCur); } }
@@ -1546,7 +1546,7 @@ function estWait(s, t, w){ const q = qOf(s); if(!q || !q.w) return 0;
   for(const [d, a, b, n] of q.w) if((d === 'all' || d === dt) && m >= a && m < b) r = Math.max(r, n);
   return r; }
 const qPeak = q => q && q.w ? Math.max(...q.w.map(x => x[3])) : 0;
-function orLink(id){ if(!OR[id]) return null; const a = h('a', null, 'OpenRice'); a.href = 'https://www.openrice.com/en/hongkong/' + OR[id]; a.target = '_blank'; a.rel = 'noopener'; return a; }
+function orLink(id){ if(!OR[id]) return null; const a = h('a', null, 'OpenRice ↗'); a.href = 'https://www.openrice.com/en/hongkong/' + OR[id]; a.target = '_blank'; a.rel = 'noopener'; return a; }
 const PH = {wynnpalace:[["9/90/Wynn_Palace_2019.jpg", "OJ-JP", "CC BY-SA 4.0"], ["6/69/Wynn_Palace_Night_2016.jpg", "Doraemon.tvb", "CC BY-SA 3.0"], ["9/9c/Wynn_Palace_Cable_car_17-01-2023%282%29.jpg", "LN9267", "CC BY-SA 4.0"]], peak:[["2/27/CWA_6th_Generation_Peak_Tram.jpg", "Samson Ng . D201@EAL", "CC BY-SA 4.0"], ["4/4f/The_Peak_Tram%2C_Hong_Kong_%28Ank_Kumar%29_03.jpg", "Ank Kumar", "CC BY-SA 4.0"], ["5/55/Peak_Tram_at_night.jpg", "Ubahnverleih", "CC0"]],
   esc:[["f/f8/Central-Mid-Levels_Escalator_and_Walkway_System_2017.jpg", "Wpcpey", "CC BY-SA 4.0"], ["2/2e/Mid-Levels_Escalator%2C_Hong_Kong_%282042642893%29.jpg", "Rob Young", "CC BY 2.0"], ["5/51/HK_Central_Cochrane_Street_Central-Mid-Levels_escalators_Upsidedown.JPG", "WingLuk", "CC BY-SA 3.0"]],
   pmq:[["f/f8/PMQ_Overview_201510.jpg", "Wpcpey", "CC BY 4.0"], ["3/35/HK_Sheung_Wan_PMQ_facade_exterior_night_courtyard_Dec-2015_DSC_001.JPG", "Lizatanmenhua", "CC BY-SA 4.0"], ["7/7d/HK_Sheung_Wan_PMQ_Aberdeen_Street_tree_night_Dec-2015_DSC.JPG", "Lizatanmenhua", "CC BY-SA 4.0"]],
@@ -1646,8 +1646,10 @@ function phBox(id, name){ const f = h('div','pph'), n = PH[id].length;
   PH[id].forEach((p, i) => { const it = h('figure'), im = h('img'), a = h('a', null, '📷 ' + phCred(p));
     im.src = phUrl(id, 500, i); im.alt = ''; im.loading = 'lazy'; im.addEventListener('error', () => it.remove());
     im.addEventListener('click', () => openLb(id, i, name));
-    a.href = phPage(p); a.target = '_blank'; a.rel = 'noopener'; it.append(im, a); if(n > 1) it.append(h('i', null, (i + 1) + '/' + n)); f.append(it); });
+    it.append(im, a); if(n > 1) it.append(h('i', null, (i + 1) + '/' + n)); f.append(it); });
   return f; }
+function lbList(list, i, name){ const path = u => (/\/wikipedia\/commons\/thumb\/(\w\/\w\w\/[^/]+)\//.exec(u || '') || [])[1], ok = list.filter(x => path(x.thumb));
+  if(!ok.length) return; PH._x = ok.map(x => [path(x.thumb), x.credit || 'Wikimedia Commons', '']); openLb('_x', Math.max(0, ok.indexOf(list[i])), name); }
 function phStrip(id, name){ const f = h('div','cph');
   PH[id].forEach((p, i) => { const a = h('a'), im = h('img'); a.href = phPage(p); a.target = '_blank'; a.rel = 'noopener'; a.title = phCred(p);
     im.src = phUrl(id, 250, i); im.alt = ''; im.loading = 'lazy'; im.addEventListener('error', () => a.remove()); a.append(im); f.append(a);
@@ -1897,7 +1899,7 @@ function drawEvents(){
   for(const e of EVENTS.filter(e => !!e.macau === (day.id === 'macau') && (!iso || (e.from <= iso && iso <= e.to)))){
     const r = h('div','evt'); r.append(h('span',null,'🎆'), h('b',null,e.n), h('span','m',e.when+' · '+e.sub));
     if(e.lat){ const has = day.stops.some(s => s.rec===e.id), b = h('button','chip', has ? '일정에 있음' : '＋ 일정에 추가'); b.type = 'button'; b.disabled = has; b.addEventListener('click', () => addPlace(e)); r.append(b); }
-    if(e.src){ const a = h('a',null,'출처'); a.href = e.src; a.target = '_blank'; a.rel = 'noopener'; r.append(a); }
+    if(e.src){ const a = h('a',null,'출처 ↗'); a.href = e.src; a.target = '_blank'; a.rel = 'noopener'; r.append(a); }
     if(e.lat){ r.style.cursor = 'pointer'; r.addEventListener('click', ev => { if(ev.target.closest('a,button')) return; if(mm && !wide() && shState === 'full') setSheet('half'); centerOn(e.lat, e.lng, 16); document.getElementById('mapwrap').scrollIntoView({block:'nearest', behavior:'smooth'});
       const mk = recLayer.getLayers().find(x => x.options.pid === e.id); if(mk) setTimeout(() => mk.openPopup(), 60); }); }
     box.append(r); }
@@ -1965,7 +1967,7 @@ function drawList(){
       t.append(cp); body.append(t); }
     if(s.lat){ const acts = h('div','acts');
       const rb = h('button','go','🧭 길찾기'); rb.type='button'; rb.addEventListener('click', () => { sel = s; render(); document.getElementById('mapwrap').scrollIntoView({block:'nearest', behavior:'smooth'}); routeTo(s); });
-      const open = h('a',null,'Google 지도'); open.href = /^https:\/\//.test(s.link || '') ? s.link : `https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lng}`; open.target='_blank'; open.rel='noopener';
+      const open = h('a',null,'Google 지도 ↗'); open.href = /^https:\/\//.test(s.link || '') ? s.link : `https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lng}`; open.target='_blank'; open.rel='noopener';
       const rtb = h('button','rtb','🚏 실시간'); rtb.type='button'; rtb.addEventListener('click', () => openRt(s.id, s.lat, s.lng, body));
       const fb = h('button', null, '📍 출발'); fb.type = 'button'; fb.addEventListener('click', () => { abSet(s); document.getElementById('mapwrap').scrollIntoView({block:'nearest', behavior:'smooth'}); });
       acts.append(rb, fb, open, rtb);
@@ -2098,7 +2100,7 @@ let lbId = null, lbName = '';
 const lbs = document.getElementById('lbs');
 function lbCap(){ if(!lbId) return; const n = PH[lbId].length, i = Math.max(0, Math.min(n - 1, Math.round(lbs.scrollLeft / (lbs.clientWidth || 1)))), ph = PH[lbId][i];
   document.getElementById('lbt').textContent = lbName; document.getElementById('lbn').textContent = n > 1 ? `${i + 1} / ${n}` : '';
-  const a = document.getElementById('lba'); a.textContent = '📷 ' + phCred(ph); a.href = phPage(ph); }
+  const a = document.getElementById('lba'); a.textContent = '📷 ' + phCred(ph) + ' ↗'; a.href = phPage(ph); }
 function openLb(id, i, name){ lbId = id; lbName = name || ''; lbs.textContent = '';
   PH[id].forEach((ph, k) => { const f = h('figure'), im = h('img'); im.alt = ''; im.src = phUrl(id, 960, k);
     im.addEventListener('error', () => { if(!im.dataset.fb){ im.dataset.fb = 1; im.src = phUrl(id, 500, k); } }); f.append(im); lbs.append(f); });
@@ -2258,9 +2260,9 @@ const GUIDE = [["📅 여행 4일 휴관·행사", [["11/16 월", "M+ 휴관"], 
       const card = h('div', 'mans'); won(String(j.answer || '답 없음').slice(0, 1500)).split(/\n+/).map(x => x.trim()).filter(Boolean).forEach((x, n) => card.append(h('p', n ? null : 'lead', x)));
       if(typeof j.photo === 'string' && j.photo){ const ph = h('div', 'mph'); card.append(ph);
         commons(j.photo).then(list => { if(!list.length){ ph.className = 'msrc'; ph.textContent = '사진 못 찾음'; return; }
-          for(const x of list){ const a = h('a'), im = h('img'); a.href = x.page; a.target = '_blank'; a.rel = 'noopener'; im.src = x.thumb; im.alt = x.title; im.loading = 'lazy'; im.addEventListener('error', () => a.remove()); a.append(im, h('small', null, '📷 ' + (x.credit || 'Wikimedia Commons'))); ph.append(a); } }); }
+          for(const x of list){ const a = h('a'), im = h('img'); a.href = x.page; a.addEventListener('click', e => { e.preventDefault(); lbList(list, list.indexOf(x), j.photo); }); im.src = x.thumb; im.alt = x.title; im.loading = 'lazy'; im.addEventListener('error', () => a.remove()); a.append(im, h('small', null, '📷 ' + (x.credit || 'Wikimedia Commons'))); ph.append(a); } }); }
       const src = (Array.isArray(j.src) ? j.src : []).filter(x => x && /^https:\/\//.test(x.u)).slice(0, 3);
-      if(src.length){ const sr = h('div', 'msrc'); for(const x of src){ const a = h('a', null, '🔗 ' + (String(x.t || '').slice(0, 28) || '출처')); a.href = x.u; a.target = '_blank'; a.rel = 'noopener'; sr.append(a); } card.append(sr); }
+      if(src.length){ const sr = h('div', 'msrc'); for(const x of src){ const a = h('a', null, '🔗 ' + (String(x.t || '').slice(0, 28) || '출처') + ' ↗'); a.href = x.u; a.target = '_blank'; a.rel = 'noopener'; sr.append(a); } card.append(sr); }
       const recs = (Array.isArray(j.recs) ? j.recs : []).map(id => REC.find(p => p.id === id)).filter(Boolean).slice(0, 4);
       if(recs.length){ const row = h('div', 'mact'); for(const p of recs){ const b = h('button', 'chip', '＋ ' + shortName(p.n)); b.type = 'button'; b.disabled = day.stops.some(x => x.rec === p.id);
           b.addEventListener('click', () => { closeMemo(); addPlace(p); }); row.append(b); } card.append(row); }
@@ -2323,7 +2325,7 @@ function flagPop(t){ const p = {id:'pt', name:t[2], lat:t[0], lng:t[1]}; if(abTo
   row.append(go, fb); box.append(row); if(!noSv) box.append(sv);
   const pop = L.popup(popOpt()).setLatLng([t[0], t[1]]).setContent(box).openOn(map);
   towerInfo(t[2]).then(r => { const id = 'tw:' + t[2]; if(r.ph.length){ PH[id] = r.ph; ph.append(...phBox(id, t[2]).children); }
-    if(r.txt){ wk.textContent = r.txt; if(r.url){ const a = h('a', null, ' 위키백과'); a.href = r.url; a.target = '_blank'; a.rel = 'noopener'; wk.append(a); } } else wk.remove();
+    if(r.txt){ wk.textContent = r.txt; if(r.url){ const a = h('a', null, ' 위키백과 ↗'); a.href = r.url; a.target = '_blank'; a.rel = 'noopener'; wk.append(a); } } else wk.remove();
     if(map.hasLayer(pop)) pop.update(); }); }
 map.on('contextmenu', e => { const p = {id:'pin', n:'지정 위치', sub:'지도에서 고른 곳', c:'search', lat:+e.latlng.lat.toFixed(6), lng:+e.latlng.lng.toFixed(6), stay:30};
   const box = h('div','pop'), o = fromHere(p), lg = legOf(o[0], p), others = legOpts(o[0], p, true).filter(x => x.mode !== lg.mode).slice(0, 3).map(x => optText(x));

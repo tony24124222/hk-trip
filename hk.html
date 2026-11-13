@@ -154,7 +154,7 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .trk[hidden]{display:none}
 .trk span{color:#6a52e0;font-weight:700}
 .trk button{border:0;background:none;text-decoration:underline;color:var(--muted);font-size:12px;padding:2px 4px}
-.routebox{margin-top:6px;border:2px solid #1a73e8;background:var(--surface);border-radius:16px;padding:8px 10px;font-size:13.5px;max-height:220px;overflow:auto}
+.routebox{margin-top:6px;border:2px solid #1a73e8;background:var(--surface);border-radius:16px;padding:8px 10px;font-size:13.5px;overflow:auto}
 .routebox[hidden]{display:none}
 #map.routing .leaflet-overlay-pane{opacity:.3}
 .dlab,.slab{pointer-events:none}
@@ -194,11 +194,11 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .newer{display:flex;flex-wrap:wrap;align-items:center;gap:6px;width:100%;padding:8px 10px;border:2px solid #f5c04a;border-radius:14px;background:var(--surface);font-size:13.5px}
 .newer[hidden]{display:none}
 .routebox .rh{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.routebox .rh b{font:400 15.5px var(--display);color:#1a73e8;flex:1 1 auto;min-width:0}
+.routebox .rh b{font:400 15.5px var(--display);color:#1a73e8;flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .routebox .rh #routerun{background:#1a73e8;border-color:#1a73e8;color:#fff}
-.rpick{display:flex;align-items:flex-end;gap:6px;margin:6px 0 4px}
-.rpick label{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:2px;font-size:11.5px;font-weight:700;color:var(--muted)}
-.rpick input{width:100%;min-width:0;box-sizing:border-box;font:16px var(--body);padding:5px 8px;border:2px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+.rpick{display:flex;align-items:center;gap:6px;margin:6px 0 4px}
+.rpick label{flex:1 1 0;min-width:0;display:flex;align-items:center;gap:4px;font-size:11.5px;font-weight:700;color:var(--muted);white-space:nowrap}
+.rpick input{width:100%;min-width:0;box-sizing:border-box;font:16px var(--body);padding:3px 7px;border:2px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
 .rpick input:focus{border-color:#1a73e8;outline:0}
 .rsug{max-height:260px;overflow:auto;border:2px solid var(--line);border-radius:12px;background:var(--surface);margin:0 0 6px}
 .rsug[hidden]{display:none}
@@ -207,7 +207,7 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .rsug button:active,.rsug button:first-of-type:focus-visible{background:var(--bg)}
 .routebox.picking{max-height:none}
 .routebox.picking #routesteps,.routebox.picking #routefrom{display:none}
-.rpick button{flex:0 0 auto;width:36px;height:36px;border:2px solid var(--line);background:var(--bg);color:var(--ink);border-radius:50%;font-size:16px}
+.rpick button{flex:0 0 auto;width:32px;height:32px;border:2px solid var(--line);background:var(--bg);color:var(--ink);border-radius:50%;font-size:16px}
 .routebox .rh button{flex:0 0 auto;border:2px solid var(--line);background:var(--bg);border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700}
 .steps{list-style:none;margin:4px 0 0;padding:0;display:flex;flex-direction:column;gap:3px}
 .steps li{padding:3px 0 3px 2px;border-bottom:1px dashed var(--line)}
@@ -221,6 +221,13 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .cmpr .t{flex:0 0 42px;font-variant-numeric:tabular-nums}
 .cmpr .c{flex:1;min-width:0;color:var(--muted);font-size:12.5px}
 .cmpr .tag{margin-left:auto;flex:0 0 auto}
+.routebox .cmp{display:flex;gap:6px}
+.routebox .cmpr{flex:1 1 0;min-width:0;flex-wrap:wrap;gap:0 6px;padding:4px 8px;position:relative}
+.routebox .cmpr .k{min-width:0}
+.routebox .cmpr .c{flex:1 0 100%;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.routebox .cmpr .tag{position:absolute;top:-8px;right:6px;font-size:10px;padding:0 5px}
+.routebox .sph img{width:104px;height:72px}
+#routefrom:empty{display:none}
 .leg{cursor:pointer}
 .leg:hover{color:var(--ink)}
 .tpin{width:22px;height:22px;border-radius:7px;background:#3b82c4;border:2px solid #fff;display:grid;place-items:center;font-size:12px;box-shadow:0 1px 3px rgba(0,0,0,.35)}
@@ -421,10 +428,11 @@ html.mm .map{height:100%;border:0;border-radius:0;box-shadow:none}
 html.mm .map{--ctop:calc(60px + env(safe-area-inset-top))}
 html.mm .leaflet-top{top:calc(var(--ctop) - 8px)}
 html.mm .leaflet-bottom{bottom:calc(var(--sh,64px) + var(--nav))}
-html.mm .mapinfo{position:absolute;z-index:600;left:8px;right:8px;bottom:calc(var(--sh,64px) + var(--nav) + 24px);max-height:40%;overflow:auto;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+html.mm .mapinfo{position:absolute;z-index:600;left:8px;right:8px;bottom:calc(var(--sh,64px) + var(--nav) + 24px);max-height:62%;overflow:auto;display:flex;flex-direction:column;gap:6px;pointer-events:none}
 html.mm .mapinfo>*{pointer-events:auto;margin:0}
 html.mm .mapinfo .gpsmsg,html.mm .mapinfo .trk{align-self:flex-start;background:var(--surface);border:2px solid var(--line);border-radius:999px;padding:3px 10px}
 html.mm .mapinfo .nomap{background:var(--surface)}
+html.mm .routebox{max-height:none}
 html.mm #panel{position:fixed;z-index:20;left:0;right:0;bottom:var(--nav);height:var(--sh,64px);background:var(--bg);border-radius:22px 22px 0 0;box-shadow:0 -6px 24px rgba(60,30,40,.2);display:flex;flex-direction:column;overflow:hidden;transition:height .28s cubic-bezier(.2,.8,.2,1)}
 html.mm #panel.drag{transition:none}
 html.mm #panel>.pstep{display:grid;position:absolute;top:14px;z-index:2}
@@ -1149,7 +1157,7 @@ function runRoute(shapes, leg){ stopRun(); if(matchMedia('(prefers-reduced-motio
   const wait = ms => new Promise(r => { runT = setTimeout(r, ms); });
   let follow = true; const off = () => { follow = false; }; map.once('dragstart', off);
   const ZF = {walk:17, mtr:15, bus:15.5, tram:15.5, taxi:15, ferry:leg.mode === 'boat' ? 11 : 14.5};
-  const camAt = (q, z) => { const s = map.getSize(), i = ins(), b = i.b + (mm && !wide() ? Math.min(document.querySelector('.mapinfo').offsetHeight + 24, innerHeight * .3) : 0);
+  const camAt = (q, z) => { const s = map.getSize(), i = ins(), b = i.b + (mm && !wide() ? Math.min(document.querySelector('.mapinfo').offsetHeight + 24, innerHeight * .65) : 0);
     return map.unproject(map.project(q, z).add([s.x / 2 - (i.l + s.x - i.r) / 2, s.y / 2 - (i.t + s.y - b) / 2]), z); };
   const look = g => { if(follow) map.flyTo(camAt(g.pts[0], ZF[g.kind]), ZF[g.kind], {duration:.6}); };
   // walking keeps a steady pace, vehicles speed up and slow down; the sprite faces the way it moves (walk art faces right, vehicles left)
@@ -1196,13 +1204,13 @@ function redrawRoute(fitIt){
   if(routeCur.preview){ box.hidden = true; return; } // line only; the steps open from the popup button
   if(s.id === 'wc') L.marker([s.lat, s.lng], {icon:L.divIcon({className:'', html:'<div class="tpin">🚻</div>', iconSize:[22,22], iconAnchor:[11,11]}), interactive:false, zIndexOffset:1500}).addTo(routeLayer);
   box.hidden = false;
-  document.getElementById('routetxt').textContent = `🧭 ${s.name}까지 약 ${leg.min}분`;
+  document.getElementById('routetxt').textContent = `🧭 약 ${leg.min}분`;
   fillPick('rpa', from, lbl); fillPick('rpb', s, s.name);
-  document.getElementById('routefrom').textContent = leg.wk ? `도보 ${leg.wk}분 + ${MODE[leg.mode]} ${Math.max(1, leg.min - leg.wk)}분` : '';
+  document.getElementById('routefrom').textContent = leg.wk && opts.length < 2 && !leg.cost ? `도보 ${leg.wk}분 + ${MODE[leg.mode]} ${Math.max(1, leg.min - leg.wk)}분` : '';
   const ol = document.getElementById('routesteps'); ol.textContent = '';
   if(opts.length > 1 || leg.cost){ const li = h('li', 'alts cmp');
     opts.forEach((o, n) => { const b = h('button', 'cmpr'); b.type = 'button'; b.setAttribute('aria-pressed', o.mode === leg.mode);
-      b.append(h('span', 'k', (legIcon[o.mode] || '') + ' ' + (MODE[o.mode] || '') + (o.mode === 'bus' ? ' ' + o.bus.no : '')), h('span', 't', o.min + '분'), h('span', 'c', o.mode === 'walk' ? '무료' : (o.wk ? `도보 ${o.wk}분 포함 · ` : '') + (costTxt(o, true) || '–')));
+      b.append(h('span', 'k', (legIcon[o.mode] || '') + ' ' + (MODE[o.mode] || '') + (o.mode === 'bus' ? ' ' + o.bus.no : '')), h('span', 't', o.min + '분'), h('span', 'c', o.mode === 'walk' ? '무료' : (o.wk ? `도보 ${o.wk}분 · ` : '') + (costTxt(o, true) || '–').replace(/HK\$[\d.,]+ \(([^)]+)\)/, '$1')));
       if(!n && opts.length > 1) b.append(h('span', 'tag next', '추천'));
       b.addEventListener('click', () => { routeCur.mode = o.mode; stopRun(); redrawRoute(true); }); li.append(b); });
     ol.append(li); }
@@ -1216,7 +1224,7 @@ function redrawRoute(fitIt){
     alts.forEach(([d, t], i) => { const b = h('button', 'chip', `🚻 ${i + 1} · ${fmt(d)}`); b.type = 'button'; b.setAttribute('aria-pressed', t[0] === s.lat && t[1] === s.lng);
       b.addEventListener('click', () => showRoute(toiletObj(t), [routeCur.from, routeCur.lbl], alts)); li.append(b); });
     ol.append(li); }
-  if(fitIt){ const pts = shapes.flatMap(x => x.pts); pts.push([from.lat, from.lng]); map.fitBounds(pts, fitOpt(30, {maxZoom:17, animate:false}, mm && !wide() ? Math.min(document.querySelector('.mapinfo').offsetHeight + 24, innerHeight * .3) : 0)); }
+  if(fitIt){ const pts = shapes.flatMap(x => x.pts); pts.push([from.lat, from.lng]); map.fitBounds(pts, fitOpt(30, {maxZoom:17, animate:false}, mm && !wide() ? Math.min(document.querySelector('.mapinfo').offsetHeight + 24, innerHeight * .65) : 0)); }
 }
 // every place you might start from or go to: me, the hotel, today's stops, the recommended places, the flag buildings
 function pickList(){ const out = [], hm0 = home();

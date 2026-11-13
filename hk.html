@@ -256,6 +256,10 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .gd dl{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;margin:0 0 12px;font-size:13px;line-height:1.45}
 .gd dt{font-weight:700;white-space:nowrap}
 .gd dd{margin:0;color:var(--muted)}
+.phr{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:0 0 12px}
+.phr button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;text-align:left;border:2px solid var(--line);background:var(--bg);border-radius:12px;padding:7px 10px;font-size:12.5px;color:var(--muted)}
+.phr b{font:700 17px "PingFang HK","PingFang TC","Microsoft JhengHei",sans-serif;color:var(--ink)}
+.phr small{font-size:11.5px}
 .pack{list-style:none;margin:0 0 12px;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;font-size:13.5px}
 .pack label{display:flex;align-items:center;gap:6px}
 .pack input{width:18px;height:18px;accent-color:var(--accent)}
@@ -317,7 +321,7 @@ html.mm .dayhead h2{display:none}
 .zc small{font-size:15px;color:#666}
 .zc b{font-size:clamp(40px,13vw,104px);line-height:1.15;font-weight:700;word-break:break-all}
 .zc span{font-size:clamp(18px,5.2vw,30px);line-height:1.4}
-.zc span:empty{display:none}
+.zc span:empty,.zc small:empty{display:none}
 .zc em{font-style:normal;font-size:14px;color:#666;font-family:var(--body)}
 #zcx{position:absolute;right:14px;top:calc(12px + env(safe-area-inset-top));width:44px;height:44px;border-radius:50%;border:0;background:#eee;color:#111;font-size:18px}
 .lb{position:fixed;inset:0;z-index:4000;background:#100a0d;display:flex;flex-direction:column}
@@ -418,7 +422,7 @@ html.mm .dayhead h2{display:none}
 </div>
 
 <div class="zc" id="zc" role="dialog" aria-modal="true" aria-label="한자 이름" hidden>
-  <small>請載我去 · Please take me to</small>
+  <small id="zcs"></small>
   <b id="zct"></b>
   <span id="zca"></span>
   <em id="zck"></em>
@@ -1574,7 +1578,7 @@ document.getElementById('pdone').addEventListener('click', () => { if(!sel) retu
   grip.addEventListener('pointerup', end); grip.addEventListener('pointercancel', end);
   grip.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); setSheet(shState === 'peek' ? 'half' : 'peek'); } }); }
 // big Chinese name card to show a driver or passer-by
-function showZh(s){ const z = zhOf(s); if(!z) return; document.getElementById('zct').textContent = z;
+function showZh(s){ const z = zhOf(s); if(!z) return; document.getElementById('zcs').textContent = '請載我去 · Please take me to'; document.getElementById('zct').textContent = z;
   document.getElementById('zca').textContent = (s.taxi || '').replace(/^目的地：[^，]*，/, ''); document.getElementById('zck').textContent = s.name || s.n || '';
   document.getElementById('zc').hidden = false; document.getElementById('zcx').focus(); }
 document.getElementById('zc').addEventListener('click', () => { document.getElementById('zc').hidden = true; });
@@ -1598,6 +1602,12 @@ const GUIDE = [["📅 여행 4일 휴관·행사", [["11/16 월", "M+ 휴관"], 
 { const g = document.getElementById('guide');
   for(const [t, rows] of GUIDE){ const d = h('details','gd'), dl = h('dl'); d.append(h('summary', null, t));
     for(const [k, v] of rows) dl.append(h('dt', null, k), h('dd', null, v)); d.append(dl); g.append(d); }
+  // phrases: tap one to show it large to staff
+  { const d = h('details','gd'), ul = h('div','phr'); d.append(h('summary', null, '🗣️ 보여주는 한마디'));
+    for(const [ko, zh, say] of [["감사합니다 · 저기요", "唔該", "음꺼이"], ["고맙습니다 (호의·선물)", "多謝", "또제"], ["계산서 주세요", "唔該，埋單", "음꺼이, 마이딴"], ["얼마예요?", "幾多錢？", "께이또친"], ["이거 주세요", "我要呢個", ""], ["두 명이요", "兩位", "렁와이"], ["포장이요", "外賣", "오이마이"], ["먹고 갈게요", "堂食", ""], ["안 맵게 해주세요", "唔要辣", ""], ["고수 빼주세요", "走芫荽", ""], ["얼음 빼주세요", "走冰", "자우빙"], ["영어 메뉴 있나요?", "有冇英文餐牌？", ""], ["카드 돼요?", "可唔可以碌卡？", ""], ["옥토퍼스 돼요?", "可唔可以用八達通？", ""], ["화장실 어디예요?", "洗手間喺邊度？", ""], ["사진 찍어도 돼요?", "可唔可以影相？", ""], ["여기서 내려주세요", "唔該，呢度落車", ""]]){ const b = h('button'); b.type = 'button'; b.append(h('span', null, ko), h('b', null, zh)); if(say) b.append(h('small', null, say));
+      b.addEventListener('click', () => { document.getElementById('zcs').textContent = ''; document.getElementById('zct').textContent = zh; document.getElementById('zca').textContent = ''; document.getElementById('zck').textContent = ko + (say ? ' · ' + say : ''); document.getElementById('zc').hidden = false; document.getElementById('zcx').focus(); });
+      ul.append(b); }
+    d.append(ul); g.append(d); }
   // emergency numbers as tap-to-call links
   { const d = h('details','gd'), dl = h('dl'); d.append(h('summary', null, '🆘 비상 연락처'));
     for(const [k, v, tel] of [['경찰·구급·소방', '999', '999'], ['주홍콩 총영사관', '2529 4141 · 애드미럴티 Far East Finance Centre 5층', '+85225294141'], ['영사콜센터', '+82-2-3210-0404 · 24시간', '+82232100404']]){

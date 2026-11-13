@@ -1,7 +1,8 @@
 // offline help for the trip page: the page itself network-first, libraries/tiles/photos cache-first
-const V = 'hk-shell-v1', T = 'hk-tiles-v1', MAX = 1800;
+const V = 'hk-shell-v2', T = 'hk-tiles-v1', MAX = 1800;
 // the libraries are requested before this worker controls the first visit, so fetch them here as well
-const SHELL = ['./', './hk.html', './toilets.json', './icon-192.png', './banner.jpg',
+const SHELL = ['./', './hk.html', './toilets.json', './icon-192.png', './banner.jpg', './walk.png',
+  './ride-mtr.png', './ride-taxi.png', './ride-bus.png', './ride-tram.png', './ride-ferry.png',
   'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css', 'https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.css',
   'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.js',
   'https://cdn.jsdelivr.net/npm/@maplibre/maplibre-gl-leaflet@0.0.22/leaflet-maplibre-gl.js',

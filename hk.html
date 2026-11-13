@@ -191,7 +191,15 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .routebox .rh b{font:400 15.5px var(--display);color:#1a73e8}
 .rpick{display:flex;align-items:flex-end;gap:6px;margin:6px 0 4px}
 .rpick label{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:2px;font-size:11.5px;font-weight:700;color:var(--muted)}
-.rpick select{width:100%;min-width:0;font:16px var(--body);padding:4px 6px;border:2px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+.rpick input{width:100%;min-width:0;box-sizing:border-box;font:16px var(--body);padding:5px 8px;border:2px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+.rpick input:focus{border-color:#1a73e8;outline:0}
+.rsug{max-height:260px;overflow:auto;border:2px solid var(--line);border-radius:12px;background:var(--surface);margin:0 0 6px}
+.rsug[hidden]{display:none}
+.rsug .g{position:sticky;top:0;background:var(--surface);font-size:11.5px;font-weight:700;color:var(--muted);padding:6px 10px 2px}
+.rsug button{display:block;width:100%;text-align:left;border:0;background:none;padding:8px 10px;font:14.5px var(--body);color:var(--ink)}
+.rsug button:active,.rsug button:first-of-type:focus-visible{background:var(--bg)}
+.routebox.picking{max-height:none}
+.routebox.picking #routesteps,.routebox.picking #routefrom{display:none}
 .rpick button{flex:0 0 auto;width:36px;height:36px;border:2px solid var(--line);background:var(--bg);color:var(--ink);border-radius:50%;font-size:16px}
 .routebox .rh button{flex:0 0 auto;border:2px solid var(--line);background:var(--bg);border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700}
 .steps{list-style:none;margin:4px 0 0;padding:0;display:flex;flex-direction:column;gap:3px}
@@ -221,11 +229,22 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .pin.sel{outline:3px solid var(--ink)}
 .pin.next{box-shadow:0 0 0 2.5px #3b2a33,0 0 0 9px rgba(255,111,145,.45),0 3px 7px rgba(0,0,0,.45)}
 .pin.multi{font-size:12.5px}
-.me,.run{position:relative;width:56px;height:74px}
-.me::before,.run::before{content:"";position:absolute;left:50%;top:50px;width:44px;height:16px;margin-left:-22px;border-radius:50%;background:radial-gradient(ellipse at 50% 30%,#ffe1e9,#ff8fab 72%);box-shadow:0 0 0 1.5px #fff,0 5px 0 #d94f78,0 5px 0 1.5px #fff,0 10px 7px rgba(0,0,0,.38)}
-.me img,.run img{position:absolute;left:0;top:0;filter:drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff)}
-@media (prefers-reduced-motion:no-preference){ .run img{animation:hop .28s ease-in-out infinite alternate} }
-@keyframes hop{to{transform:translateY(-5px)}}
+.me{position:relative;width:56px;height:74px}
+.run{position:relative}
+.me b{position:absolute;left:1px;top:0;width:54px;height:60px;background:url(walk.png) 0 0/216px 60px no-repeat;filter:drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff)}
+.me.flip b{transform:scaleX(-1)}
+@media (prefers-reduced-motion:no-preference){ .me.mv b{animation:walk .5s steps(4) infinite,hop .25s ease-in-out infinite alternate} }
+.run{width:84px;height:84px;display:flex;justify-content:center;align-items:flex-end;padding-bottom:18px;box-sizing:border-box}
+.run .rk{flex:0 0 auto;width:54px;height:60px;background:url(walk.png) 0 0/216px 60px no-repeat;filter:drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff);animation:walk .5s steps(4) infinite,hop .25s ease-in-out infinite alternate}
+.run.ride .rk{height:50px;background-position:center bottom;background-size:contain;animation:rumble .2s ease-in-out infinite alternate}
+.run.flip .rk{transform:scaleX(-1)}
+.run.rpop{animation:rpop .42s cubic-bezier(.3,1.6,.5,1)}
+.run .rb{position:absolute;left:50%;bottom:72px;transform:translateX(-50%);white-space:nowrap;background:#3b2a33;color:#fff;font:700 12.5px/1.3 var(--body);padding:3px 10px;border-radius:999px;box-shadow:0 2px 5px rgba(0,0,0,.3)}
+.run .rb[hidden]{display:none}
+@keyframes walk{to{background-position:-216px 0}}
+@keyframes hop{to{translate:0 -3px}}
+@keyframes rumble{to{translate:0 -1.5px}}
+@keyframes rpop{0%{scale:.35}100%{scale:1}}
 .me i{position:absolute;left:50%;top:58px;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;z-index:-1;background:conic-gradient(from -32deg,rgba(26,115,232,.5) 0 64deg,transparent 64deg);-webkit-mask:radial-gradient(circle,transparent 9px,#000 10px,transparent 28px);mask:radial-gradient(circle,transparent 9px,#000 10px,transparent 28px)}
 .me i[hidden]{display:none}
 .leaflet-container{font-family:var(--body)}
@@ -465,7 +484,8 @@ html.mm .dayhead h2{display:none}
       <div id="herert"></div>
       <div class="routebox" id="routebox" hidden>
         <div class="rh"><b id="routetxt"></b><button type="button" id="routeclr">닫기</button></div>
-        <div class="rpick"><label>출발<select id="rpa"></select></label><button type="button" id="rswap" aria-label="출발·도착 바꾸기">⇅</button><label>도착<select id="rpb"></select></label></div>
+        <div class="rpick"><label>출발<input id="rpa" type="text" autocomplete="off" enterkeyhint="search" placeholder="장소 이름"></label><button type="button" id="rswap" aria-label="출발·도착 바꾸기">⇅</button><label>도착<input id="rpb" type="text" autocomplete="off" enterkeyhint="search" placeholder="장소 이름"></label></div>
+        <div class="rsug" id="rsug" hidden></div>
         <div class="m" id="routefrom"></div>
         <ol class="steps" id="routesteps"></ol>
       </div>
@@ -1074,20 +1094,46 @@ let routeCur = null;
 function clearRoute(){ routeCur = null; pendingRoute = null; stopRun(); redrawRoute(false); }
 // a tap on a way to go runs the little couple along it, fast
 let runRaf = 0, runT = 0; const runLayer = L.layerGroup().addTo(map);
-function stopRun(){ cancelAnimationFrame(runRaf); clearTimeout(runT); runRaf = runT = 0; runLayer.clearLayers(); }
-function runRoute(shapes, mode){ stopRun(); if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  const pts = shapes.filter(sh => !(mode === 'mtr' && sh.st === 'link')).flatMap(sh => sh.pts.map(q => Array.isArray(q) ? q : [q.lat, q.lng])), cum = [0];
-  for(let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + dist(pts[i - 1][0], pts[i - 1][1], pts[i][0], pts[i][1]));
-  const total = cum[cum.length - 1]; if(pts.length < 2 || !(total > 30)) return;
-  const dur = Math.min(6000, Math.max(2200, total * 1.6)), trail = L.polyline([pts[0]], {color:'#ff6f91', weight:7, opacity:.95, interactive:false, pane:'route'}).addTo(runLayer),
-    mk = L.marker(pts[0], {icon:L.divIcon({className:'', html:'<div class="run">' + COUPLE + '</div>', iconSize:[56,74], iconAnchor:[28,58]}), interactive:false, zIndexOffset:3000}).addTo(runLayer);
-  let t0 = 0, i = 1;
-  const tick = t => { if(!t0) t0 = t; const f = Math.min(1, (t - t0) / dur), e = f < .5 ? 2 * f * f : 1 - Math.pow(-2 * f + 2, 2) / 2, at = e * total;
-    while(i < pts.length - 1 && cum[i] < at) i++;
-    const k = Math.max(0, Math.min(1, (at - cum[i - 1]) / (cum[i] - cum[i - 1] || 1))), q = [pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * k, pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * k];
-    mk.setLatLng(q); trail.setLatLngs(pts.slice(0, i).concat([q]));
-    if(f < 1) runRaf = requestAnimationFrame(tick); else runT = setTimeout(stopRun, 1400); };
-  runT = setTimeout(() => { runRaf = requestAnimationFrame(tick); }, 350); } // after the map has settled on the route
+const RIDE = {mtr:['ride-mtr.png', 57], taxi:['ride-taxi.png', 63], bus:['ride-bus.png', 48], tram:['ride-tram.png', 40], ferry:['ride-ferry.png', 55]};
+let runTok = 0;
+function stopRun(){ runTok++; cancelAnimationFrame(runRaf); clearTimeout(runT); runRaf = runT = 0; runLayer.clearLayers(); }
+function runRoute(shapes, leg){ stopRun(); if(matchMedia('(prefers-reduced-motion: reduce)').matches) return; const tok = runTok;
+  for(const k in RIDE) new Image().src = RIDE[k][0];
+  // legShapes lists a train trip as walk, rides, exit links, walk; the run goes in travel order
+  let seq = shapes; if(leg.mode === 'mtr'){ const w = shapes.filter(x => x.st === 'walk'), k = shapes.filter(x => x.st === 'link'); seq = [w[0], k[0], ...shapes.filter(x => x.st.startsWith('mtr:')), k[1], w[1]].filter(Boolean); }
+  const kindOf = sh => sh.st === 'walk' || (sh.st === 'link' && leg.mode === 'mtr') ? 'walk' : sh.st.startsWith('mtr:') ? 'mtr' : sh.st === 'bus' ? (leg.mode === 'tram' ? 'tram' : 'bus') : sh.st === 'car' ? 'taxi' : 'ferry';
+  const segs = [];
+  for(const sh of seq){ const pts = sh.pts.map(q => Array.isArray(q) ? q : [q.lat, q.lng]), kind = kindOf(sh), line = sh.st.startsWith('mtr:') ? sh.st.slice(4) : '', last = segs[segs.length - 1];
+    if(pts.length < 2) continue;
+    if(last && last.kind === kind && last.line === line) last.pts = last.pts.concat(pts.slice(1)); else segs.push({pts, kind, line}); }
+  for(const g of segs){ g.cum = [0]; for(let i = 1; i < g.pts.length; i++) g.cum.push(g.cum[i - 1] + dist(g.pts[i - 1][0], g.pts[i - 1][1], g.pts[i][0], g.pts[i][1])); g.len = g.cum[g.cum.length - 1];
+    g.ms = g.kind === 'walk' ? Math.min(3200, Math.max(700, 500 + g.len * 2.2)) : Math.min(3600, Math.max(1300, 900 + g.len * .25)); }
+  const run = segs.filter(g => g.len > 5); if(!run.length || run.reduce((a, g) => a + g.len, 0) < 30) return;
+  const sc = Math.min(1, 10000 / run.reduce((a, g) => a + g.ms, 0)); for(const g of run) g.ms *= sc;
+  const trail = L.polyline([run[0].pts[0]], {color:'#ff6f91', weight:7, opacity:.95, interactive:false, pane:'route'}).addTo(runLayer), done = [run[0].pts[0]],
+    mk = L.marker(run[0].pts[0], {icon:L.divIcon({className:'', html:'<div class="run"><div class="rk"></div><b class="rb" hidden></b></div>', iconSize:[84,84], iconAnchor:[42,58]}), interactive:false, zIndexOffset:3000}).addTo(runLayer),
+    el = mk.getElement().firstChild, body = el.firstChild, bub = el.lastChild;
+  const setKind = (kind, pop) => { const fl = el.classList.contains('flip'); el.className = 'run' + (kind === 'walk' ? '' : ' ride') + (fl ? ' flip' : '');
+    body.style.backgroundImage = kind === 'walk' ? '' : `url(${RIDE[kind][0]})`; body.style.width = kind === 'walk' ? '' : RIDE[kind][1] + 'px';
+    if(pop){ void el.offsetWidth; el.classList.add('rpop'); } };
+  const say = (g, prev) => g.kind === 'walk' ? (prev ? '👋 내려서 걷기' : '') : prev && prev.kind === 'mtr' && g.kind === 'mtr' ? '🔁 ' + lineKo(g.line) + ' 환승'
+    : {mtr:'🚇 ' + lineKo(g.line) + ' 타기', bus:'🚌 ' + (leg.bus ? leg.bus.no + '번' : '버스') + ' 타기', tram:'🚋 트램 타기', taxi:'🚕 택시 타기', ferry:'⛴️ 배 타기'}[g.kind];
+  const wait = ms => new Promise(r => { runT = setTimeout(r, ms); });
+  // walking keeps a steady pace, vehicles speed up and slow down; the sprite faces the way it moves (walk art faces right, vehicles left)
+  const move = g => new Promise(r => { let t0 = 0, i = 1; const tick = t => { if(tok !== runTok) return; if(!t0) t0 = t;
+      const f = Math.min(1, (t - t0) / g.ms), e = g.kind === 'walk' ? f : f < .5 ? 2 * f * f : 1 - Math.pow(-2 * f + 2, 2) / 2, at = e * g.len;
+      while(i < g.pts.length - 1 && g.cum[i] < at) i++;
+      const a = g.pts[i - 1], b = g.pts[i], k = Math.max(0, Math.min(1, (at - g.cum[i - 1]) / (g.cum[i] - g.cum[i - 1] || 1))), q = [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
+      if(Math.abs(b[1] - a[1]) > 2e-5) el.classList.toggle('flip', (b[1] > a[1]) !== (g.kind === 'walk'));
+      mk.setLatLng(q); trail.setLatLngs(done.concat(g.pts.slice(1, i), [q]));
+      if(f < 1) runRaf = requestAnimationFrame(tick); else { done.push(...g.pts.slice(1)); r(); } };
+    runRaf = requestAnimationFrame(tick); });
+  (async () => { await wait(350); let prev = null; // after the map has settled on the route
+    for(const g of run){ if(tok !== runTok) return; const t = say(g, prev);
+      setKind(g.kind, !!prev && (prev.kind !== g.kind || prev.line !== g.line));
+      if(t){ bub.textContent = t; bub.hidden = false; await wait(750); bub.hidden = true; }
+      if(tok !== runTok) return; await move(g); prev = g; }
+    if(tok !== runTok) return; bub.textContent = '🎉 도착'; bub.hidden = false; await wait(1600); if(tok === runTok) stopRun(); })(); }
 const legIcon = {walk:'🚶', mtr:'🚇', taxi:'🚕', given:'🚌', boat:'⛴️', sf:'⛴️', bus:'🚌', tram:'🚋'}, MODE = {walk:'도보', mtr:'지하철', taxi:'택시', given:'버스', boat:'배', sf:'스타페리', bus:'버스', tram:'트램'};
 const legShort = lg => lg.mode === 'same' ? '바로 옆' : `${legIcon[lg.mode] || ''} 약 ${lg.min}분 · ${fmt(lg.d)}`;
 // tapping a place answers "how far from here": my position, else the selected stop, else the hotel
@@ -1111,7 +1157,7 @@ function redrawRoute(fitIt){
   if(!routeCur){ box.hidden = true; return; }
   const {s, from, lbl, alts} = routeCur, opts = legOpts(from, s, true), leg = opts.find(o => o.mode === routeCur.mode) || opts.find(o => o.mode === legOf(from, s).mode) || opts[0], shapes = legShapes(leg, from, s);
   for(const sh of shapes) drawShape(sh, routeLayer, 1, true);
-  if(routeCur.run){ routeCur.run = false; runRoute(shapes, leg.mode); }
+  if(routeCur.run){ routeCur.run = false; runRoute(shapes, leg); }
   L.circleMarker([from.lat, from.lng], {radius:7, color:'#fff', weight:3, fillColor:'#1a73e8', fillOpacity:1, interactive:false, pane:'route'}).addTo(routeLayer);
   if(routeCur.preview){ box.hidden = true; return; } // line only; the steps open from the popup button
   if(s.id === 'wc') L.marker([s.lat, s.lng], {icon:L.divIcon({className:'', html:'<div class="tpin">🚻</div>', iconSize:[22,22], iconAnchor:[11,11]}), interactive:false, zIndexOffset:1500}).addTo(routeLayer);
@@ -1142,21 +1188,38 @@ function redrawRoute(fitIt){
 function pickList(){ const out = [], hm0 = home();
   if(me && nearHK(me)) out.push(['me', '📍 내 위치', me, '내 위치', '']);
   out.push(['home', '🏨 ' + hm0.name, hm0, hm0.name, '']);
-  for(const x of routeStops(day)) if(x.lat && !isHome(x)) out.push(['s:' + x.id, label(day, x) + '. ' + x.name, x, x.name, '오늘 일정']);
+  for(const x of day.stops) if(x.lat && !isHome(x)) out.push(['s:' + x.id, label(day, x) + '. ' + x.name, x, x.name, '오늘 일정']);
   const rec = poolFor(day).filter(q => q.lat).map(q => ['r:' + q.id, q.n, {id:'rec-' + q.id, name:q.n, lat:q.lat, lng:q.lng}, q.n, inMacau(q) ? '마카오' : '홍콩']);
   const fl = TOWERS.map(t => ['t:' + t[2], t[2], {id:'pt', name:t[2], lat:t[0], lng:t[1]}, t[2], inMacau({lat:t[0], lng:t[1]}) ? '마카오' : '홍콩']);
   const mac = day.id === 'macau', rk = x => (x[4] === '마카오') === mac ? 0 : 1;
   return out.concat(rec.concat(fl).sort((x, y) => rk(x) - rk(y) || x[1].localeCompare(y[1], 'ko'))); }
-function fillPick(id, p, nm){ const el = document.getElementById(id), key = day.id + '|' + p.lat + ',' + p.lng + '|' + (me ? 1 : 0);
-  if(el._key === key) return; el._key = key; el.textContent = ''; const os = el._os = pickList();
-  const hit = os.find(o => dist(o[2].lat, o[2].lng, p.lat, p.lng) < 8);
-  if(!hit) el.append(new Option(nm, 'cur', true, true));
-  let g = el; for(const o of os){ if(o[4] && (g === el || g.label !== o[4])){ g = document.createElement('optgroup'); g.label = o[4]; el.append(g); } g.append(new Option(o[1], o[0], false, o === hit)); } }
-function pickSet(end, v){ const el = document.getElementById(end ? 'rpb' : 'rpa'), o = (el._os || []).find(x => x[0] === v); if(!o || !routeCur) return;
+let sugEnd = null, sugTimer = 0, sugWeb = [];
+const norm = t => String(t).toLowerCase().replace(/[\s·.,'’()\-]/g, '');
+function fillPick(id, p, nm){ const el = document.getElementById(id); if(document.activeElement === el) return;
+  const hit = pickList().find(o => dist(o[2].lat, o[2].lng, p.lat, p.lng) < 8); el.value = hit ? hit[3] : nm; }
+function drawSug(){ const box = document.getElementById('rsug'); box.textContent = ''; document.getElementById('routebox').classList.toggle('picking', sugEnd !== null);
+  if(sugEnd === null){ box.hidden = true; return; }
+  const el = document.getElementById(sugEnd ? 'rpb' : 'rpa'), q = el._typed ? norm(el.value) : '', all = pickList();
+  const os = (q ? all.filter(o => norm(o[1]).includes(q)) : all).concat(sugWeb);
+  let g = null; for(const o of os){ if(o[4] !== g){ g = o[4]; if(g) box.append(h('div', 'g', g)); }
+    const b = h('button', null, o[1]); b.type = 'button'; b.addEventListener('pointerdown', e => e.preventDefault()); b.addEventListener('click', () => pickSet(sugEnd, o)); box.append(b); }
+  if(!os.length) box.append(h('div', 'g', q.length > 1 ? '찾는 중…' : '결과 없음'));
+  box.hidden = false; box.scrollTop = 0; }
+function pickSet(end, o){ if(!routeCur) return; const el = document.getElementById(end ? 'rpb' : 'rpa');
   if(end) routeCur.s = o[2].id ? o[2] : {id:'pt', name:o[3], lat:o[2].lat, lng:o[2].lng}; else { routeCur.from = {lat:o[2].lat, lng:o[2].lng}; routeCur.lbl = o[3]; }
-  routeCur.mode = null; routeCur.alts = null; routeCur.nt = {}; stopRun(); redrawRoute(true); }
-document.getElementById('rpa').addEventListener('change', e => pickSet(false, e.target.value));
-document.getElementById('rpb').addEventListener('change', e => pickSet(true, e.target.value));
+  sugEnd = null; drawSug(); el.blur(); routeCur.mode = null; routeCur.alts = null; routeCur.nt = {}; stopRun(); redrawRoute(true); }
+for(const [id, end] of [['rpa', false], ['rpb', true]]){ const el = document.getElementById(id);
+  el.addEventListener('focus', () => { sugEnd = end; el._typed = false; sugWeb = []; el.select(); drawSug(); });
+  el.addEventListener('input', () => { el._typed = true; sugWeb = []; drawSug(); clearTimeout(sugTimer); const q = el.value.trim(); if(q.length < 2) return;
+    // names the list does not know: OpenStreetMap search (photon), Hong Kong and Macau only
+    sugTimer = setTimeout(async () => { try{ const ref = refPoint(), r = await getJ(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&lat=${ref.lat}&lon=${ref.lng}&limit=8&bbox=113.5,22.05,114.45,22.6`);
+      if(el.value.trim() !== q || sugEnd !== end) return;
+      sugWeb = r.features.filter(f => f.properties.name).map(f => { const n = f.properties.name, sub = f.properties.street || f.properties.district || f.properties.city || '';
+        return ['w:' + f.properties.osm_id, n + (sub && sub !== n ? ' · ' + sub : ''), {id:'pt', name:n, lat:f.geometry.coordinates[1], lng:f.geometry.coordinates[0]}, n, '지도 검색']; });
+      drawSug(); }catch(e){ if(sugEnd === end){ sugWeb = []; drawSug(); } } }, 450); });
+  el.addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); const b = document.querySelector('#rsug button'); if(b) b.click(); } else if(e.key === 'Escape') el.blur(); });
+  el.addEventListener('blur', () => setTimeout(() => { if(sugEnd !== end || document.activeElement === el) return; sugEnd = null; drawSug();
+    if(routeCur) fillPick(id, end ? routeCur.s : routeCur.from, end ? routeCur.s.name : routeCur.lbl); }, 150)); }
 document.getElementById('rswap').addEventListener('click', () => { if(!routeCur) return; const {from, lbl, s} = routeCur;
   routeCur.from = {lat:s.lat, lng:s.lng}; routeCur.lbl = s.name; routeCur.s = {id:'pt', name:lbl, lat:from.lat, lng:from.lng};
   routeCur.mode = null; routeCur.alts = null; routeCur.nt = {}; stopRun(); redrawRoute(true); });
@@ -1603,10 +1666,9 @@ function drawMap(){
   declutter();
   if(recOpen){ const k = recLayer.getLayers().find(m => m.options.pid === recOpen); if(k) k.openPopup(); else recOpen = null; }
 }
-const COUPLE = '<img src="couple.png" width="56" height="60" alt="" draggable="false">';
 function drawMe(){ meLayer.clearLayers(); if(!me) return;
   L.circle([me.lat,me.lng], {radius:me.acc, color:'#1a73e8', weight:1, fillOpacity:.12, interactive:false}).addTo(meLayer);
-  L.marker([me.lat,me.lng], {icon: L.divIcon({className:'', html:`<div class="me"><i ${meHead == null ? 'hidden' : `style="transform:rotate(${meHead}deg)"`}></i>${COUPLE}</div>`, iconSize:[56,74], iconAnchor:[28,58]}), zIndexOffset:2000, interactive:false}).addTo(meLayer); }
+  L.marker([me.lat,me.lng], {icon: L.divIcon({className:'', html:`<div class="me${me.mv ? ' mv' : ''}${me.fl ? ' flip' : ''}"><i ${meHead == null ? 'hidden' : `style="transform:rotate(${meHead}deg)"`}></i><b></b></div>`, iconSize:[56,74], iconAnchor:[28,58]}), zIndexOffset:2000, interactive:false}).addTo(meLayer); }
 // compass: iOS gives webkitCompassHeading (after a permission tap), Android an absolute alpha
 let meHead = null, compassOn = false;
 const arrived = new Set();
@@ -1626,7 +1688,9 @@ function toggleGps(){ const b = document.getElementById('gps');
   if(!navigator.geolocation){ gpsMsg('이 브라우저는 위치 기능을 지원하지 않습니다.'); return; }
   if(!window.isSecureContext){ gpsMsg('위치는 https 주소에서만 켜집니다. 이 파일을 https 사이트에 올려서 열어 주세요.'); return; }
   b.setAttribute('aria-pressed','true'); gpsMsg('위치 찾는 중…'); let first = true; startCompass();
-  watchId = navigator.geolocation.watchPosition(p => { me = {lat:p.coords.latitude, lng:p.coords.longitude, acc:p.coords.accuracy};
+  watchId = navigator.geolocation.watchPosition(p => { const was = me; me = {lat:p.coords.latitude, lng:p.coords.longitude, acc:p.coords.accuracy};
+      // walking = the phone reports speed, or the fix moved more than its noise since the last one
+      { const d = was ? dist(was.lat, was.lng, me.lat, me.lng) : 0; me.mv = p.coords.speed > .4 || d > Math.max(6, me.acc / 3); me.fl = me.mv && was && Math.abs(me.lng - was.lng) > 1e-5 ? me.lng < was.lng : !!(was && was.fl); }
       gpsMsg(nearHK(me) ? '내 위치 · 오차 약 '+Math.round(me.acc)+'m' : '지금은 홍콩 밖 · 도착하면 지도에 표시'); drawMe(); trackAdd();
       if(DATES[day.id] === hkIso()){ const nx0 = nextStop(day), rng = 60 + Math.min(me.acc, 60),
           nx = routeStops(day).filter(s => s.lat && !done[s.id] && !arrived.has(s.id) && (s === nx0 || !isHome(s))).map(s => [dist(me.lat, me.lng, s.lat, s.lng), s]).filter(x => x[0] < rng).sort((a, b) => a[0] - b[0]).map(x => x[1])[0];

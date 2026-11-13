@@ -159,6 +159,12 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .slab i{position:absolute;left:-5px;top:-5px;width:10px;height:10px;box-sizing:border-box;border-radius:50%;background:#fff;border:2.5px solid}
 .slab span{position:absolute;left:8px;top:-9px;white-space:nowrap;font:700 11.5px "Gowun Dodum",sans-serif;color:var(--ink);text-shadow:0 0 2px var(--land),0 0 3px var(--land),0 0 5px var(--land)}
 .lmk b{display:grid;place-items:center;width:38px;height:38px;box-sizing:border-box;border-radius:13px;background:var(--surface);border:2.5px solid var(--accent);font-size:20px;font-weight:400;box-shadow:0 2px 0 var(--accent),0 3px 8px rgba(90,40,60,.25);transform:rotate(-5deg)}
+.flag{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;pointer-events:none}
+.flag span{background:#3b2a33;color:#fff;font:700 11px/1.3 var(--body);border-radius:7px;padding:2px 7px;white-space:nowrap;box-shadow:0 2px 4px rgba(0,0,0,.3)}
+.flag::after{content:"";width:2px;height:13px;background:#3b2a33;border-radius:0 0 2px 2px}
+#map:not(.z-dot) .flag{display:none}
+.lmk::after{content:"";position:absolute;left:50%;top:38px;width:30px;height:10px;margin-left:-15px;border-radius:50%;background:rgba(40,20,30,.32);filter:blur(2px);z-index:-1}
+.lmk b{position:relative;top:-6px}
 .lmk.r b{transform:rotate(4deg);border-color:var(--alt);box-shadow:0 2px 0 var(--alt),0 3px 8px rgba(30,80,70,.25)}
 .mk{position:relative}
 .nm,.ph{display:none;position:absolute;left:50%;transform:translateX(-50%);pointer-events:none}
@@ -204,16 +210,19 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .tab .wx{margin-left:4px;font-size:12px}
 .dwx{font-size:12.5px;color:var(--muted)}
 .pin{width:36px;height:36px;box-sizing:border-box;border-radius:50%;background:var(--accent);color:#fff;border:3px solid #fff;display:grid;place-items:center;font:18px/1 var(--display);box-shadow:0 0 0 2.5px #3b2a33,0 3px 7px rgba(0,0,0,.45)}
+.pin::before{content:"";position:absolute;left:50%;bottom:-10px;margin-left:-7px;border:7px solid transparent;border-top:10px solid #3b2a33;border-bottom:0;z-index:-1}
+.pin::after{content:"";position:absolute;left:50%;bottom:-14px;width:22px;height:8px;margin-left:-11px;border-radius:50%;background:rgba(40,20,30,.38);filter:blur(1.5px);z-index:-2}
 .pin.alt{background:#24a99a;color:#fff}
 .pin.done{background:var(--done)}
 .pin.sel{outline:3px solid var(--ink)}
 .pin.next{box-shadow:0 0 0 2.5px #3b2a33,0 0 0 9px rgba(255,111,145,.45),0 3px 7px rgba(0,0,0,.45)}
 .pin.multi{font-size:12.5px}
-.me{position:relative;width:56px;height:66px}
-.run img{display:block;filter:drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff) drop-shadow(0 2px 3px rgba(0,0,0,.4))}
-.me img{position:absolute;left:0;top:0;filter:drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff) drop-shadow(0 2px 3px rgba(0,0,0,.4))}
-.me::after{content:"";position:absolute;left:50%;top:62px;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:#1a73e8;border:2px solid #fff;box-shadow:0 0 0 2px rgba(26,115,232,.35)}
-.me i{position:absolute;left:50%;top:62px;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;z-index:-1;background:conic-gradient(from -32deg,rgba(26,115,232,.5) 0 64deg,transparent 64deg);-webkit-mask:radial-gradient(circle,transparent 9px,#000 10px,transparent 28px);mask:radial-gradient(circle,transparent 9px,#000 10px,transparent 28px)}
+.me,.run{position:relative;width:56px;height:74px}
+.me::before,.run::before{content:"";position:absolute;left:50%;top:50px;width:44px;height:16px;margin-left:-22px;border-radius:50%;background:radial-gradient(ellipse at 50% 30%,#ffe1e9,#ff8fab 72%);box-shadow:0 0 0 1.5px #fff,0 5px 0 #d94f78,0 5px 0 1.5px #fff,0 10px 7px rgba(0,0,0,.38)}
+.me img,.run img{position:absolute;left:0;top:0;filter:drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff)}
+@media (prefers-reduced-motion:no-preference){ .run img{animation:hop .28s ease-in-out infinite alternate} }
+@keyframes hop{to{transform:translateY(-5px)}}
+.me i{position:absolute;left:50%;top:58px;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;z-index:-1;background:conic-gradient(from -32deg,rgba(26,115,232,.5) 0 64deg,transparent 64deg);-webkit-mask:radial-gradient(circle,transparent 9px,#000 10px,transparent 28px);mask:radial-gradient(circle,transparent 9px,#000 10px,transparent 28px)}
 .me i[hidden]{display:none}
 .leaflet-container{font-family:var(--body)}
 .rt{margin-top:8px;border:2px dashed var(--alt);border-radius:16px;padding:8px 10px;background:var(--bg);cursor:default}
@@ -770,6 +779,12 @@ function restyle(st){
       p['text-color'] = /water/.test(id) ? PAL.waterText : /poi/.test(id) ? PAL.poi : PAL.text; p['text-halo-color'] = PAL.halo; p['text-halo-width'] = 1.4;
     }
   }
+  { const b = st.layers.find(l => l.id === 'building'), at = st.layers.findIndex(l => l.type === 'symbol'), dark = PAL === PALS[1],
+      hgt = ['coalesce', ['get', 'render_height'], 8], c = dark ? ['#4b3b45', '#6b5361', '#93707f', '#c08a9c'] : ['#f6e3d8', '#f3cfd3', '#eda9bb', '#e2809d'];
+    if(b) st.layers.splice(at < 0 ? st.layers.length : at, 0, {id:'bldg3d', type:'fill-extrusion', source:b.source, 'source-layer':'building', minzoom:13.5,
+      filter:['any', ['>=', ['zoom'], 15.5], ['>=', hgt, 60]],   // from far away only the towers
+      paint:{'fill-extrusion-color':['interpolate', ['linear'], hgt, 0, c[0], 40, c[1], 120, c[2], 300, c[3]], 'fill-extrusion-height':['*', 1.25, hgt],
+        'fill-extrusion-base':['*', 1.25, ['coalesce', ['get', 'render_min_height'], 0]], 'fill-extrusion-opacity':.92, 'fill-extrusion-vertical-gradient':true}}); }
   return st;
 }
 // custom pastel vector map with Korean labels; falls back to plain OSM tiles
@@ -1065,7 +1080,7 @@ function runRoute(shapes, mode){ stopRun(); if(matchMedia('(prefers-reduced-moti
   for(let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + dist(pts[i - 1][0], pts[i - 1][1], pts[i][0], pts[i][1]));
   const total = cum[cum.length - 1]; if(pts.length < 2 || !(total > 30)) return;
   const dur = Math.min(6000, Math.max(2200, total * 1.6)), trail = L.polyline([pts[0]], {color:'#ff6f91', weight:7, opacity:.95, interactive:false, pane:'route'}).addTo(runLayer),
-    mk = L.marker(pts[0], {icon:L.divIcon({className:'', html:'<div class="run">' + COUPLE + '</div>', iconSize:[56,60], iconAnchor:[28,58]}), interactive:false, zIndexOffset:3000}).addTo(runLayer);
+    mk = L.marker(pts[0], {icon:L.divIcon({className:'', html:'<div class="run">' + COUPLE + '</div>', iconSize:[56,74], iconAnchor:[28,58]}), interactive:false, zIndexOffset:3000}).addTo(runLayer);
   let t0 = 0, i = 1;
   const tick = t => { if(!t0) t0 = t; const f = Math.min(1, (t - t0) / dur), e = f < .5 ? 2 * f * f : 1 - Math.pow(-2 * f + 2, 2) / 2, at = e * total;
     while(i < pts.length - 1 && cum[i] < at) i++;
@@ -1149,6 +1164,9 @@ function drawToilets(){
 const SMOKE = [[22.31773,113.93009,"공항 흡연실 · 출국 심사 후"],[22.3372,114.17543,"흡연 구역"],[22.31307,113.91665,"공항 흡연실 · 출국 심사 후"],[22.31002,113.91714,"공항 흡연실 · 출국 심사 후"],[22.3095,113.91735,"공항 흡연실 · 출국 심사 후"],[22.30722,113.91884,"공항 흡연실 · 출국 심사 후"],[22.33734,114.17532,"흡연 구역"],[22.31389,114.04047,"흡연 구역"],[22.39036,114.20954,"흡연 구역"],[22.14696,113.56542,"런더너 카지노 안 흡연실"],[22.14494,113.5654,"런더너 그랜드 카지노 안 흡연실"],[22.14442,113.57439,"그랜드 리스보아 팰리스 카지노 안 흡연실"],[22.1463,113.56795,"MGM 코타이 카지노 안 흡연실"],[22.14568,113.55184,"브로드웨이 카지노 안 흡연실"],[22.1413,113.56167,"스튜디오 시티 카지노 안 흡연실"],[22.14789,113.57209,"윈 팰리스 카지노 안 흡연실"],[22.14853,113.56049,"베네시안 카지노 안 흡연실"],[22.14838,113.55432,"갤럭시 카지노 안 흡연실"],[22.14543,113.56267,"플라자 마카오 카지노 안 흡연실"],[22.31512,113.93303,"공항 흡연실 · 출국 심사 후"],[22.30368,114.16493,"서구룡역 흡연실 · 개찰 후 B3"],[22.18817,113.55147,"NAPE 야외 흡연 부스·흡연 지점 (카를로스 공원 주변 9곳)"],[22.15744,113.57434,"마카오 공항 흡연 라운지 · 출국 심사 후"],[22.14917,113.56651,"시티 오브 드림스 카지노 안 흡연실"],[22.18581,113.54788,"MGM 마카오 카지노 안 흡연실"]], smokeLayer = L.layerGroup().addTo(map);
 for(const t of SMOKE) L.marker([t[0], t[1]], {icon:L.divIcon({className:'', html:'<div class="tpin sm">🚬</div>', iconSize:[22,22], iconAnchor:[11,11]}), zIndexOffset:-200, title:t[2]})
   .bindPopup(() => { const box = h('div','pop'), bt = h('button', null, '🧭 길찾기'); bt.type = 'button'; bt.addEventListener('click', () => { map.closePopup(); showRoute({id:'smoke', name:t[2], lat:t[0], lng:t[1]}, originNear()); }); box.append(h('b', null, t[2]), bt); return box; }).addTo(smokeLayer);
+// big buildings to get your bearings by: a name flag standing on each (coordinates from OpenStreetMap, 2026-11-14)
+const TOWERS = [[22.2853,114.15927,'IFC'],[22.30337,114.16022,'ICC'],[22.27924,114.16158,'중국은행타워'],[22.28025,114.15951,'HSBC'],[22.28016,114.17349,'센트럴 플라자'],[22.28262,114.17306,'컨벤션센터'],[22.28461,114.15472,'더 센터'],[22.29372,114.17045,'문화센터·시계탑']];
+for(const t of TOWERS) L.marker([t[0], t[1]], {icon:L.divIcon({className:'flag', html:'<span>' + t[2] + '</span>', iconSize:[100,32], iconAnchor:[50,32]}), interactive:false, keyboard:false, zIndexOffset:-150}).addTo(map);
 async function toggleToilet(){
   const btn = document.getElementById('ztoilet'); showToilet = !showToilet; btn.setAttribute('aria-pressed', showToilet);
   if(!showToilet){ toiletLayer.clearLayers(); if(routeCur && routeCur.s.id === 'wc') clearRoute(); return; }
@@ -1525,10 +1543,10 @@ function drawMap(){
     const grp = alt ? [s] : day.stops.filter(o => o.lat===s.lat && o.lng===s.lng && o.kind!=='alt'); if(grp[0]!==s) continue;
     const cls = 'pin' + (alt?' alt':'') + (grp.every(o=>done[o.id])&&!alt?' done':'') + (grp.includes(sel)?' sel':'') + (grp.includes(nx)?' next':'') + (grp.length>1?' multi':'');
     const pid = s.far || grp.length > 1 ? null : phId(s), nm = s.far ? '' : shortName(grp.map(o => o.name).join(' · '));
-    const m = L.marker([s.lat,s.lng], {icon: L.divIcon({className:'', html:`<div class="${cls} mk">${s.far ? '✈' : grp.map(o=>label(day,o)).join('·')}${nm ? nmTag(nm, 1) : ''}${phImg(pid)}</div>`, iconSize:[36,36], iconAnchor:[18,18]}),
+    const m = L.marker([s.lat,s.lng], {icon: L.divIcon({className:'', html:`<div class="${cls} mk">${s.far ? '✈' : grp.map(o=>label(day,o)).join('·')}${nm ? nmTag(nm, 1) : ''}${phImg(pid)}</div>`, iconSize:[36,36], iconAnchor:[18,46]}),
       title:s.name, zIndexOffset: grp.includes(sel)?1500:alt?700:900}).addTo(layer);
     if(nm) mkList.push({m, pri:grp.includes(sel) ? 0 : alt ? 20 : 10, day:1, name:nm, ph:!!pid, r:18});
-    m.bindTooltip(s.name, {direction:'top', offset:[0,-18]});
+    m.bindTooltip(s.name, {direction:'top', offset:[0,-46]});
     m.on('click', () => { const p0 = map.latLngToContainerPoint([s.lat, s.lng]);
       const near = day.stops.filter(o => o.lat && (o.lat !== s.lat || o.lng !== s.lng) && map.latLngToContainerPoint([o.lat, o.lng]).distanceTo(p0) < 24);
       if(near.length && map.getZoom() < 16){ map.fitBounds([[s.lat, s.lng], ...near.map(o => [o.lat, o.lng])], fitOpt(50, {maxZoom:17})); return; }
@@ -1558,7 +1576,7 @@ function drawMap(){
 const COUPLE = '<img src="couple.png" width="56" height="60" alt="" draggable="false">';
 function drawMe(){ meLayer.clearLayers(); if(!me) return;
   L.circle([me.lat,me.lng], {radius:me.acc, color:'#1a73e8', weight:1, fillOpacity:.12, interactive:false}).addTo(meLayer);
-  L.marker([me.lat,me.lng], {icon: L.divIcon({className:'', html:`<div class="me"><i ${meHead == null ? 'hidden' : `style="transform:rotate(${meHead}deg)"`}></i>${COUPLE}</div>`, iconSize:[56,66], iconAnchor:[28,62]}), zIndexOffset:2000, interactive:false}).addTo(meLayer); }
+  L.marker([me.lat,me.lng], {icon: L.divIcon({className:'', html:`<div class="me"><i ${meHead == null ? 'hidden' : `style="transform:rotate(${meHead}deg)"`}></i>${COUPLE}</div>`, iconSize:[56,74], iconAnchor:[28,58]}), zIndexOffset:2000, interactive:false}).addTo(meLayer); }
 // compass: iOS gives webkitCompassHeading (after a permission tap), Android an absolute alpha
 let meHead = null, compassOn = false;
 const arrived = new Set();
@@ -1866,7 +1884,7 @@ function stopPop(s){ const box = h('div','pop'), info = schedule(day).out.get(s)
   { const q = h('button', null, '💬 질문'); q.type = 'button'; q.addEventListener('click', () => { map.closePopup(); askAbout(s); }); row.append(q); }
   box.append(row); return box; }
 function select(s, scroll){ sel = s; noSheets(); if(mm && !wide() && shState === 'full') setSheet('half'); if(!(scroll && !mm)) focus(s); render();
-  if(scroll && !mm && s.lat) L.popup(Object.assign(popOpt(), {offset:[0, -12]})).setLatLng([s.lat, s.lng]).setContent(stopPop(s)).openOn(map);
+  if(scroll && !mm && s.lat) L.popup(Object.assign(popOpt(), {offset:[0, -44]})).setLatLng([s.lat, s.lng]).setContent(stopPop(s)).openOn(map);
   if(scroll){ const li = document.getElementById('stop-'+s.id); if(li) li.scrollIntoView({block:'nearest', behavior:'smooth'}); } }
 function setDay(id, push){ const was = day; day = DAYS.find(d=>d.id===id) || DAYS[0]; sel = null; recOpen = null; map.closePopup(); if(routeCur && was !== day) clearRoute();
   { const t = document.getElementById('toast'); if(t && t.dataset.undo) t.hidden = true; } // its undo would act on the day being left

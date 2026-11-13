@@ -73,6 +73,10 @@ button,a,summary,label,select{touch-action:manipulation;-webkit-tap-highlight-co
 .mapbox{position:sticky;top:0;z-index:5;background:var(--bg);padding-bottom:6px}
 .map{position:relative;height:300px;border:3px solid var(--surface);box-shadow:0 0 0 2px var(--line);border-radius:22px;overflow:hidden;background:var(--land)}
 .map{--ctop:8px}
+.abbar{position:absolute;z-index:1001;top:var(--ctop);left:50%;transform:translateX(-50%);max-width:calc(100% - 130px);display:flex;align-items:center;gap:6px;background:#1a73e8;color:#fff;border-radius:999px;padding:5px 6px 5px 12px;font:700 13px/1.3 var(--body);box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.abbar[hidden]{display:none}
+.abbar span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.abbar button{flex:0 0 auto;width:26px;height:26px;border:0;border-radius:50%;background:rgba(255,255,255,.25);color:#fff;font-size:13px}
 .zoom,.lay{position:absolute;top:var(--ctop);display:flex;flex-direction:column;gap:6px;z-index:500;transition:opacity .15s}
 .zoom{right:8px}
 .lay{left:8px;flex-wrap:wrap;align-content:flex-start;max-height:calc(100% - var(--ctop) - 8px)}
@@ -466,6 +470,7 @@ html.mm .dayhead h2{display:none}
     <div class="mapbox">
       <div class="map" id="mapwrap">
         <div id="map"></div>
+        <div class="abbar" id="abbar" hidden><span id="abtxt"></span><button type="button" id="abx" aria-label="출발 지정 취소">✕</button></div>
         <div class="zoom">
           <button type="button" id="gps" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4"/></svg><span>내 위치</span></button>
           <button type="button" id="zfit"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="6" r="2.2"/><path d="M8 17c5 0 3-10 8-10" stroke-dasharray="2.5 2.5"/></svg><span>전체</span></button>
@@ -498,6 +503,7 @@ html.mm .dayhead h2{display:none}
       <button type="button" class="pstep" data-d="-1" aria-label="이전 장소">‹</button><button type="button" class="pstep" data-d="1" aria-label="다음 장소">›</button>
       <div class="acts peekact" id="peekact" hidden>
         <button type="button" class="go" id="pgo">🧭 길찾기</button>
+        <button type="button" id="pfrom">📍 출발</button>
         <button type="button" id="pmore">자세히</button>
         <button type="button" id="pdone" aria-pressed="false">완료 체크</button>
       </div>
@@ -1107,9 +1113,9 @@ function runRoute(shapes, leg){ stopRun(); if(matchMedia('(prefers-reduced-motio
     if(pts.length < 2) continue;
     if(last && last.kind === kind && last.line === line) last.pts = last.pts.concat(pts.slice(1)); else segs.push({pts, kind, line}); }
   for(const g of segs){ g.cum = [0]; for(let i = 1; i < g.pts.length; i++) g.cum.push(g.cum[i - 1] + dist(g.pts[i - 1][0], g.pts[i - 1][1], g.pts[i][0], g.pts[i][1])); g.len = g.cum[g.cum.length - 1];
-    g.ms = g.kind === 'walk' ? Math.min(3200, Math.max(700, 500 + g.len * 2.2)) : Math.min(3600, Math.max(1300, 900 + g.len * .25)); }
+    g.ms = g.kind === 'walk' ? Math.min(4500, Math.max(1200, 600 + g.len * 4)) : Math.min(5000, Math.max(2000, 1200 + g.len * .4)); }
   const run = segs.filter(g => g.len > 5); if(!run.length || run.reduce((a, g) => a + g.len, 0) < 30) return;
-  const sc = Math.min(1, 10000 / run.reduce((a, g) => a + g.ms, 0)); for(const g of run) g.ms *= sc;
+  const sc = Math.min(1, 18000 / run.reduce((a, g) => a + g.ms, 0)); for(const g of run) g.ms *= sc;
   const trail = L.polyline([run[0].pts[0]], {color:'#ff6f91', weight:7, opacity:.95, interactive:false, pane:'route'}).addTo(runLayer), done = [run[0].pts[0]],
     mk = L.marker(run[0].pts[0], {icon:L.divIcon({className:'', html:'<div class="run"><div class="rk"></div><b class="rb" hidden></b></div>', iconSize:[84,84], iconAnchor:[42,58]}), interactive:false, zIndexOffset:3000}).addTo(runLayer),
     el = mk.getElement().firstChild, body = el.firstChild, bub = el.lastChild;
@@ -1119,21 +1125,26 @@ function runRoute(shapes, leg){ stopRun(); if(matchMedia('(prefers-reduced-motio
   const say = (g, prev) => g.kind === 'walk' ? (prev ? '👋 내려서 걷기' : '') : prev && prev.kind === 'mtr' && g.kind === 'mtr' ? '🔁 ' + lineKo(g.line) + ' 환승'
     : {mtr:'🚇 ' + lineKo(g.line) + ' 타기', bus:'🚌 ' + (leg.bus ? leg.bus.no + '번' : '버스') + ' 타기', tram:'🚋 트램 타기', taxi:'🚕 택시 타기', ferry:'⛴️ 배 타기'}[g.kind];
   const wait = ms => new Promise(r => { runT = setTimeout(r, ms); });
+  let follow = true; const off = () => { follow = false; }; map.once('dragstart', off);
+  const ZF = {walk:17, mtr:15, bus:15.5, tram:15.5, taxi:15, ferry:leg.mode === 'boat' ? 11 : 14.5};
+  const camAt = (q, z) => { const s = map.getSize(), i = ins(), b = i.b + (mm && !wide() ? Math.min(document.querySelector('.mapinfo').offsetHeight + 24, innerHeight * .3) : 0);
+    return map.unproject(map.project(q, z).add([s.x / 2 - (i.l + s.x - i.r) / 2, s.y / 2 - (i.t + s.y - b) / 2]), z); };
+  const look = g => { if(follow) map.flyTo(camAt(g.pts[0], ZF[g.kind]), ZF[g.kind], {duration:.6}); };
   // walking keeps a steady pace, vehicles speed up and slow down; the sprite faces the way it moves (walk art faces right, vehicles left)
   const move = g => new Promise(r => { let t0 = 0, i = 1; const tick = t => { if(tok !== runTok) return; if(!t0) t0 = t;
       const f = Math.min(1, (t - t0) / g.ms), e = g.kind === 'walk' ? f : f < .5 ? 2 * f * f : 1 - Math.pow(-2 * f + 2, 2) / 2, at = e * g.len;
       while(i < g.pts.length - 1 && g.cum[i] < at) i++;
       const a = g.pts[i - 1], b = g.pts[i], k = Math.max(0, Math.min(1, (at - g.cum[i - 1]) / (g.cum[i] - g.cum[i - 1] || 1))), q = [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
       if(Math.abs(b[1] - a[1]) > 2e-5) el.classList.toggle('flip', (b[1] > a[1]) !== (g.kind === 'walk'));
-      mk.setLatLng(q); trail.setLatLngs(done.concat(g.pts.slice(1, i), [q]));
+      mk.setLatLng(q); trail.setLatLngs(done.concat(g.pts.slice(1, i), [q])); if(follow) map.setView(camAt(q, map.getZoom()), map.getZoom(), {animate:false});
       if(f < 1) runRaf = requestAnimationFrame(tick); else { done.push(...g.pts.slice(1)); r(); } };
     runRaf = requestAnimationFrame(tick); });
-  (async () => { await wait(350); let prev = null; // after the map has settled on the route
+  (async () => { await wait(60); look(run[0]); await wait(700); let prev = null; // redrawRoute fits the whole route right after this call; zoom in after that
     for(const g of run){ if(tok !== runTok) return; const t = say(g, prev);
-      setKind(g.kind, !!prev && (prev.kind !== g.kind || prev.line !== g.line));
+      setKind(g.kind, !!prev && (prev.kind !== g.kind || prev.line !== g.line)); if(prev && prev.kind !== g.kind) look(g);
       if(t){ bub.textContent = t; bub.hidden = false; await wait(750); bub.hidden = true; }
       if(tok !== runTok) return; await move(g); prev = g; }
-    if(tok !== runTok) return; bub.textContent = '🎉 도착'; bub.hidden = false; await wait(1600); if(tok === runTok) stopRun(); })(); }
+    if(tok !== runTok) return; bub.textContent = '🎉 도착'; bub.hidden = false; await wait(1600); map.off('dragstart', off); if(tok !== runTok) return; stopRun(); if(follow && routeCur) redrawRoute(true); })(); }
 const legIcon = {walk:'🚶', mtr:'🚇', taxi:'🚕', given:'🚌', boat:'⛴️', sf:'⛴️', bus:'🚌', tram:'🚋'}, MODE = {walk:'도보', mtr:'지하철', taxi:'택시', given:'버스', boat:'배', sf:'스타페리', bus:'버스', tram:'트램'};
 const legShort = lg => lg.mode === 'same' ? '바로 옆' : `${legIcon[lg.mode] || ''} 약 ${lg.min}분 · ${fmt(lg.d)}`;
 // tapping a place answers "how far from here": my position, else the selected stop, else the hotel
@@ -1223,6 +1234,15 @@ for(const [id, end] of [['rpa', false], ['rpb', true]]){ const el = document.get
 document.getElementById('rswap').addEventListener('click', () => { if(!routeCur) return; const {from, lbl, s} = routeCur;
   routeCur.from = {lat:s.lat, lng:s.lng}; routeCur.lbl = s.name; routeCur.s = {id:'pt', name:lbl, lat:from.lat, lng:from.lng};
   routeCur.mode = null; routeCur.alts = null; routeCur.nt = {}; stopRun(); redrawRoute(true); });
+let abFrom = null;
+function abSet(p){ abFrom = p ? {lat:p.lat, lng:p.lng, name:p.name || p.n || '지정 위치'} : null; const b = document.getElementById('abbar'); b.hidden = !abFrom;
+  if(abFrom){ document.getElementById('abtxt').textContent = `📍 ${shortName(abFrom.name)} 출발 → 도착지 누르기`; map.closePopup(); } }
+function abTo(d){ const f = abFrom; if(!f) return false; abSet(null); if(dist(f.lat, f.lng, d.lat, d.lng) < 15) return true;
+  showRoute(d, [f, f.name]); routeCur.run = true; redrawRoute(true); return true; }
+document.getElementById('abx').addEventListener('click', () => abSet(null));
+// a popup opening while a start is set means "this is where I'm going"
+map.on('popupopen', e => { if(!abFrom) return; const src = e.popup._source, ll = e.popup.getLatLng(), nm = src && src.options.title || '지정 위치';
+  setTimeout(() => { map.closePopup(); abTo({id:'pt', name:nm, lat:ll.lat, lng:ll.lng}); }, 0); });
 async function nextTrain(st, k, rc){
   try{ const r = await getJ(`https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=${st.line}&sta=${st.sta}`);
     const d = r.data && r.data[st.line + '-' + st.sta], arr = d && d[st.up ? 'UP' : 'DOWN']; if(!arr || !arr.length) return;
@@ -1640,7 +1660,7 @@ function drawMap(){
       title:s.name, zIndexOffset: grp.includes(sel)?1500:alt?700:900}).addTo(layer);
     if(nm) mkList.push({m, pri:grp.includes(sel) ? 0 : alt ? 20 : 10, day:1, name:nm, ph:!!pid, r:18});
     m.bindTooltip(s.name, {direction:'top', offset:[0,-46]});
-    m.on('click', () => { const p0 = map.latLngToContainerPoint([s.lat, s.lng]);
+    m.on('click', () => { if(abTo(s)) return; const p0 = map.latLngToContainerPoint([s.lat, s.lng]);
       const near = day.stops.filter(o => o.lat && (o.lat !== s.lat || o.lng !== s.lng) && map.latLngToContainerPoint([o.lat, o.lng]).distanceTo(p0) < 24);
       if(near.length && map.getZoom() < 16){ map.fitBounds([[s.lat, s.lng], ...near.map(o => [o.lat, o.lng])], fitOpt(50, {maxZoom:17})); return; }
       select(grp.includes(sel) ? grp[(grp.indexOf(sel)+1)%grp.length] : s, true); });
@@ -1661,7 +1681,8 @@ function drawMap(){
       const row = h('div','prow'), go = h('button','ghost','🧭 길찾기'), b = h('button',null,'＋ '+day.tab.replace(/^\S+\s/,'')); go.type = b.type = 'button';
       go.addEventListener('click', () => { showRoute({id:'rec-' + p.id, name:p.n, lat:p.lat, lng:p.lng}, fromHere(p)); map.closePopup(); });
       b.addEventListener('click', () => { map.closePopup(); addPlace(p); }); const qb = h('button', null, '💬 질문'); qb.type = 'button'; qb.addEventListener('click', () => { map.closePopup(); askAbout(p); });
-      row.append(go, b, qb); box.append(row); return box; }, popOpt());
+      const fb = h('button', null, '📍 출발'); fb.type = 'button'; fb.addEventListener('click', () => abSet({lat:p.lat, lng:p.lng, name:p.n}));
+      row.append(go, fb, b, qb); box.append(row); return box; }, popOpt());
   }
   declutter();
   if(recOpen){ const k = recLayer.getLayers().find(m => m.options.pid === recOpen); if(k) k.openPopup(); else recOpen = null; }
@@ -2007,6 +2028,7 @@ function step(d){ const rs = routeStops(day).filter(x => x.lat); if(!rs.length) 
   const t = rs[Math.max(0, Math.min(rs.length - 1, i + d))]; if(t !== sel) select(t); }
 for(const b of document.querySelectorAll('.pstep')) b.addEventListener('click', () => step(+b.dataset.d));
 document.getElementById('pgo').addEventListener('click', () => { if(sel) routeTo(sel); });
+document.getElementById('pfrom').addEventListener('click', () => { if(sel) abSet(sel); });
 document.getElementById('pmore').addEventListener('click', () => { if(!sel) return; const id = 'stop-' + sel.id; setSheet('half'); setTimeout(() => { const li = document.getElementById(id); if(li) li.scrollIntoView({block:'start'}); }, 60); });
 document.getElementById('pdone').addEventListener('click', () => { if(!sel) return; done[sel.id] = !done[sel.id]; if(done[sel.id]) noteArr(sel.id); save(); render(); });
 { let gd = null;
@@ -2229,7 +2251,8 @@ map.on('contextmenu', e => { const p = {id:'pin', n:'지정 위치', sub:'지도
   const row = h('div','prow'), go = h('button','ghost','🧭 길찾기'), b = h('button', null, '＋ ' + day.tab.replace(/^\S+\s/, '') + '에 추가'); go.type = b.type = 'button';
   go.addEventListener('click', () => { showRoute({id:'pin', name:'지정 위치', lat:p.lat, lng:p.lng}, fromHere(p)); map.closePopup(); });
   b.addEventListener('click', () => { map.closePopup(); addPlace(Object.assign({}, p, {id:'pin' + Date.now().toString(36)})); });
-  row.append(go, b); box.append(row);
+  const fb = h('button', null, '📍 출발'); fb.type = 'button'; fb.addEventListener('click', () => abSet({lat:p.lat, lng:p.lng, name:'지정 위치'}));
+  row.append(go, fb, b); box.append(row);
   pinPop = L.popup(popOpt()).setLatLng(e.latlng).setContent(box).openOn(map); previewRoute(p); });
 map.on('popupclose', e => { if(e.popup === pinPop){ pinPop = null; if(routeCur && routeCur.preview) clearRoute(); } if(showToilet) setTimeout(() => { if(!document.getElementById('mapwrap').classList.contains('popon')) drawToilets(); }, 0); });
 // ⭐ opens a category picker for the recommended places shown on the map

@@ -1291,6 +1291,7 @@ function drawMe(){ meLayer.clearLayers(); if(!me) return;
   L.marker([me.lat,me.lng], {icon: L.divIcon({className:'', html:`<div class="me"><i ${meHead == null ? 'hidden' : `style="transform:rotate(${meHead}deg)"`}></i></div>`, iconSize:[18,18], iconAnchor:[9,9]}), zIndexOffset:2000, interactive:false}).addTo(meLayer); }
 // compass: iOS gives webkitCompassHeading (after a permission tap), Android an absolute alpha
 let meHead = null, compassOn = false;
+const arrived = new Set();
 function onCompass(e){ const hd = e.webkitCompassHeading != null ? e.webkitCompassHeading : e.absolute && e.alpha != null ? 360 - e.alpha : null; if(hd == null) return;
   meHead = Math.round(hd); const i = document.querySelector('.me i'); if(i){ i.hidden = false; i.style.transform = `rotate(${meHead}deg)`; } }
 function startCompass(){ if(compassOn || !window.DeviceOrientationEvent) return;
@@ -1308,7 +1309,10 @@ function toggleGps(){ const b = document.getElementById('gps');
   if(!window.isSecureContext){ gpsMsg('위치는 https 주소에서만 켜집니다. 이 파일을 https 사이트에 올려서 열어 주세요.'); return; }
   b.setAttribute('aria-pressed','true'); gpsMsg('위치 찾는 중…'); let first = true; startCompass();
   watchId = navigator.geolocation.watchPosition(p => { me = {lat:p.coords.latitude, lng:p.coords.longitude, acc:p.coords.accuracy};
-      gpsMsg(nearHK(me) ? '내 위치 · 오차 약 '+Math.round(me.acc)+'m' : '지금은 홍콩 밖 · 도착하면 지도에 표시'); drawMe(); if(!editMode) drawList();
+      gpsMsg(nearHK(me) ? '내 위치 · 오차 약 '+Math.round(me.acc)+'m' : '지금은 홍콩 밖 · 도착하면 지도에 표시'); drawMe();
+      if(DATES[day.id] === hkIso()){ const nx = nextStop(day);
+        if(nx && nx.lat && !arrived.has(nx.id) && dist(me.lat, me.lng, nx.lat, nx.lng) < 60 + Math.min(me.acc, 60)){ arrived.add(nx.id);
+          toast(`📍 ${nx.name} 도착`, () => { done[nx.id] = true; save(); render(); }, '완료 체크'); } } if(!editMode) drawList();
       if(pendingRoute){ const s = pendingRoute; pendingRoute = null; first = false; routeTo(s); }
       else if(first){ first = false; if(nearHK(me)) centerOn(me.lat, me.lng, Math.max(map.getZoom(), 15)); } },
     e => { gpsMsg(e.code===1 ? '위치 권한이 거부되었습니다. 브라우저 설정에서 이 사이트의 위치 접근을 허용해 주세요.' : '위치를 가져오지 못했습니다. 잠시 후 다시 눌러 주세요.');
@@ -1318,6 +1322,11 @@ function toggleGps(){ const b = document.getElementById('gps');
 
 function h(tag, cls, text){ const e = document.createElement(tag); if(cls) e.className = cls; if(text!=null) e.textContent = text; return e; }
 const hm = m => { m = ((Math.round(m) % 1440) + 1440) % 1440; return String(Math.floor(m/60)).padStart(2,'0') + ':' + String(m%60).padStart(2,'0'); };
+const hkNow = () => new Date(Date.now() + 8 * 3600e3), hkIso = () => hkNow().toISOString().slice(0, 10), hkMin = () => hkNow().getUTCHours() * 60 + hkNow().getUTCMinutes();
+// open / closing soon / closed right now — only meaningful on the day itself
+function openNow(s, w){ const cl = s.closed || ((/([일월화수목금토])\s*휴/.exec(s.hours || '') || [])[1] || ''); if(w && cl.includes(w)) return '🔴 오늘 휴무';
+  const hr = hoursOf(s); if(!hr) return ''; let m = hkMin(); if(m < hr[0] && m + 1440 <= hr[1]) m += 1440; // after midnight, still yesterday's opening
+  return m < hr[0] ? `⚪ ${hm(hr[0])} 오픈` : m >= hr[1] ? '🔴 영업 종료' : hr[1] - m <= 60 ? `🟠 곧 마감 ${hm(hr[1])}` : '🟢 영업 중'; }
 const toMin = t => { const [a,b] = String(t).split(':').map(Number); return a*60 + (b||0); };
 const recMeta = p => { const q = Q[p.id], pk = qPeak(q), inf = INFO[p.id]; return [p.when, p.sub, p.hours && '영업 '+p.hours, inf && inf.p && '💰 '+inf.p, p.best && `추천 ${hm(p.best[0])}–${hm(p.best[1])}`, (q || p.wait) && '⏳ ' + (pk ? `붐빌 때 약 ${pk}분 · ` : '') + (q ? q.t : p.wait), p.closed && p.closed+' 휴무', p.tip].filter(Boolean).join(' · '); };
 function hoursOf(s){ const m = /(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})/.exec(s.hours || ''); if(!m) return null;
@@ -1399,10 +1408,10 @@ function pick(lbl, opts, cur, set){
   for(const o of [...new Set([...opts, cur])].sort((a,b) => a-b)){ const op = h('option', null, o < 0 ? '자동' : o ? (o >= 60 ? (o/60)+'시간' : o+'분') : (lbl==='웨이팅' ? '없음' : '들름')); op.value = o; sl.append(op); }
   sl.value = cur; sl.addEventListener('change', () => { set(+sl.value); changed(); }); l.append(sl); return l;
 }
-function toast(msg, undo){
+function toast(msg, undo, label){
   let t = document.getElementById('toast'); if(!t){ t = h('div','toast'); t.id = 'toast'; t.setAttribute('role','status'); document.body.append(t); }
   t.textContent = msg;
-  if(undo){ const b = h('button', null, '되돌리기'); b.type = 'button'; b.addEventListener('click', () => { t.hidden = true; undo(); }); t.append(b); }
+  if(undo){ const b = h('button', null, label || '되돌리기'); b.type = 'button'; b.addEventListener('click', () => { t.hidden = true; undo(); }); t.append(b); }
   t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, undo ? 6000 : 2500);
 }
 function refPoint(){ if(me) return me; const pts = mapStops(day); if(!pts.length) return HOTEL;
@@ -1448,7 +1457,8 @@ function drawList(){
     if(on){ const pd = document.getElementById('pdone'); pd.hidden = sel.kind === 'alt'; pd.textContent = done[sel.id] ? '완료됨' : '완료 체크'; pd.setAttribute('aria-pressed', !!done[sel.id]); }
     if(mm && shState === 'peek') root.style.setProperty('--sh', shH('peek') + 'px'); }
   document.getElementById('dstart').value = day.start;
-  document.getElementById('dsum').textContent = rs.length > 1 ? `이동 약 ${sch.travel}분 · ${hm(sch.end)} 끝` : '';
+  { const wk = [...sch.out.values()].reduce((a, i) => a + (i.leg && i.leg.mode === 'walk' ? i.leg.d * 1.25 : 0), 0);
+    document.getElementById('dsum').textContent = rs.length > 1 ? `이동 약 ${sch.travel}분` + (wk > 300 ? ` · 🚶 ${(wk / 1000).toFixed(1)}km` : '') + ` · ${hm(sch.end)} 끝` : ''; }
   document.getElementById('dwx').textContent = wxText(day);
   const nw = document.getElementById('newer'); nw.hidden = !day.newer;
   if(day.newer){ nw.textContent = ''; const a = h('button','chip','새 일정으로'), b = h('button','chip','내 편집 유지'); a.type = b.type = 'button';
@@ -1480,7 +1490,7 @@ function drawList(){
     { const pid = phId(s); if(pid && !editMode && (pid !== 'hotel' || s === day.stops.find(x => phId(x) === 'hotel'))) body.append(phStrip(pid, s.name)); } // hotel photos once per day
     const inf = infoOf(s); if(inf && inf.d) body.append(h('div','desc',inf.d));
     if(s.note) body.append(h('div','note',s.note));
-    if(s.hours) body.append(h('div','hours','영업 '+s.hours));
+    if(s.hours){ const on = DATES[day.id] === hkIso() ? openNow(s, DOW[hkNow().getUTCDay()]) : ''; body.append(h('div','hours','영업 '+s.hours + (on ? ' · ' + on : ''))); }
     if(inf && inf.p) body.append(h('div','hours','💰 '+inf.p));
     if(inf && inf.t) body.append(h('div','tip','💡 '+inf.t));
     if(info) for(const w of info.warn) body.append(h('div','warn',w));

@@ -257,7 +257,8 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .toast[hidden]{display:none}
 .toast button{border:0;background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:3px 10px;font-weight:700;flex:0 0 auto}
 /* map mode: map fills the screen, the itinerary is a bottom sheet (peek / half / full) */
-.grip{display:none}
+.grip,.peekact,.peekact[hidden]{display:none}
+html.mm #panel[data-st="peek"] .peekact:not([hidden]){display:flex;justify-content:center;flex-wrap:nowrap;margin:0;padding:0 14px 12px;flex:0 0 auto}
 html.mm,html.mm body{height:100%;overflow:hidden}
 html.mm header,html.mm .progress{display:none}
 html.mm .wrap{max-width:none;padding:0}
@@ -339,6 +340,11 @@ html.mm .dayhead h2{display:none}
     </div>
     <section id="panel">
       <button type="button" class="grip" id="grip" aria-label="일정 펼치기·접기" aria-expanded="false"><i></i><span id="gripsum"></span></button>
+      <div class="acts peekact" id="peekact" hidden>
+        <button type="button" class="go" id="pgo">🧭 길찾기</button>
+        <button type="button" id="pmore">자세히</button>
+        <button type="button" id="pdone" aria-pressed="false">완료 체크</button>
+      </div>
       <div class="pbody" id="pbody">
       <div class="dayhead">
         <h2 id="daytitle"></h2>
@@ -898,7 +904,8 @@ async function importPlan(){
 // map mode covers part of the map (tabs on top, sheet below or panel at the left): keep points inside what is left
 let mm = false, shState = 'peek';
 const wide = () => innerWidth >= 820;
-const shH = st => st === 'peek' ? 64 + sab : st === 'half' ? Math.round(innerHeight * .5) : innerHeight - 64;
+const peekSel = () => sel && sel.lat && sel.kind !== 'plain';
+const shH = st => st === 'peek' ? 64 + sab + (peekSel() ? 46 : 0) : st === 'half' ? Math.round(innerHeight * .5) : innerHeight - 64;
 const ins = () => !mm ? {t:0, l:0, b:0, r:0} : wide() ? {t:56, l:456, b:0, r:0} : {t:56, l:0, b:Math.min(shH(shState), innerHeight * .55), r:0};
 const fitOpt = (pad, o) => { const i = ins(); return Object.assign({paddingTopLeft:[pad + i.l, pad + i.t], paddingBottomRight:[pad + i.r + (mm ? 44 : 0), pad + i.b]}, o); };
 function centerOn(lat, lng, z){ const i = ins(), dx = (i.l - i.r) / 2, dy = (i.t - i.b) / 2;
@@ -1048,7 +1055,9 @@ const COURSES = [
  {e:"🛍️", n:"침사추이 쇼핑", ids:["jenny", "bakehouse", "harbourcity", "cheunghing", "theone", "donki", "hashtagb"], min:270},
  {e:"🛍️", n:"코즈웨이베이 쇼핑", ids:["timessq", "hysan", "sogo", "fashionwalk", "sisterwah"], min:240},
  {e:"🛍️", n:"몽콕 쇼핑", ids:["langham", "sneakers", "feijie", "ladies"], min:210},
- {e:"🍡", n:"삼수이포 간식", ids:["kungwo", "hopyik", "luklam"], min:60}
+ {e:"🍡", n:"삼수이포 간식", ids:["kungwo", "hopyik", "luklam"], min:60},
+ {e:"✨", n:"11/18 서구룡 → 마지막 심포니 오브 라이트", ids:["mplus", "palace", "harbourcity", "sol", "temple"], min:480, only:"day3"},
+ {e:"🎰", n:"마카오 반도 → 타이파", ids:["senado", "stpaul", "monte", "margaret", "cunha", "eiffel"], min:300, only:"macau"}
 ];
 /*INFO-END*/
 const infoOf = s => INFO[s.rec || s.id];
@@ -1295,7 +1304,7 @@ function mkStop(p){
   if(p.tip) s.note = p.tip; if(p.wait) s.waitTip = p.wait; return s; }
 // a course goes in as one block after the last stop, in its own walking order
 function addCourse(c){ const prev = day.stops.slice(), wasEdited = day.edited, have = new Set(day.stops.map(s => s.rec));
-  const add = c.ids.filter(id => !have.has(id)).map(id => REC.find(p => p.id === id)).filter(Boolean).map(mkStop); if(!add.length) return;
+  const add = c.ids.filter(id => !have.has(id)).map(id => POOL.find(p => p.id === id)).filter(Boolean).map(mkStop); if(!add.length) return;
   const tbd = day.stops.findIndex(x => x.kind==='plain' && /^tbd/.test(x.id)); if(tbd >= 0) day.stops.splice(tbd, 1);
   const rs = routeStops(day); day.stops.splice(rs.length ? day.stops.indexOf(rs[rs.length-1]) + 1 : 0, 0, ...add);
   sel = add[0]; changed(); fit();
@@ -1336,7 +1345,7 @@ function drawSheet(){
     const b = h('button','chip',lbl); b.type = 'button'; b.setAttribute('aria-pressed', sheetCat===k); b.addEventListener('click', () => { sheetCat = k; drawSheet(); }); cats.append(b); }
   const ref = refPoint(), q = document.getElementById('q').value.trim().toLowerCase(), inDay = new Set(day.stops.map(s => s.rec));
   const cz = document.getElementById('courses'); cz.textContent = '';
-  if(!day.nomap && DATES[day.id]) for(const c of COURSES){ const b = h('button','chip', `${c.e} ${c.n} · ${c.ids.length}곳 · 약 ${c.min >= 60 ? (c.min / 60) + '시간' : c.min + '분'}`); b.type = 'button';
+  if(!day.nomap) for(const c of COURSES.filter(c => c.only ? c.only === day.id : !!DATES[day.id])){ const b = h('button','chip', `${c.e} ${c.n} · ${c.ids.length}곳 · 약 ${c.min >= 60 ? (c.min / 60) + '시간' : c.min + '분'}`); b.type = 'button';
     b.disabled = c.ids.every(id => inDay.has(id)); b.addEventListener('click', () => addCourse(c)); cz.append(b); }
   let items = poolFor(day).filter(p => (sheetCat==='all' || p.c===sheetCat) && (!q || (p.n+' '+p.sub).toLowerCase().includes(q)))
     .map(p => [dist(ref.lat,ref.lng,p.lat,p.lng), p]).filter(x => q || x[0] < 30000).sort((a,b) => a[0]-b[0]);
@@ -1366,6 +1375,9 @@ function drawList(){
   const nx = nextStop(day), rs = routeStops(day), sch = schedule(day), firstAlt = day.stops.find(x => x.kind==='alt'), grp = (day.stops.find(x => x.group) || {}).group;
   { const g = sel && sch.out.get(sel) ? sel : nx, gi = g && sch.out.get(g);
     document.getElementById('gripsum').textContent = (day.date ? day.date + ' · ' : '') + (g ? (sel === g ? '' : '다음 ') + (gi ? hm(gi.arr) + ' ' : '') + g.name : day.title); }
+  { const pa = document.getElementById('peekact'), on = !!peekSel(); pa.hidden = !on;
+    if(on){ const pd = document.getElementById('pdone'); pd.hidden = sel.kind === 'alt'; pd.textContent = done[sel.id] ? '완료됨' : '완료 체크'; pd.setAttribute('aria-pressed', !!done[sel.id]); }
+    if(mm && shState === 'peek') root.style.setProperty('--sh', shH('peek') + 'px'); }
   document.getElementById('dstart').value = day.start;
   document.getElementById('dsum').textContent = rs.length > 1 ? `이동 약 ${sch.travel}분 · ${hm(sch.end)} 끝` : '';
   document.getElementById('dwx').textContent = wxText(day);
@@ -1460,6 +1472,9 @@ function setMM(on){ mm = on; root.classList.toggle('mm', on); const b = document
   if(on) setSheet(wide() ? 'half' : 'peek'); else { root.style.removeProperty('--sh'); delete panel.dataset.st; }
   scrollTo(0, 0); map.invalidateSize(); if(sel) focus(sel); else if(routeCur) redrawRoute(true); else fit(); }
 document.getElementById('zfull').addEventListener('click', () => setMM(!mm));
+document.getElementById('pgo').addEventListener('click', () => { if(sel) routeTo(sel); });
+document.getElementById('pmore').addEventListener('click', () => { if(!sel) return; const id = 'stop-' + sel.id; setSheet('half'); setTimeout(() => { const li = document.getElementById(id); if(li) li.scrollIntoView({block:'start'}); }, 60); });
+document.getElementById('pdone').addEventListener('click', () => { if(!sel) return; done[sel.id] = !done[sel.id]; save(); render(); });
 { let gd = null;
   grip.addEventListener('pointerdown', e => { gd = {y:e.clientY, h:panel.offsetHeight, moved:false}; grip.setPointerCapture(e.pointerId); });
   grip.addEventListener('pointermove', e => { if(!gd) return; const dy = e.clientY - gd.y; if(Math.abs(dy) > 6) gd.moved = true;
@@ -1495,6 +1510,7 @@ document.getElementById('routeclr').addEventListener('click', clearRoute);
 document.getElementById('ztoilet').addEventListener('click', toggleToilet);
 document.getElementById('bshare').addEventListener('click', sharePlan);
 map.on('moveend', () => { if(showToilet) drawToilets(); });
+map.on('click', () => { if(mm && sel && shState === 'peek'){ sel = null; render(); } });
 document.getElementById('zrt').addEventListener('click', () => { const c = me || map.getCenter(); openRt('_here', c.lat, c.lng, document.getElementById('herert')); });
 document.getElementById('zfit').addEventListener('click', () => { sel = null; fit(); render(); });
 document.getElementById('reset').addEventListener('click', () => { for(const s of day.stops) delete done[s.id]; save(); render(); });
@@ -1517,7 +1533,8 @@ document.getElementById('q').addEventListener('input', () => {
 window.addEventListener('resize', () => { if(mm) setSheet(shState); map.invalidateSize(); });
 if('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 window.addEventListener('hashchange', () => setDay(location.hash.slice(1), false));
-setDay(location.hash.slice(1) || 'day1', false); zoomCls();
+const today = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10), todayId = (Object.entries(DATES).find(([, v]) => v === today) || [])[0]; // Hong Kong date
+setDay(location.hash.slice(1) || todayId || 'day1', false); zoomCls();
 try{ if(localStorage.getItem('hk-mm')) setMM(true); }catch(e){}
 importPlan().then(ch => { if(ch) setDay('day1', false); });
 loadWx();

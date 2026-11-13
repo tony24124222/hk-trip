@@ -1647,11 +1647,14 @@ document.getElementById('pdone').addEventListener('click', () => { if(!sel) retu
     gd = null; };
   grip.addEventListener('pointerup', end); grip.addEventListener('pointercancel', end);
   grip.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); setSheet(shState === 'peek' ? 'half' : 'peek'); } }); }
+function ovPush(){ try{ if(!(history.state && history.state.ov)) history.pushState({ov:1}, ''); }catch(e){} }
+function ovPop(){ try{ if(history.state && history.state.ov) history.back(); }catch(e){} }
+addEventListener('popstate', () => { document.getElementById('zc').hidden = true; if(lbId) closeLb(true); });
 // big Chinese name card to show a driver or passer-by
 function showZh(s){ const z = zhOf(s); if(!z) return; document.getElementById('zcs').textContent = '請載我去 · Please take me to'; document.getElementById('zct').textContent = z;
   document.getElementById('zca').textContent = (s.taxi || '').replace(/^目的地：[^，]*，/, ''); document.getElementById('zck').textContent = s.name || s.n || '';
-  document.getElementById('zc').hidden = false; document.getElementById('zcx').focus(); }
-document.getElementById('zc').addEventListener('click', () => { document.getElementById('zc').hidden = true; });
+  document.getElementById('zc').hidden = false; document.getElementById('zcx').focus(); ovPush(); }
+document.getElementById('zc').addEventListener('click', () => { document.getElementById('zc').hidden = true; ovPop(); });
 // photo viewer
 let lbId = null, lbName = '';
 const lbs = document.getElementById('lbs');
@@ -1661,12 +1664,12 @@ function lbCap(){ if(!lbId) return; const n = PH[lbId].length, i = Math.max(0, M
 function openLb(id, i, name){ lbId = id; lbName = name || ''; lbs.textContent = '';
   PH[id].forEach((ph, k) => { const f = h('figure'), im = h('img'); im.alt = ''; im.src = phUrl(id, 960, k);
     im.addEventListener('error', () => { if(!im.dataset.fb){ im.dataset.fb = 1; im.src = phUrl(id, 500, k); } }); f.append(im); lbs.append(f); });
-  document.getElementById('lb').hidden = false; lbs.scrollLeft = (i || 0) * lbs.clientWidth; lbCap(); document.getElementById('lbx').focus(); }
-function closeLb(){ document.getElementById('lb').hidden = true; lbId = null; lbs.textContent = ''; }
+  document.getElementById('lb').hidden = false; lbs.scrollLeft = (i || 0) * lbs.clientWidth; lbCap(); document.getElementById('lbx').focus(); ovPush(); }
+function closeLb(fromBack){ document.getElementById('lb').hidden = true; lbId = null; lbs.textContent = ''; if(fromBack !== true) ovPop(); }
 lbs.addEventListener('scroll', lbCap, {passive:true});
 lbs.addEventListener('click', e => { if(e.target.tagName === 'IMG'){ const n = PH[lbId].length, w = lbs.clientWidth, i = Math.round(lbs.scrollLeft / w); lbs.scrollTo({left:(e.clientX > innerWidth / 2 ? Math.min(n - 1, i + 1) : Math.max(0, i - 1)) * w, behavior:'smooth'}); } else closeLb(); });
-document.getElementById('lbx').addEventListener('click', closeLb);
-document.addEventListener('keydown', e => { if(e.key === 'Escape') document.getElementById('zc').hidden = true; if(!lbId) return; if(e.key === 'Escape') closeLb();
+document.getElementById('lbx').addEventListener('click', () => closeLb());
+document.addEventListener('keydown', e => { if(e.key === 'Escape' && !document.getElementById('zc').hidden){ document.getElementById('zc').hidden = true; ovPop(); } if(!lbId) return; if(e.key === 'Escape') closeLb();
   else if(e.key === 'ArrowRight' || e.key === 'ArrowLeft') lbs.scrollBy({left:(e.key === 'ArrowRight' ? 1 : -1) * lbs.clientWidth, behavior:'smooth'}); });
 const GUIDE = [["📅 여행 4일 휴관·행사", [["11/16 월", "M+ 휴관"], ["11/17 화", "고궁박물관 휴관"], ["11/18 수", "심포니 오브 라이트 마지막 공연 20:00 + 불꽃 · 윈터페스트 개막 · 미도카페 휴무"], ["11/19 목", "홍콩미술관 휴관 · 오스트레일리아 데일리컴퍼니 휴무 · 심포니 오브 라이트 없음 · 마카오 그랑프리 연습일"], ["날씨 평년", "최고 24.5° · 최저 20.3° · 얇은 겉옷"]]], ["🚇 교통·결제", [["옥토퍼스(관광객용)", "HK$39 · 보증금 없음 · 잔액만 환불"], ["아이폰", "'Octopus for Tourists' 앱 · 해외 Visa·Mastercard 충전 (한국 카드 미확인)"], ["A21 버스", "공항→침사추이 이스트 · HK$34.6 · 10~20분 간격 · 60~75분"], ["공항철도", "구룡역 HK$105 · 홍콩역 HK$120 · 약 24분"], ["MTR", "하늘색 개찰구에서 Visa·Mastercard 컨택리스"], ["택시(빨간색)", "기본 2km HK$29 · 이후 200m당 HK$2.1 · 해저터널 HK$25~50 · 짐 1개 HK$6"], ["스타페리", "위층 평일 HK$5 · 주말 HK$6.5"], ["피크트램", "편도 HK$82 · 왕복 HK$116 (자료 엇갈림)"]]], ["⚠️ 현지 규칙", [["MTR 안 음식·음료", "물 포함 금지 · 최고 HK$2,000"], ["쓰레기·침", "HK$3,000"], ["흡연", "금연구역·대중교통 줄에서 HK$3,000"], ["전자담배", "반입 금지 · 공공장소에서 갖고만 있어도 HK$3,000"], ["담배·술 면세", "궐련 19개비 · 술 1L"], ["무단횡단", "최고 HK$2,000"], ["비둘기·원숭이 먹이", "HK$5,000"], ["호텔", "일회용 세면도구·생수 무료 제공 안 함"], ["식당", "봉사료 10% (차찬탱은 없음) · 딤섬집 찻값 1인 HK$3~20 · 합석 기본"], ["택시 결제", "QR·옥토퍼스·카드 중 차마다 다름 · 현금 가능"], ["MTR 막차", "침사추이 → 센트럴 00:54쯤"], ["전압", "220V · G형 3핀"], ["입국", "입국카드 없음 · 무비자 90일 · 자동출입국은 도착 후 현장 등록"], ["마카오", "여권 필수 · 무비자 90일 · 홍콩달러 1:1 통용(거스름돈은 파타카) · 옥토퍼스는 버스에서 안 됨"]]], ["🛍️ 쇼핑 메모", [["세금", "부가세·환급 없음 · 식당은 봉사료 10% 많음"], ["쇼핑몰", "10~11시 개점 · 22시 폐점"], ["결제", "몰·체인 카드 OK · 노포·간식집은 현금·옥토퍼스"], ["비닐봉투", "장당 HK$1 이상"], ["드럭스토어", "백화유 · 타이거밤 · 달리 치약 · 닌지옴 캔디 (매닝스·왓슨스)"], ["과자 선물", "제니 베이커리 쿠키 · 기화병가 펑리수·에그롤 · 이금기 소스"], ["11/18부터", "윈터페스트 할인(알리페이 QR)"]]], ["⛴️ 마카오 가는 법", [["침사추이 페리터미널", "마카오행 없음 (주하이행만)"], ["터보젯", "셩완 → 마카오 외항 · 07:30~22:30 · 약 60분 · 평일 HK$194 · 주말 HK$212 · 야간 HK$242"], ["코타이 워터젯", "셩완 → 타이파 · 07:30~22:30 · 평일 HK$192 · 베네시안 무료 셔틀"], ["원버스", "조던 캔톤로드 505 → 샌즈·런더너·베네시안 · 평일 낮 HK$160 · 저녁·주말 HK$180"], ["대교 셔틀버스", "HK$65 · 24시간 · 홍콩 쪽 터미널까지 1시간 이상"], ["11/19~22", "그랑프리로 외항 터미널 주변 통제 → 타이파행 배·원버스"]]]];
 { const g = document.getElementById('guide');
@@ -1675,7 +1678,7 @@ const GUIDE = [["📅 여행 4일 휴관·행사", [["11/16 월", "M+ 휴관"], 
   // phrases: tap one to show it large to staff
   { const d = h('details','gd'), ul = h('div','phr'); d.append(h('summary', null, '🗣️ 보여주는 한마디'));
     for(const [ko, zh, say] of [["감사합니다 · 저기요", "唔該", "음꺼이"], ["고맙습니다 (호의·선물)", "多謝", "또제"], ["계산서 주세요", "唔該，埋單", "음꺼이, 마이딴"], ["얼마예요?", "幾多錢？", "께이또친"], ["이거 주세요", "我要呢個", ""], ["두 명이요", "兩位", "렁와이"], ["포장이요", "外賣", "오이마이"], ["먹고 갈게요", "堂食", ""], ["안 맵게 해주세요", "唔要辣", ""], ["고수 빼주세요", "走芫荽", ""], ["얼음 빼주세요", "走冰", "자우빙"], ["영어 메뉴 있나요?", "有冇英文餐牌？", ""], ["카드 돼요?", "可唔可以碌卡？", ""], ["옥토퍼스 돼요?", "可唔可以用八達通？", ""], ["화장실 어디예요?", "洗手間喺邊度？", ""], ["사진 찍어도 돼요?", "可唔可以影相？", ""], ["여기서 내려주세요", "唔該，呢度落車", ""]]){ const b = h('button'); b.type = 'button'; b.append(h('span', null, ko), h('b', null, zh)); if(say) b.append(h('small', null, say));
-      b.addEventListener('click', () => { document.getElementById('zcs').textContent = ''; document.getElementById('zct').textContent = zh; document.getElementById('zca').textContent = ''; document.getElementById('zck').textContent = ko + (say ? ' · ' + say : ''); document.getElementById('zc').hidden = false; document.getElementById('zcx').focus(); });
+      b.addEventListener('click', () => { document.getElementById('zcs').textContent = ''; document.getElementById('zct').textContent = zh; document.getElementById('zca').textContent = ''; document.getElementById('zck').textContent = ko + (say ? ' · ' + say : ''); document.getElementById('zc').hidden = false; document.getElementById('zcx').focus(); ovPush(); });
       ul.append(b); }
     d.append(ul); g.append(d); }
   // emergency numbers as tap-to-call links

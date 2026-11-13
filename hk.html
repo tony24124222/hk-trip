@@ -1094,7 +1094,7 @@ let routeCur = null;
 function clearRoute(){ routeCur = null; pendingRoute = null; stopRun(); redrawRoute(false); }
 // a tap on a way to go runs the little couple along it, fast
 let runRaf = 0, runT = 0; const runLayer = L.layerGroup().addTo(map);
-const RIDE = {mtr:['ride-mtr.png', 57], taxi:['ride-taxi.png', 63], bus:['ride-bus.png', 48], tram:['ride-tram.png', 40], ferry:['ride-ferry.png', 55]};
+const RIDE = {mtr:['ride-mtr.png', 57], taxi:['ride-taxi.png', 71], bus:['ride-bus.png', 48], tram:['ride-tram.png', 42], ferry:['ride-ferry.png', 56]};
 let runTok = 0;
 function stopRun(){ runTok++; cancelAnimationFrame(runRaf); clearTimeout(runT); runRaf = runT = 0; runLayer.clearLayers(); }
 function runRoute(shapes, leg){ stopRun(); if(matchMedia('(prefers-reduced-motion: reduce)').matches) return; const tok = runTok;

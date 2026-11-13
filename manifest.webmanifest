@@ -1,0 +1,13 @@
+{
+  "name": "홍콩 동선 지도",
+  "short_name": "홍콩 지도",
+  "start_url": "./hk.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fff6ee",
+  "theme_color": "#fff6ee",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"}
+  ]
+}

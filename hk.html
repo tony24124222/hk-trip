@@ -4,6 +4,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>홍콩 동선 지도</title>
+<meta name="description" content="홍콩 11/16~19 동선 · 맛집 · 쇼핑 · 길찾기">
+<meta property="og:title" content="홍콩 동선 지도">
+<meta property="og:description" content="11/16~19 동선 · 맛집 · 쇼핑 · 길찾기">
+<meta property="og:image" content="https://tony24124222.github.io/hk-trip/cover.jpg">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="홍콩 지도">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#fff6ee" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#221a1e" media="(prefers-color-scheme: dark)">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -35,8 +50,11 @@ a{color:inherit}
 button{font:inherit;color:inherit;cursor:pointer}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
-.wrap{max-width:1080px;margin:0 auto;padding:0 16px 48px}
-header{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;padding:16px 0 10px}
+.wrap{max-width:1080px;margin:0 auto;padding:env(safe-area-inset-top) 16px 48px}
+header{position:relative;display:flex;align-items:flex-start;justify-content:space-between;gap:8px;min-height:104px;margin:14px 0 10px;padding:14px 14px 12px 16px;border-radius:22px;overflow:hidden;border:3px solid var(--surface);box-shadow:0 0 0 2px var(--line);background:var(--land) url(banner.jpg) right center/cover no-repeat}
+header::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,var(--bg) 0%,color-mix(in srgb,var(--bg) 82%,transparent) 36%,transparent 74%)}
+header>*{position:relative}
+.hero{display:flex;flex-direction:column;gap:2px;align-self:center}
 h1{font-family:var(--display);font-weight:400;font-size:28px;color:var(--accent);letter-spacing:.01em;margin:0;text-wrap:balance}
 .stay{color:var(--muted);font-size:13px}
 
@@ -49,9 +67,15 @@ h1{font-family:var(--display);font-weight:400;font-size:28px;color:var(--accent)
 .grid{display:grid;gap:14px}
 .mapbox{position:sticky;top:0;z-index:5;background:var(--bg);padding-bottom:6px}
 .map{position:relative;height:300px;border:3px solid var(--surface);box-shadow:0 0 0 2px var(--line);border-radius:22px;overflow:hidden;background:var(--land)}
-.zoom{position:absolute;right:8px;top:8px;display:flex;flex-direction:column;gap:6px}
-.zoom button{width:36px;height:36px;border-radius:12px;border:2px solid var(--line);background:var(--surface);font-size:18px;line-height:1}
-.zoom button.fit{font-size:11px;font-weight:600}
+.map{--ctop:8px}
+.zoom,.lay{position:absolute;top:var(--ctop);display:flex;flex-direction:column;gap:6px;z-index:500;transition:opacity .15s}
+.zoom{right:8px}
+.lay{left:8px}
+.zoom button,.lay button{width:46px;height:44px;padding:0;border-radius:14px;border:2px solid var(--line);background:var(--surface);color:var(--ink);display:grid;place-items:center;align-content:center;gap:2px;font:700 9.5px/1 var(--body);box-shadow:0 2px 0 var(--line)}
+.zoom svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.lay b{font-size:16px;font-weight:400;line-height:1}
+@media (pointer:fine){ .lay{top:calc(var(--ctop) + 78px)} }
+@media (pointer:coarse){ .leaflet-control-zoom{display:none} }
 .maphint{position:absolute;left:8px;bottom:8px;font-size:11px;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:2px 6px}
 .nomap{border:1px dashed var(--line);border-radius:12px;padding:14px;color:var(--muted);font-size:13px}
 
@@ -90,6 +114,7 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .foot a{text-decoration:underline}
 
 @media (min-width:820px){
+  header{background-size:auto 190%;background-position:right 46%}
   .grid{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);align-items:start}
   .mapbox{top:12px}
   .map{height:560px}
@@ -99,12 +124,11 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
   @keyframes pulse{from{opacity:.7;transform:scale(1)}to{opacity:0;transform:scale(2.2)}}
 }
 #map{width:100%;height:100%;background:var(--land)}
-.zoom{z-index:500;transition:opacity .15s}
-.map.popon .zoom,.map.popon .leaflet-control-zoom{opacity:0;pointer-events:none}
+.map.popon .zoom,.map.popon .lay,.map.popon .leaflet-control-zoom{opacity:0;pointer-events:none}
 .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--surface);color:var(--ink)}
 .leaflet-container a.leaflet-popup-close-button{color:var(--muted)}
-.zoom button.fit{width:auto;min-width:44px;padding:0 8px;font-size:12px}
 #gps[aria-pressed="true"]{background:#1a73e8;color:#fff;border-color:#1a73e8}
+#zfull[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
 .gpsmsg{font-size:12.5px;color:var(--muted);padding:6px 2px 0}
 .routebox{margin-top:6px;border:2px solid #1a73e8;background:var(--surface);border-radius:16px;padding:8px 10px;font-size:13.5px;max-height:220px;overflow:auto}
 .routebox[hidden]{display:none}
@@ -160,7 +184,9 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .pin.sel{outline:3px solid var(--ink)}
 .pin.next{box-shadow:0 0 0 6px rgba(255,111,145,.35),0 1px 4px rgba(0,0,0,.4)}
 .pin.multi{font-size:10px}
-.me{width:18px;height:18px;border-radius:50%;background:#1a73e8;border:3px solid #fff;box-shadow:0 0 0 2px rgba(26,115,232,.4)}
+.me{position:relative;width:18px;height:18px;border-radius:50%;background:#1a73e8;border:3px solid #fff;box-shadow:0 0 0 2px rgba(26,115,232,.4)}
+.me i{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;z-index:-1;background:conic-gradient(from -32deg,rgba(26,115,232,.5) 0 64deg,transparent 64deg);-webkit-mask:radial-gradient(circle,transparent 9px,#000 10px,transparent 28px);mask:radial-gradient(circle,transparent 9px,#000 10px,transparent 28px)}
+.me i[hidden]{display:none}
 .leaflet-container{font-family:var(--body)}
 .rt{margin-top:8px;border:2px dashed var(--alt);border-radius:16px;padding:8px 10px;background:var(--bg);cursor:default}
 .rt h4{margin:6px 0 2px;font:400 14.5px var(--display);color:var(--alt)}
@@ -222,8 +248,8 @@ html.mm .grid{display:block}
 html.mm .tabs{position:fixed;z-index:30;left:0;right:0;top:0;padding:calc(8px + env(safe-area-inset-top)) 10px 10px;background:linear-gradient(var(--bg) 55%,transparent)}
 html.mm .mapbox{position:fixed;inset:0;z-index:1;padding:0;background:var(--land)}
 html.mm .map{height:100%;border:0;border-radius:0;box-shadow:none}
-html.mm .zoom{top:calc(60px + env(safe-area-inset-top))}
-html.mm .leaflet-top{top:calc(52px + env(safe-area-inset-top))}
+html.mm .map{--ctop:calc(60px + env(safe-area-inset-top))}
+html.mm .leaflet-top{top:calc(var(--ctop) - 8px)}
 html.mm .leaflet-bottom{bottom:var(--sh,64px)}
 html.mm .mapinfo{position:absolute;z-index:600;left:8px;right:8px;bottom:calc(var(--sh,64px) + 24px);max-height:40%;overflow:auto;display:flex;flex-direction:column;gap:6px;pointer-events:none}
 html.mm .mapinfo>*{pointer-events:auto;margin:0}
@@ -244,6 +270,7 @@ html.mm .dayhead h2{display:none}
   html.mm .leaflet-bottom{bottom:0}
   html.mm .tabs{left:16px;right:auto;background:none}
   html.mm .leaflet-top.leaflet-left{left:456px}
+  html.mm .lay{left:464px}
 }
 @media (prefers-reduced-motion:reduce){ html.mm #panel{transition:none} }
 /* photo viewer */
@@ -262,8 +289,7 @@ html.mm .dayhead h2{display:none}
 <body>
 <div class="wrap">
   <header>
-    <h1>🥟 홍콩 동선 지도</h1>
-    <span class="stay">🏨 호텔 아이콘 · 16~19일</span>
+    <div class="hero"><h1>홍콩 동선 지도</h1><span class="stay">🏨 호텔 아이콘 · 11/16~19</span></div>
     <button type="button" class="share" id="bshare">🔗 일정 공유</button>
   </header>
   <div class="tabs" role="tablist" id="tabs"></div>
@@ -272,12 +298,14 @@ html.mm .dayhead h2{display:none}
       <div class="map" id="mapwrap">
         <div id="map"></div>
         <div class="zoom">
-          <button type="button" id="zfull" class="fit" aria-pressed="false">크게</button>
-          <button type="button" id="gps" class="fit" aria-pressed="false">내 위치</button>
-          <button type="button" id="zfit" class="fit" aria-label="전체 보기">전체</button>
-          <button type="button" id="zrt" class="fit" aria-label="여기 근처 실시간">🚏</button>
-          <button type="button" id="zrec" class="fit" aria-pressed="true" aria-label="추천 장소 표시">⭐</button>
-          <button type="button" id="ztoilet" class="fit" aria-pressed="false" aria-label="화장실">🚻</button>
+          <button type="button" id="zfull" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><span>크게</span></button>
+          <button type="button" id="gps" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4"/></svg><span>내 위치</span></button>
+          <button type="button" id="zfit"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="6" r="2.2"/><path d="M8 17c5 0 3-10 8-10" stroke-dasharray="2.5 2.5"/></svg><span>전체</span></button>
+        </div>
+        <div class="lay">
+          <button type="button" id="zrec" aria-pressed="true"><b>⭐</b><span>추천</span></button>
+          <button type="button" id="ztoilet" aria-pressed="false"><b>🚻</b><span>화장실</span></button>
+          <button type="button" id="zrt"><b>🚏</b><span>실시간</span></button>
         </div>
       </div>
       <div class="mapinfo">
@@ -995,17 +1023,29 @@ function drawMap(){
 }
 function drawMe(){ meLayer.clearLayers(); if(!me) return;
   L.circle([me.lat,me.lng], {radius:me.acc, color:'#1a73e8', weight:1, fillOpacity:.12}).addTo(meLayer);
-  L.marker([me.lat,me.lng], {icon: L.divIcon({className:'', html:'<div class="me"></div>', iconSize:[18,18], iconAnchor:[9,9]}), zIndexOffset:2000, interactive:false}).addTo(meLayer); }
+  L.marker([me.lat,me.lng], {icon: L.divIcon({className:'', html:`<div class="me"><i ${meHead == null ? 'hidden' : `style="transform:rotate(${meHead}deg)"`}></i></div>`, iconSize:[18,18], iconAnchor:[9,9]}), zIndexOffset:2000, interactive:false}).addTo(meLayer); }
+// compass: iOS gives webkitCompassHeading (after a permission tap), Android an absolute alpha
+let meHead = null, compassOn = false;
+function onCompass(e){ const hd = e.webkitCompassHeading != null ? e.webkitCompassHeading : e.absolute && e.alpha != null ? 360 - e.alpha : null; if(hd == null) return;
+  meHead = Math.round(hd); const i = document.querySelector('.me i'); if(i){ i.hidden = false; i.style.transform = `rotate(${meHead}deg)`; } }
+function startCompass(){ if(compassOn || !window.DeviceOrientationEvent) return;
+  const go = () => { compassOn = true; addEventListener('ondeviceorientationabsolute' in window ? 'deviceorientationabsolute' : 'deviceorientation', onCompass); };
+  if(typeof DeviceOrientationEvent.requestPermission === 'function') DeviceOrientationEvent.requestPermission().then(r => { if(r === 'granted') go(); }).catch(() => {}); else go(); }
+const nearHK = p => dist(p.lat, p.lng, 22.3, 114.17) < 90000;
+// where the uncovered part of the map is centred right now
+const viewCenter = () => { const i = ins(); return map.containerPointToLatLng(map.getSize().divideBy(2).add([(i.l - i.r) / 2, (i.t - i.b) / 2])); };
 function gpsMsg(t){ const e = document.getElementById('gpsmsg'); e.hidden = !t; e.textContent = t || ''; }
 function toggleGps(){ const b = document.getElementById('gps');
+  // second tap = back to me, a tap while already centred = off
+  if(watchId!==null && me && nearHK(me) && map.distance(viewCenter(), [me.lat, me.lng]) > 120){ centerOn(me.lat, me.lng, Math.max(map.getZoom(), 16)); return; }
   if(watchId!==null){ navigator.geolocation.clearWatch(watchId); watchId = null; me = null; b.setAttribute('aria-pressed','false'); gpsMsg(''); if(routeCur && routeCur.lbl === '내 위치') clearRoute(); drawMe(); drawList(); return; }
   if(!navigator.geolocation){ gpsMsg('이 브라우저는 위치 기능을 지원하지 않습니다.'); return; }
   if(!window.isSecureContext){ gpsMsg('위치는 https 주소에서만 켜집니다. 이 파일을 https 사이트에 올려서 열어 주세요.'); return; }
-  b.setAttribute('aria-pressed','true'); gpsMsg('위치 찾는 중…'); let first = true;
+  b.setAttribute('aria-pressed','true'); gpsMsg('위치 찾는 중…'); let first = true; startCompass();
   watchId = navigator.geolocation.watchPosition(p => { me = {lat:p.coords.latitude, lng:p.coords.longitude, acc:p.coords.accuracy};
-      gpsMsg('내 위치 표시 중 · 오차 약 '+Math.round(me.acc)+'m'); drawMe(); if(!editMode) drawList();
+      gpsMsg(nearHK(me) ? '내 위치 · 오차 약 '+Math.round(me.acc)+'m' : '지금은 홍콩 밖 · 도착하면 지도에 표시'); drawMe(); if(!editMode) drawList();
       if(pendingRoute){ const s = pendingRoute; pendingRoute = null; first = false; routeTo(s); }
-      else if(first){ first = false; centerOn(me.lat, me.lng, Math.max(map.getZoom(), 15)); } },
+      else if(first){ first = false; if(nearHK(me)) centerOn(me.lat, me.lng, Math.max(map.getZoom(), 15)); } },
     e => { gpsMsg(e.code===1 ? '위치 권한이 거부되었습니다. 브라우저 설정에서 이 사이트의 위치 접근을 허용해 주세요.' : '위치를 가져오지 못했습니다. 잠시 후 다시 눌러 주세요.');
       pendingRoute = null;
       if(e.code===1){ navigator.geolocation.clearWatch(watchId); watchId = null; b.setAttribute('aria-pressed','false'); } },
@@ -1209,7 +1249,7 @@ const sab = (() => { const d = h('div'); d.style.cssText = 'position:fixed;visib
 const root = document.documentElement, panel = document.getElementById('panel'), grip = document.getElementById('grip');
 function setSheet(st){ const b0 = ins().b; shState = st; const db = ins().b - b0; if(db && map._loaded) map.panBy([0, db / 2], {animate:true, duration:.28}); // keep what was centred above the sheet centred
   root.style.setProperty('--sh', shH(st) + 'px'); panel.dataset.st = st; grip.setAttribute('aria-expanded', st !== 'peek'); }
-function setMM(on){ mm = on; root.classList.toggle('mm', on); const b = document.getElementById('zfull'); b.setAttribute('aria-pressed', on); b.textContent = on ? '작게' : '크게';
+function setMM(on){ mm = on; root.classList.toggle('mm', on); const b = document.getElementById('zfull'); b.setAttribute('aria-pressed', on); b.lastElementChild.textContent = on ? '작게' : '크게';
   try{ localStorage.setItem('hk-mm', on ? '1' : ''); }catch(e){}
   if(on) setSheet(wide() ? 'half' : 'peek'); else { root.style.removeProperty('--sh'); delete panel.dataset.st; }
   scrollTo(0, 0); map.invalidateSize(); if(sel) focus(sel); else if(routeCur) redrawRoute(true); else fit(); }
@@ -1265,6 +1305,7 @@ document.getElementById('q').addEventListener('input', () => {
       drawSheet(); }catch(err){ toast('검색 실패'); } }, 450);
 });
 window.addEventListener('resize', () => { if(mm) setSheet(shState); map.invalidateSize(); });
+if('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 window.addEventListener('hashchange', () => setDay(location.hash.slice(1), false));
 setDay(location.hash.slice(1) || 'day1', false); zoomCls();
 try{ if(localStorage.getItem('hk-mm')) setMM(true); }catch(e){}

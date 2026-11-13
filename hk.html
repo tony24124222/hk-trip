@@ -244,6 +244,10 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .pop{display:flex;flex-direction:column;gap:4px;min-width:170px}
 .pop b{font:400 15px var(--display)}
 .pop .d{font-size:13px;line-height:1.45}
+.pop .rt1{font:400 14.5px var(--display);color:#1a73e8}
+.pop .prow{display:flex;gap:6px}
+.pop .prow button{flex:1}
+.pop .prow .ghost{background:#1a73e8;color:#fff}
 .pop .zhb{align-self:flex-start;background:none;color:var(--ink);border:2px solid var(--line);padding:3px 10px;font-weight:400;font-size:13.5px}
 .desc{font-size:13.5px;line-height:1.5;margin:3px 0 2px}
 .busl{margin-top:8px;font-weight:700;font-variant-numeric:tabular-nums}
@@ -853,6 +857,12 @@ function drawShape(sh, grp, op, big){
 // ---- in-page directions ----
 let routeCur = null;
 function clearRoute(){ routeCur = null; pendingRoute = null; redrawRoute(false); }
+const legIcon = {walk:'🚶', mtr:'🚇', taxi:'🚕', given:'🚌'};
+const legShort = lg => lg.mode === 'same' ? '바로 옆' : `${legIcon[lg.mode] || ''} 약 ${lg.min}분 · ${fmt(lg.d)}`;
+// tapping a place answers "how far from here": my position, else the selected stop, else the hotel
+function fromHere(p){ return me && nearHK(me) && dist(me.lat, me.lng, p.lat, p.lng) < 60000 ? [me, '내 위치'] : sel && sel.lat && dist(sel.lat, sel.lng, p.lat, p.lng) > 30 ? [sel, sel.name] : [HOTEL, HOTEL.name]; }
+function previewRoute(p){ if(routeCur && !routeCur.preview) return; const o = fromHere(p);
+  routeCur = {s:{id:'rec-' + p.id, name:p.n, lat:p.lat, lng:p.lng}, from:{lat:o[0].lat, lng:o[0].lng}, lbl:o[1], nt:{}, preview:true}; redrawRoute(false); }
 function originFor(s){
   if(me && dist(me.lat,me.lng,s.lat,s.lng) < 60000) return [me, '내 위치'];
   const rs = routeStops(day), i = rs.indexOf(s);
@@ -871,6 +881,7 @@ function redrawRoute(fitIt){
   const {s, from, lbl, alts} = routeCur, leg = legOf(from, s), shapes = legShapes(leg, from, s);
   for(const sh of shapes) drawShape(sh, routeLayer, 1, true);
   L.circleMarker([from.lat, from.lng], {radius:7, color:'#fff', weight:3, fillColor:'#1a73e8', fillOpacity:1, interactive:false, pane:'route'}).addTo(routeLayer);
+  if(routeCur.preview){ box.hidden = true; return; } // line only; the steps open from the popup button
   if(s.id === 'wc') L.marker([s.lat, s.lng], {icon:L.divIcon({className:'', html:'<div class="tpin">🚻</div>', iconSize:[22,22], iconAnchor:[11,11]}), interactive:false, zIndexOffset:1500}).addTo(routeLayer);
   box.hidden = false;
   document.getElementById('routetxt').textContent = `🧭 ${s.name}까지 약 ${leg.min}분`;
@@ -1282,13 +1293,14 @@ function drawMap(){
     const icon = LM[p.id] ? L.divIcon({className:'lmk' + (li++ % 2 ? ' r' : ''), html:`<b>${LM[p.id]}</b>${nmTag(nm)}${phImg(pid)}`, iconSize:[40,40], iconAnchor:[20,20]})
       : L.divIcon({className:'', html:`<div class="rpin mk">${CATS[p.c][0]}${nmTag(nm)}${phImg(pid)}</div>`, iconSize:[26,26], iconAnchor:[13,13]});
     const m = L.marker([p.lat,p.lng], {icon, title:p.n, pid:p.id, zIndexOffset:LM[p.id] ? -400 : -500}).addTo(recLayer);
-    m.on('popupopen', () => { recOpen = p.id; }).on('popupclose', () => { if(recOpen === p.id) recOpen = null; });
+    m.on('popupopen', () => { recOpen = p.id; previewRoute(p); }).on('popupclose', () => { if(recOpen === p.id) recOpen = null; if(routeCur && routeCur.preview) clearRoute(); });
     mkList.push({m, pri:LM[p.id] ? 30 : p.c === 'food' ? 40 : 50, name:nm, ph:!!pid, r:LM[p.id] ? 20 : 13});
-    m.bindPopup(() => { const box = h('div','pop'); if(pid) box.append(phBox(pid, p.n)); box.append(h('b',null,p.n)); const inf = INFO[p.id]; if(inf && inf.d) box.append(h('div','d',inf.d)); box.append(h('div','m',recMeta(p))); if(inf && inf.t) box.append(h('div','d','💡 ' + inf.t));
+    m.bindPopup(() => { const box = h('div','pop'); if(pid) box.append(phBox(pid, p.n)); box.append(h('b',null,p.n)); const o = fromHere(p); box.append(h('div','rt1', legShort(legOf(o[0], p)) + ' · ' + shortName(o[1]) + '에서')); const inf = INFO[p.id]; if(inf && inf.d) box.append(h('div','d',inf.d)); box.append(h('div','m',recMeta(p))); if(inf && inf.t) box.append(h('div','d','💡 ' + inf.t));
       const ol = orLink(p.id); if(ol) box.append(ol);
       if(ZH[p.id]){ const zb = h('button', 'zhb', '🀄 ' + ZH[p.id]); zb.type = 'button'; zb.addEventListener('click', () => showZh({rec:p.id, name:p.n})); box.append(zb); }
-      const b = h('button',null,'＋ '+day.tab.replace(/^\S+\s/,'')+'에 추가'); b.type = 'button';
-      b.addEventListener('click', () => { map.closePopup(); addPlace(p); }); box.append(b); return box; }, popOpt());
+      const row = h('div','prow'), go = h('button','ghost','🧭 길찾기'), b = h('button',null,'＋ '+day.tab.replace(/^\S+\s/,'')+'에 추가'); go.type = b.type = 'button';
+      go.addEventListener('click', () => { showRoute({id:'rec-' + p.id, name:p.n, lat:p.lat, lng:p.lng}, fromHere(p)); map.closePopup(); });
+      b.addEventListener('click', () => { map.closePopup(); addPlace(p); }); row.append(go, b); box.append(row); return box; }, popOpt());
   }
   declutter();
   if(recOpen){ const k = recLayer.getLayers().find(m => m.options.pid === recOpen); if(k) k.openPopup(); else recOpen = null; }
@@ -1438,7 +1450,7 @@ function drawSheet(){
   document.getElementById('sref').textContent = '거리 기준: ' + (me ? '내 위치' : '이 날 동선');
   const ul = document.getElementById('recs'); ul.textContent = '';
   for(const [d, p] of items){ const li = h('li','rec'), b = h('div'), has = inDay.has(p.id);
-    b.append(h('div','n',p.n)); if(INFO[p.id] && INFO[p.id].d) b.append(h('div','d1',INFO[p.id].d)); b.append(h('div','m',fmt(d)+' · '+recMeta(p)));
+    b.append(h('div','n',p.n)); if(INFO[p.id] && INFO[p.id].d) b.append(h('div','d1',INFO[p.id].d)); b.append(h('div','m',legShort(legOf(ref, p))+' · '+recMeta(p)));
     const add = h('button', null, has ? '추가됨' : '추가'); add.type = 'button'; add.disabled = has; add.addEventListener('click', () => addPlace(p));
     const e = h('div','e',(CATS[p.c] || ['📍'])[0]); if(PH[p.id]){ const im = h('img'); im.src = phUrl(p.id, 250); im.alt = ''; im.loading = 'lazy'; im.addEventListener('error', () => im.remove()); e.append(im); }
     li.append(e, b, add);
@@ -1459,7 +1471,7 @@ function drawList(){
   document.getElementById('daytitle').textContent = (day.date ? day.date+' · ' : '') + day.title;
   const nx = nextStop(day), rs = routeStops(day), sch = schedule(day), firstAlt = day.stops.find(x => x.kind==='alt'), grp = (day.stops.find(x => x.group) || {}).group;
   { const g = sel && sch.out.get(sel) ? sel : nx, gi = g && sch.out.get(g);
-    document.getElementById('gripsum').textContent = (day.date ? day.date + ' · ' : '') + (g ? (sel === g ? '' : '다음 ') + (gi ? hm(gi.arr) + ' ' : '') + g.name : day.title); }
+    document.getElementById('gripsum').textContent = (day.date ? day.date + ' · ' : '') + (g ? (sel === g ? '' : '다음 ') + (gi ? hm(gi.arr) + ' ' : '') + g.name + (sel === g && gi && gi.leg && gi.leg.mode !== 'same' ? ` · ${legIcon[gi.leg.mode] || ''}${gi.leg.min}분` : '') : day.title); }
   { const pa = document.getElementById('peekact'), on = !!peekSel(); pa.hidden = !on;
     if(on){ const pd = document.getElementById('pdone'); pd.hidden = sel.kind === 'alt'; pd.textContent = done[sel.id] ? '완료됨' : '완료 체크'; pd.setAttribute('aria-pressed', !!done[sel.id]); }
     if(mm && shState === 'peek') root.style.setProperty('--sh', shH('peek') + 'px'); }

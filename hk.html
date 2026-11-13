@@ -1041,7 +1041,7 @@ function toggleSmoke(){ const btn = document.getElementById('zsmoke'), on = btn.
   for(const t of SMOKE) L.marker([t[0], t[1]], {icon:L.divIcon({className:'', html:'<div class="tpin sm">🚬</div>', iconSize:[22,22], iconAnchor:[11,11]}), zIndexOffset:-300, title:t[2]})
     .bindPopup(() => { const box = h('div','pop'), bt = h('button', null, '🧭 길찾기'); bt.type = 'button'; bt.addEventListener('click', () => { map.closePopup(); showRoute(obj(t), originNear()); }); box.append(h('b', null, t[2]), bt); return box; }).addTo(smokeLayer);
   const [o, lbl] = originNear(), near = SMOKE.map(t => [dist(o.lat, o.lng, t[0], t[1]), t]).sort((a, b) => a[0] - b[0])[0];
-  if(near[0] < 1500) showRoute(obj(near[1]), [o, lbl]); else toast('근처 흡연실 없음 · 길거리는 금연구역 밖 가능'); }
+  if(near[0] < 250) showRoute(obj(near[1]), [o, lbl]); else toast(inMacau(o) ? '길거리 가능 · 정류장 10m 안은 금지' : '길거리 가능 · 금연 표지·타는 줄은 금지'); }
 async function toggleToilet(){
   const btn = document.getElementById('ztoilet'); showToilet = !showToilet; btn.setAttribute('aria-pressed', showToilet);
   if(!showToilet){ toiletLayer.clearLayers(); if(routeCur && routeCur.s.id === 'wc') clearRoute(); return; }

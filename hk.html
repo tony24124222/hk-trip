@@ -64,7 +64,7 @@ h1{font-family:var(--display);font-weight:400;font-size:28px;color:var(--accent)
 .tab[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);box-shadow:0 3px 0 rgba(0,0,0,.08)}
 .tab[aria-selected="true"] small{color:inherit;opacity:.7}
 
-.grid{display:grid;gap:14px}
+.grid{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
 .mapbox{position:sticky;top:0;z-index:5;background:var(--bg);padding-bottom:6px}
 .map{position:relative;height:300px;border:3px solid var(--surface);box-shadow:0 0 0 2px var(--line);border-radius:22px;overflow:hidden;background:var(--land)}
 .map{--ctop:8px}
@@ -226,7 +226,7 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .sheet input[type=search]{width:100%;font:inherit;border:2px solid var(--line);border-radius:12px;padding:7px 10px;background:var(--bg);color:inherit}
 .sref{font-size:11.5px;color:var(--muted);margin:6px 2px}
 .recs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:440px;overflow:auto}
-.rec{display:grid;grid-template-columns:30px 1fr auto;gap:8px;align-items:center;border:2px solid var(--line);border-radius:14px;padding:8px;cursor:pointer}
+.rec{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:8px;align-items:center;border:2px solid var(--line);border-radius:14px;padding:8px;cursor:pointer}
 .rec .e{font-size:22px;text-align:center}
 .rec .n{font-family:var(--display);font-size:15.5px}
 .m{font-size:12px;color:var(--muted)}
@@ -234,7 +234,24 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .rec button:disabled{background:var(--done)}
 .pop{display:flex;flex-direction:column;gap:4px;min-width:170px}
 .pop b{font:400 15px var(--display)}
+.pop .d{font-size:13px;line-height:1.45}
+.desc{font-size:13.5px;line-height:1.5;margin:3px 0 2px}
+.guide{display:flex;flex-direction:column;gap:8px;margin-top:18px}
+.gd{border:2px solid var(--line);background:var(--surface);border-radius:16px;padding:0 12px}
+.gd summary{font:400 15.5px var(--display);padding:10px 0;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center}
+.gd summary::-webkit-details-marker{display:none}
+.gd summary::after{content:"+";color:var(--muted);font-size:18px}
+.gd[open] summary::after{content:"−"}
+.gd dl{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;margin:0 0 12px;font-size:13px;line-height:1.45}
+.gd dt{font-weight:700;white-space:nowrap}
+.gd dd{margin:0;color:var(--muted)}
+.rec .e{position:relative;width:44px;height:44px;display:grid;place-items:center}
+.rec .e img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:12px}
+.rec .d1{font-size:12.5px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.rec .m{overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+#courses:empty{display:none}
 .rpin{width:26px;height:26px;border-radius:50%;background:#fff;display:grid;place-items:center;font-size:15px;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+#map:not(.z-dot) .rpin{transform:scale(.46);box-shadow:0 0 0 2px rgba(255,111,145,.55)}
 #zrec[aria-pressed="true"]{background:#f5c04a;border-color:#f5c04a;color:#3a2f35}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;max-width:calc(100% - 32px);background:var(--ink);color:var(--surface);border-radius:999px;padding:8px 16px;font-size:14px;font-weight:700;z-index:3000;box-shadow:0 4px 12px rgba(0,0,0,.25)}
 .toast[hidden]{display:none}
@@ -336,12 +353,14 @@ html.mm .dayhead h2{display:none}
       </div>
       <div id="evts"></div>
       <div class="sheet" id="sheet" hidden>
+        <div class="cats" id="courses"></div>
         <div class="cats" id="cats"></div>
         <input type="search" id="q" placeholder="장소 이름 검색 (영어·한자)" autocomplete="off">
         <div class="sref" id="sref"></div>
         <ul class="recs" id="recs"></ul>
       </div>
       <ol class="stops" id="list"></ol>
+      <div class="guide" id="guide"></div>
       <div class="foot">
         <span>🚻 = 가까운 화장실 3곳 · 확대하면 전부 표시 (OpenStreetMap 자료)</span>
         <span>「🚏 실시간」 = 근처 MTR·KMB 버스 도착 시간(정부 공개 자료). 지도 위 🚏 = 내 위치(없으면 지도 가운데) 근처. 시티버스(홍콩섬 대부분)는 안 나옵니다.</span>
@@ -352,6 +371,7 @@ html.mm .dayhead h2{display:none}
         <span>🔀 순서 추천: 호텔·⏰ 고정 일정은 그대로, 그 사이 순서만 변경</span>
         <span>⏳ 예상 웨이팅: 2023–26 방문 후기의 시간대별 대기 · 실시간 번호표는 OpenRice·The Gulu 앱</span>
         <span>📷 사진: Wikimedia Commons (사진 누르면 작가·라이선스)</span>
+        <span>가격·영업시간: 2025~26년 공식 페이지·여행 자료 기준 · 현지에서 다를 수 있음</span>
         <span>편집 내용: 이 폰 브라우저에만 저장</span>
       </div>
       </div>
@@ -416,7 +436,7 @@ const DATES = {day1:'2026-11-16', day2:'2026-11-17', day3:'2026-11-18'};
 const STAY = {apt:30, sci:0, icon1:20, icon2:0, mcot:45, peak:90, esc:30, soho:40, pmq:45, icon2b:90, hkma:60, oms:90, icon3:0, adc:45, north:90};
 const BEST = {esc:[600,1410], hkma:[1020,1140]};
 const LEGMIN = {sci:['apt',85], icon1:['sci',5]};
-const CATS = {food:['🍜','맛집'], sight:['🏛️','명소'], hot:['✨','핫플'], photo:['📸','사진'], event:['🎆','이벤트']};
+const CATS = {food:['🍜','맛집'], sweet:['🍡','간식·디저트'], shop:['🛍️','쇼핑'], sight:['🏛️','명소'], hot:['✨','핫플'], bar:['🍸','바·전망'], photo:['📸','사진'], event:['🎆','이벤트']};
 // coords: OSM (Macau shops approx); hours/closed only where well known
 const REC = [
  {id:'timho', c:'food', n:'팀호완 · 딤섬', sub:'Tim Ho Wan · 홍콩역', lat:22.28449, lng:114.158146, stay:50, wait:'식사 시간 줄 · 번호표'},
@@ -437,45 +457,76 @@ const REC = [
  {id:'margaret', c:'food', n:'마가렛 카페 · 에그타르트', sub:"Margaret's Café e Nata · 마카오", lat:22.1918, lng:113.5416, stay:20, approx:true},
  {id:'lordstow', c:'food', n:'로드스토우 · 에그타르트', sub:"Lord Stow's · 마카오 콜로안", lat:22.1166, lng:113.5615, stay:20, hours:'07:00–21:00', approx:true},
  {id:'aos', c:'sight', n:'스타의 거리 · 하버 야경', sub:'Avenue of Stars · 침사추이', lat:22.29426, lng:114.174683, stay:40, best:[1110,1350]},
- {id:'ferry', c:'sight', n:'스타페리', sub:'Star Ferry · 침사추이↔센트럴', lat:22.293546, lng:114.168475, stay:30, tip:'약 10분 · 배 위 야경'},
- {id:'st428', c:'sight', n:'스카이테라스 428', sub:'Sky Terrace 428 · 피크 정상', lat:22.271304, lng:114.15016, stay:60, best:[990,1170], tip:'일몰~야경 · 유료'},
+ {id:'ferry', c:'sight', n:'스타페리', sub:'Star Ferry · 침사추이↔센트럴', lat:22.293546, lng:114.168475, stay:30, tip:'약 10분 · 배 위 야경', hours:'06:30–23:30'},
+ {id:'st428', c:'sight', n:'스카이테라스 428', sub:'Sky Terrace 428 · 피크 정상', lat:22.271304, lng:114.15016, stay:60, best:[990,1170], tip:'일몰~야경 · 유료', hours:'08:30–22:00'},
  {id:'temple', c:'sight', n:'템플스트리트 야시장', sub:'Temple Street · 조던', lat:22.307021, lng:114.170135, stay:60, best:[1140,1380]},
- {id:'manmo', c:'sight', n:'만모 사원', sub:'Man Mo Temple · 셩완', lat:22.283882, lng:114.150174, stay:20},
- {id:'mplus', c:'sight', n:'M+ 미술관', sub:'M+ · 서구룡', lat:22.301924, lng:114.158902, stay:90, closed:'월'},
- {id:'palace', c:'sight', n:'홍콩 고궁박물관', sub:'Hong Kong Palace Museum · 서구룡', lat:22.301577, lng:114.156223, stay:90, closed:'화'},
- {id:'wts', c:'sight', n:'웡타이신 사원', sub:'Wong Tai Sin Temple', lat:22.342835, lng:114.193654, stay:45, best:[480,960]},
+ {id:'manmo', c:'sight', n:'만모 사원', sub:'Man Mo Temple · 셩완', lat:22.283882, lng:114.150174, stay:20, hours:'08:00–18:00'},
+ {id:'mplus', c:'sight', n:'M+ 미술관', sub:'M+ · 서구룡', lat:22.301924, lng:114.158902, stay:90, closed:'월', hours:'10:00–18:00 · 금 22:00'},
+ {id:'palace', c:'sight', n:'홍콩 고궁박물관', sub:'Hong Kong Palace Museum · 서구룡', lat:22.301577, lng:114.156223, stay:90, closed:'화', hours:'10:00–18:00 · 금·토 20:00'},
+ {id:'wts', c:'sight', n:'웡타이신 사원', sub:'Wong Tai Sin Temple', lat:22.342835, lng:114.193654, stay:45, best:[480,960], hours:'07:30–16:30'},
  {id:'repulse', c:'sight', n:'리펄스베이 해변', sub:'Repulse Bay · 홍콩섬 남쪽', lat:22.236451, lng:114.196175, stay:60, best:[600,1020]},
  {id:'buddha', c:'sight', n:'옹핑 빅부다', sub:'Tian Tan Buddha · 란타우', lat:22.253963, lng:113.905012, stay:180, best:[570,1020], tip:'반나절 · 케이블카'},
  {id:'senado', c:'sight', n:'세나도 광장', sub:'Senado Square · 마카오', lat:22.1935, lng:113.5397, stay:30},
  {id:'stpaul', c:'sight', n:'성바울 성당 유적', sub:"Ruins of St. Paul's · 마카오", lat:22.1975, lng:113.5409, stay:30},
- {id:'mtower', c:'sight', n:'마카오 타워', sub:'Macau Tower', lat:22.1803, lng:113.531, stay:60},
- {id:'ama', c:'sight', n:'아마 사원', sub:'A-Ma Temple · 마카오', lat:22.1863, lng:113.5308, stay:30},
- {id:'k11', c:'hot', n:'K11 MUSEA', sub:'침사추이 해변 쇼핑몰', lat:22.29457, lng:114.174559, stay:60},
- {id:'harbourcity', c:'hot', n:'하버시티', sub:'Harbour City · 침사추이', lat:22.297003, lng:114.167048, stay:90},
- {id:'taikwun', c:'hot', n:'타이퀀', sub:'Tai Kwun · 옛 경찰서 복합문화공간', lat:22.281179, lng:114.154003, stay:60},
+ {id:'mtower', c:'sight', n:'마카오 타워', sub:'Macau Tower', lat:22.1803, lng:113.531, stay:60, hours:'10:00–20:00'},
+ {id:'ama', c:'sight', n:'아마 사원', sub:'A-Ma Temple · 마카오', lat:22.1863, lng:113.5308, stay:30, hours:'07:00–18:00'},
+ {id:'k11', c:'shop', n:'K11 MUSEA', sub:'침사추이 해변 쇼핑몰', lat:22.29457, lng:114.174559, stay:60, hours:'10:00–22:00'},
+ {id:'harbourcity', c:'shop', n:'하버시티', sub:'Harbour City · 침사추이', lat:22.297003, lng:114.167048, stay:90, hours:'10:00–22:00'},
+ {id:'taikwun', c:'hot', n:'타이퀀', sub:'Tai Kwun · 옛 경찰서 복합문화공간', lat:22.281179, lng:114.154003, stay:60, hours:'08:00–23:00'},
  {id:'lkf', c:'hot', n:'란콰이퐁 · 바 거리', sub:'Lan Kwai Fong · 센트럴', lat:22.28082, lng:114.155418, stay:60, best:[1200,1500]},
  {id:'starst', c:'hot', n:'스타 스트리트 · 카페 골목', sub:'Star Street · 완차이', lat:22.276537, lng:114.167741, stay:40},
  {id:'taiping', c:'hot', n:'타이핑산 거리 · 카페·편집숍', sub:'Tai Ping Shan St · 셩완', lat:22.285264, lng:114.147636, stay:40},
- {id:'ladies', c:'hot', n:'레이디스 마켓', sub:"Ladies' Market · 몽콕", lat:22.317537, lng:114.170923, stay:60, best:[780,1320]},
- {id:'stanley', c:'hot', n:'스탠리 마켓', sub:'Stanley · 홍콩섬 남쪽', lat:22.218986, lng:114.211663, stay:90, best:[600,1080]},
+ {id:'ladies', c:'shop', n:'레이디스 마켓', sub:"Ladies' Market · 몽콕", lat:22.317537, lng:114.170923, stay:60, best:[780,1320], hours:'12:00–23:00'},
+ {id:'stanley', c:'shop', n:'스탠리 마켓', sub:'Stanley · 홍콩섬 남쪽', lat:22.218986, lng:114.211663, stay:90, best:[600,1080], hours:'10:00–18:30'},
  {id:'cunha', c:'hot', n:'쿤하 거리', sub:'Rua do Cunha · 마카오 타이파', lat:22.1534, lng:113.5567, stay:60},
  {id:'lugard', c:'photo', n:'루가드 로드 전망대', sub:'Lugard Road · 피크', lat:22.277562, lng:114.143827, stay:40, best:[1050,1260], tip:'피크 야경 무료 명당'},
  {id:'artpark', c:'photo', n:'서구룡 아트파크 · 하버 일몰', sub:'Art Park · 서구룡', lat:22.301116, lng:114.15784, stay:40, best:[990,1110]},
- {id:'wheel', c:'photo', n:'대관람차', sub:'Observation Wheel · 센트럴', lat:22.285304, lng:114.161746, stay:30, best:[1080,1320]},
+ {id:'wheel', c:'photo', n:'대관람차', sub:'Observation Wheel · 센트럴', lat:22.285304, lng:114.161746, stay:30, best:[1080,1320], hours:'12:00–22:00 · 금~일 11:00–23:00'},
  {id:'monster', c:'photo', n:'몬스터 빌딩', sub:'Yick Cheong Building · 쿼리베이', lat:22.284009, lng:114.212327, stay:30, tip:'주민 거주지 · 조용히'},
  {id:'choihung', c:'photo', n:'초이훙 무지개 아파트', sub:'Choi Hung Estate', lat:22.3355, lng:114.2068, stay:30, tip:'주민 거주지 · 조용히'},
  {id:'bluehouse', c:'photo', n:'블루하우스', sub:'Blue House · 완차이', lat:22.273893, lng:114.17416, stay:20},
- {id:'nanlian', c:'photo', n:'남련원지 정원', sub:'Nan Lian Garden · 다이아몬드힐', lat:22.339355, lng:114.204453, stay:45},
+ {id:'nanlian', c:'photo', n:'남련원지 정원', sub:'Nan Lian Garden · 다이아몬드힐', lat:22.339355, lng:114.204453, stay:45, hours:'07:00–21:00'},
  {id:'goldfish', c:'photo', n:'금붕어 거리', sub:'Goldfish Street · 몽콕', lat:22.323052, lng:114.169832, stay:20},
- {id:'monte', c:'photo', n:'몬테 요새', sub:'Monte Fort · 마카오', lat:22.1973, lng:113.5428, stay:30},
- {id:'eiffel', c:'photo', n:'파리지앵 에펠탑', sub:'The Parisian · 마카오', lat:22.144, lng:113.5615, stay:30, best:[1080,1380]}
+ {id:'monte', c:'photo', n:'몬테 요새', sub:'Monte Fort · 마카오', lat:22.1973, lng:113.5428, stay:30, hours:'07:00–19:00'},
+ {id:'eiffel', c:'photo', n:'파리지앵 에펠탑', sub:'The Parisian · 마카오', lat:22.144, lng:113.5615, stay:30, best:[1080,1380], hours:'12:00–23:00'},
+ {id:'jenny', c:'shop', n:"제니 베이커리 · 쿠키", sub:"Jenny Bakery · 침사추이 미라도 맨션 1층", lat:22.297354, lng:114.172485, stay:20, hours:'10:00–19:00', wait:'줄 잦음'},
+ {id:'god', c:'shop', n:"G.O.D. · 홍콩 감성 소품", sub:"Goods of Desire · 센트럴 할리우드로드 48", lat:22.28242, lng:114.153054, stay:30, hours:'10:00–20:00'},
+ {id:'donki', c:'shop', n:"돈돈돈키", sub:"DON DON DONKI · 침사추이 미라 플레이스 2 지하", lat:22.300134, lng:114.172447, stay:45},
+ {id:'theone', c:'shop', n:"The ONE", sub:"침사추이 네이선로드 100", lat:22.29986, lng:114.172688, stay:45, hours:'11:00–23:00'},
+ {id:'sneakers', c:'shop', n:"스니커즈 스트리트", sub:"Fa Yuen St · 몽콕", lat:22.317671, lng:114.171496, stay:40, hours:'12:00–22:00'},
+ {id:'langham', c:'shop', n:"랭함 플레이스", sub:"Langham Place · 몽콕역 연결", lat:22.318215, lng:114.168611, stay:60, hours:'11:00–23:00'},
+ {id:'timessq', c:'shop', n:"타임스 스퀘어", sub:"Times Square · 코즈웨이베이", lat:22.278359, lng:114.182106, stay:60, hours:'10:00–22:00'},
+ {id:'hysan', c:'shop', n:"하이산 플레이스", sub:"Hysan Place · 코즈웨이베이", lat:22.279806, lng:114.183766, stay:45, hours:'10:00–22:00'},
+ {id:'sogo', c:'shop', n:"SOGO 백화점", sub:"SOGO · 코즈웨이베이", lat:22.28039, lng:114.184284, stay:45, hours:'10:00–22:00'},
+ {id:'fashionwalk', c:'shop', n:"패션 워크", sub:"Fashion Walk · 코즈웨이베이", lat:22.281563, lng:114.185203, stay:30, hours:'11:00–22:00'},
+ {id:'ifc', c:'shop', n:"IFC 몰", sub:"ifc mall · 홍콩역 위", lat:22.285228, lng:114.158766, stay:60},
+ {id:'leetung', c:'shop', n:"리퉁 애비뉴", sub:"Lee Tung Avenue · 완차이", lat:22.275775, lng:114.172419, stay:40, hours:'10:00–22:00'},
+ {id:'catst', c:'shop', n:"캣 스트리트 · 골동품 골목", sub:"Upper Lascar Row · 셩완", lat:22.284889, lng:114.149658, stay:30, hours:'11:00–18:00'},
+ {id:'citygate', c:'shop', n:"시티게이트 아웃렛", sub:"Citygate Outlets · 퉁청(공항 옆)", lat:22.2904, lng:113.940192, stay:120, hours:'10:00–22:00'},
+ {id:'bakehouse', c:'sweet', n:"베이크하우스 · 에그타르트", sub:"Bakehouse · 침사추이 한코우로드 44", lat:22.297859, lng:114.171154, stay:15, hours:'08:00–21:00', wait:'줄 잦음 · 포장만'},
+ {id:'hashtagb', c:'sweet', n:"해시태그 B · 천겹 타르트", sub:"Hashtag B · 침사추이 카나본로드 49", lat:22.299493, lng:114.173604, stay:30, hours:'08:00–21:00', wait:'줄 30분~1시간'},
+ {id:'cheunghing', c:'sweet', n:"청힝키 · 성젠바오", sub:"Cheung Hing Kee · 침사추이 록로드 48", lat:22.297777, lng:114.171621, stay:15, hours:'09:00–21:00', wait:'포장 줄'},
+ {id:'kaikai', c:'sweet', n:"카이카이 디저트 · 탕수이", sub:"Kai Kai Dessert · 조던 파크스 스트리트 113", lat:22.30667, lng:114.170831, stay:30, hours:'12:00–01:00', wait:'저녁 줄'},
+ {id:'feijie', c:'sweet', n:"페이제 · 꼬치 간식", sub:"Fei Jie · 몽콕 던다스 스트리트 55", lat:22.315736, lng:114.171749, stay:15, hours:'14:00–23:00', wait:'줄 잦음'},
+ {id:'kungwo', c:'sweet', n:"공와 두부공장 · 두부푸딩", sub:"Kung Wo · 삼수이포", lat:22.331084, lng:114.163589, stay:20, hours:'07:00–21:00'},
+ {id:'hopyik', c:'sweet', n:"합익타이 · 청펀", sub:"Hop Yik Tai · 삼수이포", lat:22.330483, lng:114.161229, stay:15, hours:'06:30–20:00', wait:'줄 잦음'},
+ {id:'luklam', c:'sweet', n:"룩람 디저트 · 망고 사고", sub:"Luk Lam Dessert · 삼수이포", lat:22.332606, lng:114.16268, stay:30, hours:'14:00–24:00', wait:'저녁 줄'},
+ {id:'leekeung', c:'sweet', n:"리컹키 · 에그와플", sub:"Lee Keung Kee · 노스포인트 본점", lat:22.291238, lng:114.201632, stay:15, hours:'07:00–23:00', wait:'줄 잦음'},
+ {id:'makman', c:'food', n:"막만키 · 완탕면", sub:"Mak Man Kee · 조던", lat:22.304684, lng:114.170534, stay:35, hours:'12:00–00:30', wait:'식사 시간 줄'},
+ {id:'linheung', c:'food', n:"린흥라우 · 24시간 얌차", sub:"Lin Heung Lau · 침사추이 킴벌리로드 25", lat:22.300848, lng:114.173222, stay:60},
+ {id:'hingkee', c:'food', n:"힝키 · 태풍 대피소 게", sub:"Hing Kee · 침사추이 네이선로드 180 1층", lat:22.302836, lng:114.172083, stay:75, hours:'16:00–02:00'},
+ {id:'hohochak', c:'food', n:"호호착 · 차오저우 요리", sub:"Ho Ho Chak · 침사추이 힐우드로드 38 9층", lat:22.302627, lng:114.17399, stay:75, hours:'12:00–22:00', closed:'월'},
+ {id:'sisterwah', c:'food', n:"시스터 와 · 양지 국수", sub:"Sister Wah · 틴하우", lat:22.283178, lng:114.191531, stay:40, hours:'11:00–22:45', wait:'식사 시간 줄'},
+ {id:'ozone', c:'bar', n:"오존 바 · 118층", sub:"OZONE · 리츠칼튼 ICC", lat:22.303379, lng:114.160226, stay:75, hours:'16:00–01:00', best:[1050,1380]},
+ {id:'redsugar', c:'bar', n:"레드 슈거 · 테라스 바", sub:"Red Sugar · 케리 호텔 7층 · 홍함", lat:22.301418, lng:114.189005, stay:75, hours:'16:00–24:00', best:[1020,1320]},
+ {id:'eyebar', c:'bar', n:"아이바 · 루프톱", sub:"eyebar · 아이스퀘어 30층", lat:22.296943, lng:114.171857, stay:60, hours:'15:00–24:00', best:[1080,1380]}
 ];
 const EVENTS = [
  {id:'sol', c:'event', from:'2026-11-18', to:'2026-11-18', when:'11/18(수) 20:00', n:'심포니 오브 라이트 마지막 공연 + 불꽃', sub:'침사추이 해변 · 19:30 전 자리 잡기', lat:22.2934, lng:114.1705, stay:60, fixed:1170, src:'https://www.thestandard.com.hk/news/article/348049/'},
- {id:'winter', from:'2026-11-18', to:'2027-01-05', when:'11/18~1/5', n:'윈터페스트 시작', sub:'크리스마스 장식 · 센트럴·침사추이'},
+ {id:'winter', from:'2026-11-18', to:'2027-01-05', when:'11/18~1/5', n:'윈터페스트 개막', sub:'센트럴 황후상 광장 22m 트리 · 매일 19시부터 조명 쇼'},
  {id:'badm', c:'event', from:'2026-11-17', to:'2026-11-22', when:'11/17~22', n:'홍콩 오픈 배드민턴', sub:'카이탁 아레나 · 유료', lat:22.321, lng:114.2, stay:150, approx:true},
  {id:'dins', c:'event', from:'2026-11-18', to:'2026-11-21', when:'11/18~21', n:'디자인인스파이어 전시', sub:'HKCEC · 완차이', lat:22.283, lng:114.1735, stay:90},
- {id:'mgp', macau:true, from:'2026-11-19', to:'2026-11-22', when:'11/19~22', n:'마카오 그랑프리', sub:'이 기간 숙소·페리 붐빔 · 도로 통제'}
+ {id:'mgp', macau:true, from:'2026-11-19', to:'2026-11-22', when:'11/19~22', n:'마카오 그랑프리', sub:'19·20일 연습·예선 · 외항 페리터미널 주변 통제 · 타이파행 배·원버스 추천'}
 ];
 const POOL = REC.concat(EVENTS.filter(e => e.lat));
 const poolFor = d => POOL.filter(p => p.c !== 'event' || (DATES[d.id] && p.from <= DATES[d.id] && DATES[d.id] <= p.to));
@@ -897,6 +948,110 @@ const Q = {
 };
 const OR = {singheung:'r-sing-heung-yuen-central-hong-kong-style-r10577', hohung:'r-%E4%BD%95%E6%B4%AA%E8%A8%98-%E9%8A%85%E9%91%BC%E7%81%A3-%E7%B2%B5%E8%8F%9C-%E5%BB%A3%E6%9D%B1-%E7%B2%A5%E5%93%81-r114105',
   fourseasons:'r-four-seasons-pot-rice-yau-ma-tei-hong-kong-style-r19509', onedim:'r-one-dim-sum-prince-edward-guangdong-dim-sum-r18164'};
+/*INFO-START*/
+const INFO = {
+ peak:{d:"센트럴에서 피크까지 오르는 130년 넘은 산악 트램.", t:"해 질 무렵 줄이 가장 김 · 오후 4시 전 탑승, 내려올 땐 15번 버스·택시", p:"편도 HK$82 · 왕복 HK$116 (자료 엇갈림)"},
+ st428:{d:"피크타워 옥상 해발 428m 유료 전망대.", t:"무료 전망은 피크 갤러리아 옥상·루가드 로드", p:"HK$80 · 트램 왕복 묶음 HK$182"},
+ lugard:{d:"피크타워에서 걸어서 15~20분, 빌딩 숲과 하버가 한눈에 보이는 무료 전망 산책로.", t:"조명이 적어 밤엔 휴대폰 손전등", p:"무료"},
+ esc:{d:"센트럴~미드레벨을 잇는 약 800m 옥외 에스컬레이터.", t:"10시 전엔 내려오는 방향만 운행 · 일부 구간 교체 공사 중", p:"무료"},
+ soho:{d:"스톤턴·엘긴 스트리트 일대 식당·바 골목.", t:"저녁 6시 전엔 해피아워 가격"},
+ pmq:{d:"옛 경찰 숙소를 고친 디자인 복합공간, 홍콩 디자이너 소품 가게와 전시.", t:"가게는 정오부터 열어 오전엔 닫힌 곳 많음", p:"무료"},
+ taikwun:{d:"옛 중앙경찰서·감옥을 보존한 문화예술 단지.", t:"전시관(JC 컨템포러리)은 11시 개관 · 월 휴관", p:"무료"},
+ manmo:{d:"1847년 무렵 지은 문무묘, 천장 가득 매달린 나선형 향.", t:"연기가 강함 · 기도 중인 사람 정면 촬영은 피하기", p:"무료"},
+ hkma:{d:"침사추이 해변의 시립 미술관, 창밖으로 하버 풍경.", t:"목요일 휴관(11/19) · 토·일은 21시까지", p:"상설 무료(특별전 별도)"},
+ aos:{d:"홍콩 영화인 손도장과 이소룡 동상이 있는 해변 산책로, 홍콩섬 야경 정면.", t:"11/18 20:00 심포니 오브 라이트 마지막 공연 · 매우 붐빔", p:"무료"},
+ ferry:{d:"침사추이~센트럴을 약 10분에 잇는 1888년 창업 페리.", t:"옥토퍼스로 바로 탑승 · 위층이 전망 좋음", p:"위층 평일 HK$5 · 주말 HK$6.5"},
+ temple:{d:"조던~야우마테이의 야시장, 노점과 길거리 음식.", t:"저녁 7시 이후 노점이 다 펴짐 · 흥정 기본"},
+ ladies:{d:"퉁초이 스트리트에 약 1km 이어지는 노점 시장, 옷·가방·기념품.", t:"부르는 값의 절반부터 흥정 · 현금"},
+ goldfish:{d:"관상어 가게 거리, 벽 가득 걸린 금붕어 비닐봉지.", t:"가게 안 촬영은 먼저 물어보기 · 레이디스 마켓에서 도보 5분"},
+ mplus:{d:"서구룡의 현대 시각문화 미술관(아시아 현대미술·디자인·건축).", t:"월 휴관(11/16) · 금요일만 22시까지", p:"HK$190"},
+ palace:{d:"베이징 고궁 소장품을 전시하는 박물관.", t:"화 휴관(11/17) · 매표 마감은 폐관 1시간 전", p:"상설 HK$70"},
+ artpark:{d:"M+와 고궁박물관 사이 바닷가 잔디 공원, 홍콩섬 일몰.", t:"그늘이 적어 해 질 무렵 추천", p:"무료"},
+ wheel:{d:"센트럴 부두 앞 60m 대관람차, 15~20분 탑승.", t:"야경 직전 5시쯤 타면 대기 짧음", p:"HK$20"},
+ k11:{d:"침사추이 해변의 예술 테마 쇼핑몰, 스타의 거리와 붙어 있음.", t:"B2 매닝스(드럭스토어): 백화유 소 약 HK$20 · 타이거밤 약 HK$45 · 달리 치약"},
+ harbourcity:{d:"캔톤로드의 홍콩 최대 쇼핑몰, 오션터미널 덱에서 일몰.", t:"구역(오션터미널·오션센터·게이트웨이) 먼저 확인 · 게이트웨이 3층 city'super: 이금기 소스·차·과자"},
+ lkf:{d:"센트럴의 바·클럽 거리.", t:"평일 밤 9시 전 해피아워 · 금·토는 매우 붐빔"},
+ starst:{d:"완차이 스타·문·선 스트리트의 조용한 카페·편집숍 골목.", t:"점심 전후가 적당 · 애드미럴티역 F 출구"},
+ taiping:{d:"셩완 언덕의 오래된 사당과 독립 카페·갤러리 골목.", t:"만모 사원에서 도보 5분 · 월요일 쉬는 가게 많음"},
+ bluehouse:{d:"1920년대 파란색 통라우 건물, 지금도 주민 거주.", t:"1층 이야기관은 수요일 휴무 자료 있음 · 외관은 상시", p:"무료"},
+ monster:{d:"5개 동이 맞붙은 초고밀도 아파트, 안마당에서 올려다보는 풍경.", t:"주민 거주지 · 짧게 조용히 · 삼각대·드론 금지"},
+ choihung:{d:"1960년대 무지개색 공공 아파트, 주차장 옥상 농구장이 사진 명소.", t:"재개발은 2028년 시작 예정, 농구장은 아직 남아 있는 것으로 보임 · 운동 중인 주민 우선"},
+ nanlian:{d:"당나라 양식 정원, 금색 정자와 연못.", t:"일방통행 동선 · 삼각대·음식 제한 · 옆 치린 수녀원 09:00–16:30", p:"무료"},
+ wts:{d:"소원이 잘 이뤄진다는 도교 사원, 점괘 막대(카우침).", t:"16:30에 닫음 · 웡타이신역 B2 출구 바로 앞", p:"무료"},
+ repulse:{d:"홍콩섬 남쪽의 초승달 모양 해변.", t:"센트럴 익스체인지 스퀘어에서 6·6X·260번 버스 2층 앞자리"},
+ stanley:{d:"홍콩섬 남단의 골목 시장과 해변 식당가.", t:"가게는 18:30쯤 닫음 · 리펄스베이 먼저 보고 이동"},
+ buddha:{d:"란타우섬 옹핑의 34m 청동 좌불, 케이블카로 올라감.", t:"평일 케이블카 10:00–18:00 · 운휴 땐 퉁청에서 23번 버스", p:"대불 무료 · 케이블카 왕복 HK$295"},
+ senado:{d:"물결무늬 타일이 깔린 마카오 구시가 중심 광장.", t:"성바울 유적·몬테 요새까지 걸어서 묶기"},
+ stpaul:{d:"1835년 화재로 정면 벽만 남은 17세기 성당 유적.", t:"몬테 요새 쪽으로 올라가 위에서 찍으면 사람이 덜 걸림", p:"무료"},
+ monte:{d:"성바울 유적 옆 언덕의 17세기 요새, 마카오 반도 전경.", t:"마카오 박물관 에스컬레이터로 계단 없이 오름", p:"무료"},
+ ama:{d:"마카오 지명의 유래가 된 15세기 마조 사원.", t:"세나도 광장에서 버스·택시 10분", p:"무료"},
+ mtower:{d:"338m 타워, 58·61층 전망대.", t:"전망대는 20시에 닫음 · 일몰 1시간 전 입장", p:"MOP208"},
+ eiffel:{d:"파리지앵 호텔 앞 1/2 크기 에펠탑, 37층 전망대.", t:"11/19(목)은 18:00부터 휴장(입장 마감 17:00)", p:"MOP98 · 6·7층만 MOP20"},
+ cunha:{d:"타이파 빌리지의 먹자골목, 아몬드 쿠키·육포 시식.", t:"베네시안에서 도보 약 15분"},
+ mcot:{d:"완차이 춘원가 골목의 작은 차찬탱, 밀크티와 번.", t:"좌석이 적어 합석 · 아침 8~10시가 한산"},
+ oms:{d:"1956년 창업 다이파이동, 센 불 볶음 요리.", t:"입구 기계로 번호표 · 저녁 7~8시가 가장 붐빔 · 월요일 휴무 자료 있음", p:"흑후추 감자 소고기 HK$138(2024) · 1인 HK$150~300"},
+ adc:{d:"조던의 차찬탱, 스크램블 에그 토스트와 우유 푸딩.", t:"합석·빠른 주문 · 현금 · 목요일 휴무", p:"세트 HK$50대(2023)"},
+ yung:{d:"진피(말린 귤껍질)로 향을 낸 거위구이집.", t:"아침 7시부터 영업 · 점심만 피하면 금방 앉음", p:"거위구이 5종 덮밥 HK$98 · 차슈 계란 덮밥 HK$78"},
+ kam:{d:"미쉐린 1스타 거위구이집.", t:"예약 불가 · 입구에서 번호표 · 14~17시가 한산", p:"거위 다리 덮밥 HK$80~180대(자료 엇갈림)"},
+ ohw:{d:"프랫 애비뉴의 길거리 간식 가게(카레 어묵·시우마이·튀김).", t:"서서 먹거나 포장 · 야식으로 적당", p:"5종 모둠 HK$20(2022)"},
+ north:{d:"베네시안 1층 중국 북방 요리 식당, 오픈 키친 수타면.", t:"누들 바 좌석은 예약 때 요청", p:"1인 MOP200~300 추정"},
+ timho:{d:"미쉐린 딤섬집, 차슈 번이 대표."},
+ tsimchai:{d:"큼직한 새우 완탕·어묵·소고기 토핑 국수."},
+ kaukee:{d:"소고기 양지 국수와 카레 양지 국수."},
+ lanfong:{d:"스타킹 밀크티 원조, 폭찹 번."},
+ taicheong:{d:"쿠키 타르트지 에그타르트."},
+ singheung:{d:"노천 다이파이동, 토마토 국물 라면과 레몬 꿀 바삭 번."},
+ yatlok:{d:"미쉐린 거위구이, 거위 다리 쌀국수."},
+ maxim:{d:"시티홀 2층 대형 얌차홀, 수레 딤섬."},
+ hohung:{d:"완탕면·콘지, 미쉐린 수록."},
+ joyhing:{d:"차슈 덮밥 노포."},
+ mido:{d:"1950년 개업 옛 차찬탱, 타일·창틀 그대로."},
+ fourseasons:{d:"숯불 뚝배기밥(보짜이판)."},
+ onedim:{d:"가성비 딤섬집."},
+ kamwah:{d:"버터 끼운 파인애플번과 밀크티."},
+ wongchikei:{d:"마카오 완탕면 노포, 새우알 비빔면."},
+ margaret:{d:"마카오식 에그타르트."},
+ lordstow:{d:"마카오 에그타르트 원조(콜로안 본점)."},
+ jenny:{d:"곰돌이 틴케이스 버터쿠키.", t:"현금 준비 · 셩완점 줄이 더 짧음", p:"4믹스 소 약 HK$80"},
+ god:{d:"홍콩 옛 간판·우체통 무늬 생활 소품 브랜드.", t:"에코백·양말·머그 기념품 · 타이퀀·PMQ 가는 길"},
+ donki:{d:"일본 돈키호테 홍콩 1호점, 과자·라면·주류·화장품.", t:"24시간 영업으로 알려짐(2026년 미확인)"},
+ theone:{d:"네이선로드의 고층 몰, 성품서점(eslite)이 2026년 6월 입점.", t:"바로 옆이 미라 플레이스(돈키)"},
+ sneakers:{d:"운동화·스포츠 매장이 몰린 거리.", t:"한정판 구경용, 값이 꼭 싸진 않음 · 남쪽으로 내려가 레이디스 마켓으로"},
+ langham:{d:"몽콕역과 이어진 15층 쇼핑몰, 긴 에스컬레이터.", t:"23시까지 · 야시장 보고 들르기 좋음"},
+ timessq:{d:"코즈웨이베이 대표 쇼핑몰.", t:"역 A 출구가 지하로 연결"},
+ hysan:{d:"역과 이어진 17층 몰, 화장품·패션·편집숍.", t:"SOGO 맞은편 · 금·토 23시까지"},
+ sogo:{d:"일본계 백화점.", t:"지하 식품관에서 과자·차 선물"},
+ fashionwalk:{d:"실내 몰과 거리 매장이 섞인 패션 구역, 푸드 스트리트.", t:"SOGO 뒤편 도보 3분"},
+ ifc:{d:"공항철도 홍콩역 위 쇼핑몰.", t:"기화병가(1층 · 09:00–20:00) 펑리수·에그롤 · city'super · 마지막 날 기념품"},
+ leetung:{d:"가로수 보행자 쇼핑 거리, 카페·디저트·소품.", t:"연말 장식 사진 · 베이크하우스 완차이 본점 도보 5분"},
+ catst:{d:"골동품·옛 포스터·옥 장신구 골목.", t:"흥정 가능 · 현금 · 일요일 쉬는 가게 있음"},
+ citygate:{d:"공항 옆 아웃렛, 스포츠·중가 브랜드 할인.", t:"출국일이나 옹핑 케이블카 날에 묶기"},
+ bakehouse:{d:"사워도우 에그타르트로 유명한 빵집.", t:"저녁 7시쯤 품절되기도 · 소호(스톤턴 5)·코즈웨이베이점도 있음", p:"에그타르트 약 HK$12.5"},
+ hashtagb:{d:"나폴레옹(캐러멜 천겹) 타르트로 줄 서는 빵집.", t:"천겹 타르트는 정해진 시간에만 나옴 · 1인 수량 제한", p:"천겹 타르트 HK$18~23"},
+ cheunghing:{d:"상하이식 군만두(성젠바오) 포장 전문, 미쉐린 수록.", t:"육즙이 뜨거움 · 한입에 넣지 않기"},
+ kaikai:{d:"미쉐린 길거리 음식에 오른 탕수이 가게, 흑임자죽·생강 탕위안.", t:"2025년 9월 이 주소로 이전"},
+ feijie:{d:"오징어·대창 꼬치에 겨자 소스.", t:"현금 · 영업시간 자료 엇갈림", p:"꼬치당 약 HK$15"},
+ kungwo:{d:"1893년부터 이어진 두부 가게.", t:"합석 · 현금 · 흑설탕 뿌려 먹기", p:"두부푸딩 HK$11 · 두유 HK$10"},
+ hopyik:{d:"쌀 롤(청펀)에 간장·땅콩·단 소스, 미쉐린 수록.", t:"현금 · 서서 먹거나 합석"},
+ luklam:{d:"삼수이포의 오래된 탕수이 가게.", t:"애문생 저녁 뒤 디저트로 · 도보 권", p:"망고 포멜로 사고 HK$53"},
+ leekeung:{d:"원조 에그와플(까이단자이), 한 가지 맛.", t:"현금", p:"HK$28"},
+ makman:{d:"완탕면 노포, 굴소스 비빔면도 인기.", t:"양이 적음 · 자정 넘어까지 영업", p:"새우 완탕면 약 HK$45"},
+ linheung:{d:"백 년 얌차집의 24시간 지점(2025년 5월 개점), 수레 딤섬.", t:"오전 11시 전이 저렴 · 호텔에서 도보 약 12분", p:"연밥 앙금 빵 HK$35"},
+ hingkee:{d:"마늘 튀김을 얹은 태풍 대피소식 게 요리, 미쉐린 수록.", t:"게는 시가 · 주문 전 값 묻기"},
+ hohochak:{d:"2026년 빕 구르망에 새로 오른 차오저우 요리집.", t:"영업시간 자료 엇갈림 · 예약 전화 권장"},
+ sisterwah:{d:"맑은 국물 소고기 양지 국수, 미쉐린 수록.", t:"카드 불가 · 현금·옥토퍼스·알리페이"},
+ ozone:{d:"118층 호텔 바, 하버 전체 조망.", t:"스마트 캐주얼(슬리퍼·운동복 불가) · 테이블 최소 주문 있음"},
+ redsugar:{d:"하버 쪽 야외 테라스가 넓은 호텔 바.", t:"해피아워 16–20시 · 호텔 아이콘에서 해변 산책로로 도보 15~20분"},
+ eyebar:{d:"30층 루프톱 바, 하버 정면 야경.", t:"2026년 영업시간 미확인 · 가기 전 확인"}
+};
+const COURSES = [
+ {e:"🛍️", n:"침사추이 쇼핑", ids:["jenny", "bakehouse", "harbourcity", "cheunghing", "theone", "donki", "hashtagb"], min:270},
+ {e:"🛍️", n:"코즈웨이베이 쇼핑", ids:["timessq", "hysan", "sogo", "fashionwalk", "sisterwah"], min:240},
+ {e:"🛍️", n:"몽콕 쇼핑", ids:["langham", "sneakers", "feijie", "ladies"], min:210},
+ {e:"🍡", n:"삼수이포 간식", ids:["kungwo", "hopyik", "luklam"], min:60}
+];
+/*INFO-END*/
+const infoOf = s => INFO[s.rec || s.id];
 const qOf = s => Q[s.rec || s.id];
 function estWait(s, t, w){ const q = qOf(s); if(!q || !q.w) return 0;
   const dt = /[토일]/.test(w) ? 'we' : 'wd', m = ((t % 1440) + 1440) % 1440; let r = 0;
@@ -1013,7 +1168,7 @@ function drawMap(){
     const m = L.marker([p.lat,p.lng], {icon, title:p.n, pid:p.id, zIndexOffset:LM[p.id] ? -400 : -500}).addTo(recLayer);
     m.on('popupopen', () => { recOpen = p.id; }).on('popupclose', () => { if(recOpen === p.id) recOpen = null; });
     mkList.push({m, pri:LM[p.id] ? 30 : p.c === 'food' ? 40 : 50, name:nm, ph:!!pid, r:LM[p.id] ? 20 : 13});
-    m.bindPopup(() => { const box = h('div','pop'); if(pid) box.append(phBox(pid, p.n)); box.append(h('b',null,p.n), h('div','m',recMeta(p)));
+    m.bindPopup(() => { const box = h('div','pop'); if(pid) box.append(phBox(pid, p.n)); box.append(h('b',null,p.n)); const inf = INFO[p.id]; if(inf && inf.d) box.append(h('div','d',inf.d)); box.append(h('div','m',recMeta(p))); if(inf && inf.t) box.append(h('div','d','💡 ' + inf.t));
       const ol = orLink(p.id); if(ol) box.append(ol);
       const b = h('button',null,'＋ '+day.tab.replace(/^\S+\s/,'')+'에 추가'); b.type = 'button';
       b.addEventListener('click', () => { map.closePopup(); addPlace(p); }); box.append(b); return box; }, popOpt());
@@ -1054,7 +1209,7 @@ function toggleGps(){ const b = document.getElementById('gps');
 function h(tag, cls, text){ const e = document.createElement(tag); if(cls) e.className = cls; if(text!=null) e.textContent = text; return e; }
 const hm = m => { m = ((Math.round(m) % 1440) + 1440) % 1440; return String(Math.floor(m/60)).padStart(2,'0') + ':' + String(m%60).padStart(2,'0'); };
 const toMin = t => { const [a,b] = String(t).split(':').map(Number); return a*60 + (b||0); };
-const recMeta = p => { const q = Q[p.id], pk = qPeak(q); return [p.when, p.sub, p.hours && '영업 '+p.hours, p.best && `추천 ${hm(p.best[0])}–${hm(p.best[1])}`, (q || p.wait) && '⏳ ' + (pk ? `붐빌 때 약 ${pk}분 · ` : '') + (q ? q.t : p.wait), p.closed && p.closed+' 휴무', p.tip].filter(Boolean).join(' · '); };
+const recMeta = p => { const q = Q[p.id], pk = qPeak(q), inf = INFO[p.id]; return [p.when, p.sub, p.hours && '영업 '+p.hours, inf && inf.p && '💰 '+inf.p, p.best && `추천 ${hm(p.best[0])}–${hm(p.best[1])}`, (q || p.wait) && '⏳ ' + (pk ? `붐빌 때 약 ${pk}분 · ` : '') + (q ? q.t : p.wait), p.closed && p.closed+' 휴무', p.tip].filter(Boolean).join(' · '); };
 function hoursOf(s){ const m = /(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})/.exec(s.hours || ''); if(!m) return null;
   const o = +m[1]*60 + +m[2]; let c = +m[3]*60 + +m[4]; if(c <= o) c += 1440; return [o, c]; }
 function schedule(d, rs){
@@ -1099,10 +1254,20 @@ function optimizeDay(){
   day.stops = [...order, ...day.stops.filter(x => !rs.includes(x))]; changed();
   toast(`순서 변경 · 이동 ${before}분 → ${schedule(day).travel}분`, () => { day.stops = prev; changed(); });
 }
-function addPlace(p){
-  const s = {id:p.id+'-'+Date.now().toString(36), rec:p.id, name:p.n, sub:[p.when, p.sub].filter(Boolean).join(' · '), lat:p.lat, lng:p.lng, stay:p.stay ?? 45};
+let stopSeq = 0;
+function mkStop(p){
+  const s = {id:p.id+'-'+Date.now().toString(36)+(stopSeq++), rec:p.id, name:p.n, sub:[p.when, p.sub].filter(Boolean).join(' · '), lat:p.lat, lng:p.lng, stay:p.stay ?? 45};
   for(const k of ['best','hours','closed','fixed','approx']) if(p[k] != null) s[k] = p[k];
-  if(p.tip) s.note = p.tip; if(p.wait) s.waitTip = p.wait;
+  if(p.tip) s.note = p.tip; if(p.wait) s.waitTip = p.wait; return s; }
+// a course goes in as one block after the last stop, in its own walking order
+function addCourse(c){ const prev = day.stops.slice(), wasEdited = day.edited, have = new Set(day.stops.map(s => s.rec));
+  const add = c.ids.filter(id => !have.has(id)).map(id => REC.find(p => p.id === id)).filter(Boolean).map(mkStop); if(!add.length) return;
+  const tbd = day.stops.findIndex(x => x.kind==='plain' && /^tbd/.test(x.id)); if(tbd >= 0) day.stops.splice(tbd, 1);
+  const rs = routeStops(day); day.stops.splice(rs.length ? day.stops.indexOf(rs[rs.length-1]) + 1 : 0, 0, ...add);
+  sel = add[0]; changed(); fit();
+  toast(`${c.n} ${add.length}곳 추가`, () => { day.stops = prev; day.edited = wasEdited; sel = null; savePlan(); render(); }); }
+function addPlace(p){
+  const s = mkStop(p);
   const tbd = day.stops.findIndex(x => x.kind==='plain' && /^tbd/.test(x.id)); if(tbd >= 0) day.stops.splice(tbd, 1);
   const rs = routeStops(day); let bi = rs.length, bc = Infinity;
   for(let i = rs.length ? 1 : 0; i <= rs.length; i++){ const t = rs.slice(); t.splice(i, 0, s); const c = schedule(day, t).cost; if(c < bc){ bc = c; bi = i; } }
@@ -1136,15 +1301,19 @@ function drawSheet(){
   for(const [k, lbl] of [['all','전체'], ...Object.entries(CATS).map(([k,v]) => [k, v[0]+' '+v[1]])]){
     const b = h('button','chip',lbl); b.type = 'button'; b.setAttribute('aria-pressed', sheetCat===k); b.addEventListener('click', () => { sheetCat = k; drawSheet(); }); cats.append(b); }
   const ref = refPoint(), q = document.getElementById('q').value.trim().toLowerCase(), inDay = new Set(day.stops.map(s => s.rec));
+  const cz = document.getElementById('courses'); cz.textContent = '';
+  if(!day.nomap && DATES[day.id]) for(const c of COURSES){ const b = h('button','chip', `${c.e} ${c.n} · ${c.ids.length}곳 · 약 ${c.min >= 60 ? (c.min / 60) + '시간' : c.min + '분'}`); b.type = 'button';
+    b.disabled = c.ids.every(id => inDay.has(id)); b.addEventListener('click', () => addCourse(c)); cz.append(b); }
   let items = poolFor(day).filter(p => (sheetCat==='all' || p.c===sheetCat) && (!q || (p.n+' '+p.sub).toLowerCase().includes(q)))
     .map(p => [dist(ref.lat,ref.lng,p.lat,p.lng), p]).filter(x => q || x[0] < 30000).sort((a,b) => a[0]-b[0]);
   if(q) items = items.concat(searchRes.filter(p => !items.some(x => x[1].n===p.n)).map(p => [dist(ref.lat,ref.lng,p.lat,p.lng), p]));
   document.getElementById('sref').textContent = '거리 기준: ' + (me ? '내 위치' : '이 날 동선');
   const ul = document.getElementById('recs'); ul.textContent = '';
   for(const [d, p] of items){ const li = h('li','rec'), b = h('div'), has = inDay.has(p.id);
-    b.append(h('div','n',p.n), h('div','m',fmt(d)+' · '+recMeta(p)));
+    b.append(h('div','n',p.n)); if(INFO[p.id] && INFO[p.id].d) b.append(h('div','d1',INFO[p.id].d)); b.append(h('div','m',fmt(d)+' · '+recMeta(p)));
     const add = h('button', null, has ? '추가됨' : '추가'); add.type = 'button'; add.disabled = has; add.addEventListener('click', () => addPlace(p));
-    li.append(h('div','e',(CATS[p.c] || ['📍'])[0]), b, add);
+    const e = h('div','e',(CATS[p.c] || ['📍'])[0]); if(PH[p.id]){ const im = h('img'); im.src = phUrl(p.id, 250); im.alt = ''; im.loading = 'lazy'; im.addEventListener('error', () => im.remove()); e.append(im); }
+    li.append(e, b, add);
     li.addEventListener('click', e => { if(e.target.closest('button')) return; centerOn(p.lat, p.lng, 16); document.getElementById('mapwrap').scrollIntoView({block:'nearest', behavior:'smooth'}); });
     ul.append(li); }
   if(!items.length) ul.append(h('li','m', q ? '검색 결과 없음' : '없음'));
@@ -1193,8 +1362,11 @@ function drawList(){
     body.append(nm);
     if(s.sub) body.append(h('div','hours',s.sub));
     { const pid = phId(s); if(pid && !editMode) body.append(phStrip(pid, s.name)); }
+    const inf = infoOf(s); if(inf && inf.d) body.append(h('div','desc',inf.d));
     if(s.note) body.append(h('div','note',s.note));
     if(s.hours) body.append(h('div','hours','영업 '+s.hours));
+    if(inf && inf.p) body.append(h('div','hours','💰 '+inf.p));
+    if(inf && inf.t) body.append(h('div','tip','💡 '+inf.t));
     if(info) for(const w of info.warn) body.append(h('div','warn',w));
     if(s.best && !(info && info.warn.some(w => w.includes('추천')))) body.append(h('div','tip',`추천 ${hm(s.best[0])}–${hm(s.best[1])}`));
     { const q = qOf(s), wt = q ? q.t : s.waitTip, n = info ? info.wait : 0;
@@ -1280,6 +1452,10 @@ lbs.addEventListener('click', e => { if(e.target.tagName === 'IMG'){ const n = P
 document.getElementById('lbx').addEventListener('click', closeLb);
 document.addEventListener('keydown', e => { if(!lbId) return; if(e.key === 'Escape') closeLb();
   else if(e.key === 'ArrowRight' || e.key === 'ArrowLeft') lbs.scrollBy({left:(e.key === 'ArrowRight' ? 1 : -1) * lbs.clientWidth, behavior:'smooth'}); });
+const GUIDE = [["📅 여행 4일 휴관·행사", [["11/16 월", "M+ 휴관"], ["11/17 화", "고궁박물관 휴관"], ["11/18 수", "심포니 오브 라이트 마지막 공연 20:00 + 불꽃 · 윈터페스트 개막 · 미도카페 휴무"], ["11/19 목", "홍콩미술관 휴관 · 오스트레일리아 데일리컴퍼니 휴무 · 심포니 오브 라이트 없음 · 마카오 그랑프리 연습일"], ["날씨 평년", "최고 24.5° · 최저 20.3° · 얇은 겉옷"]]], ["🚇 교통·결제", [["옥토퍼스(관광객용)", "HK$39 · 보증금 없음 · 잔액만 환불"], ["아이폰", "'Octopus for Tourists' 앱 · 해외 Visa·Mastercard 충전 (한국 카드 미확인)"], ["A21 버스", "공항→침사추이 이스트 · HK$34.6 · 10~20분 간격 · 60~75분"], ["공항철도", "구룡역 HK$105 · 홍콩역 HK$120 · 약 24분"], ["MTR", "하늘색 개찰구에서 Visa·Mastercard 컨택리스"], ["택시(빨간색)", "기본 2km HK$29 · 이후 200m당 HK$2.1 · 해저터널 HK$25~50 · 짐 1개 HK$6"], ["스타페리", "위층 평일 HK$5 · 주말 HK$6.5"], ["피크트램", "편도 HK$82 · 왕복 HK$116 (자료 엇갈림)"]]], ["🛍️ 쇼핑 메모", [["세금", "부가세·환급 없음 · 식당은 봉사료 10% 많음"], ["쇼핑몰", "10~11시 개점 · 22시 폐점"], ["결제", "몰·체인 카드 OK · 노포·간식집은 현금·옥토퍼스"], ["비닐봉투", "장당 HK$1 이상"], ["드럭스토어", "백화유 · 타이거밤 · 달리 치약 · 닌지옴 캔디 (매닝스·왓슨스)"], ["과자 선물", "제니 베이커리 쿠키 · 기화병가 펑리수·에그롤 · 이금기 소스"], ["11/18부터", "윈터페스트 할인(알리페이 QR)"]]], ["⛴️ 마카오 가는 법", [["침사추이 페리터미널", "마카오행 없음 (주하이행만)"], ["터보젯", "셩완 → 마카오 외항 · 07:30~22:30 · 약 60분 · 평일 HK$194 · 주말 HK$212 · 야간 HK$242"], ["코타이 워터젯", "셩완 → 타이파 · 07:30~22:30 · 평일 HK$192 · 베네시안 무료 셔틀"], ["원버스", "조던 캔톤로드 505 → 샌즈·런더너·베네시안 · 평일 낮 HK$160 · 저녁·주말 HK$180"], ["대교 셔틀버스", "HK$65 · 24시간 · 홍콩 쪽 터미널까지 1시간 이상"], ["11/19~22", "그랑프리로 외항 터미널 주변 통제 → 타이파행 배·원버스"]]]];
+{ const g = document.getElementById('guide');
+  for(const [t, rows] of GUIDE){ const d = h('details','gd'), dl = h('dl'); d.append(h('summary', null, t));
+    for(const [k, v] of rows) dl.append(h('dt', null, k), h('dd', null, v)); d.append(dl); g.append(d); } }
 document.getElementById('gps').addEventListener('click', toggleGps);
 document.getElementById('routeclr').addEventListener('click', clearRoute);
 document.getElementById('ztoilet').addEventListener('click', toggleToilet);

@@ -276,7 +276,9 @@ function routeMsg(t){ document.getElementById('routemsg').hidden = false; docume
 // shortcut: route drawn once from where you are when tapped; tap again to refresh as you walk
 async function routeTo(s){
   if(!me){ pendingRoute = s; routeMsg('내 위치 찾는 중…'); if(watchId===null) toggleGps(); return; }
-  const car = dist(me.lat,me.lng,s.lat,s.lng) > 4000, prof = car ? 'car' : 'foot';
+  const far = dist(me.lat,me.lng,s.lat,s.lng);
+  if(far > 100000){ routeLayer.clearLayers(); routeMsg('지금 홍콩에서 '+fmt(far)+' 떨어져 있어요. 홍콩에 도착하면 경로가 나와요 ✈️'); return; }
+  const car = far > 4000, prof = car ? 'car' : 'foot';
   routeMsg('경로 찾는 중…');
   try{
     const r = await (await fetch(`https://routing.openstreetmap.de/routed-${prof}/route/v1/${car?'driving':'foot'}/${me.lng},${me.lat};${s.lng},${s.lat}?overview=full&geometries=geojson`)).json();
@@ -379,6 +381,7 @@ for(const d of DAYS){ const b = h('button','tab',d.tab); b.type='button'; b.id='
   if(d.date) b.append(h('small',null,d.date)); b.addEventListener('click', () => setDay(d.id, true)); tabs.append(b); }
 
 document.getElementById('gps').addEventListener('click', toggleGps);
+document.getElementById('routeclr').addEventListener('click', clearRoute);
 document.getElementById('zrt').addEventListener('click', () => { const c = me || map.getCenter(); openRt('_here', c.lat, c.lng, document.getElementById('herert')); });
 document.getElementById('zfit').addEventListener('click', () => { sel = null; fit(); render(); });
 document.getElementById('reset').addEventListener('click', () => { for(const s of day.stops) delete done[s.id]; save(); render(); });

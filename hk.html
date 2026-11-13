@@ -74,7 +74,7 @@ h1{font-family:var(--display);font-weight:400;font-size:28px;color:var(--accent)
 .map{--ctop:8px}
 .zoom,.lay{position:absolute;top:var(--ctop);display:flex;flex-direction:column;gap:6px;z-index:500;transition:opacity .15s}
 .zoom{right:8px}
-.lay{left:8px}
+.lay{left:8px;flex-wrap:wrap;align-content:flex-start;max-height:calc(100% - var(--ctop) - 8px)}
 .zoom button,.lay button{width:46px;height:44px;padding:0;border-radius:14px;border:2px solid var(--line);background:var(--surface);color:var(--ink);display:grid;place-items:center;align-content:center;gap:2px;font:700 9.5px/1 var(--body);box-shadow:0 2px 0 var(--line)}
 .zoom svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .lay b,.zoom b{font-size:16px;font-weight:400;line-height:1}
@@ -83,7 +83,7 @@ h1{font-family:var(--display);font-weight:400;font-size:28px;color:var(--accent)
 .catp .chip{justify-content:flex-start;font-size:12px;padding:4px 7px;gap:2px}
 .catp .chip:last-child{grid-column:1 / -1;justify-content:center;color:var(--muted)}
 .map.popon .catp{display:none}
-@media (pointer:fine){ .lay,.catp{top:calc(var(--ctop) + 78px)} }
+@media (pointer:fine){ .lay,.catp{top:calc(var(--ctop) + 78px)} .lay{max-height:calc(100% - var(--ctop) - 86px)} }
 @media (pointer:coarse){ .leaflet-control-zoom{display:none} }
 .maphint{position:absolute;left:8px;bottom:8px;font-size:11px;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:2px 6px}
 .nomap{border:1px dashed var(--line);border-radius:12px;padding:14px;color:var(--muted);font-size:13px}
@@ -184,6 +184,8 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .leg:hover{color:var(--ink)}
 .tpin{width:22px;height:22px;border-radius:7px;background:#3b82c4;border:2px solid #fff;display:grid;place-items:center;font-size:12px;box-shadow:0 1px 3px rgba(0,0,0,.35)}
 #ztoilet[aria-pressed="true"]{background:#3b82c4;border-color:#3b82c4;color:#fff}
+#zsmoke[aria-pressed="true"]{background:#7d6b72;border-color:#7d6b72;color:#fff}
+.tpin.sm{background:#7d6b72}
 .tab .wx{margin-left:4px;font-size:12px}
 .dwx{font-size:12.5px;color:var(--muted)}
 .share{margin-left:auto;font-size:12.5px;font-weight:700;border:2px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 11px}
@@ -407,6 +409,7 @@ html.mm .dayhead h2{display:none}
         <div class="lay">
           <button type="button" id="zrec" aria-pressed="true" aria-expanded="false" aria-controls="catp"><b>⭐</b><span>추천</span></button>
           <button type="button" id="ztoilet" aria-pressed="false"><b>🚻</b><span>화장실</span></button>
+          <button type="button" id="zsmoke" aria-pressed="false"><b>🚬</b><span>흡연</span></button>
           <button type="button" id="zrt"><b>🚏</b><span>실시간</span></button>
           <button type="button" id="zask" aria-controls="memo"><b>💬</b><span>질문</span></button>
         </div>
@@ -455,6 +458,7 @@ html.mm .dayhead h2{display:none}
       <div class="guide" id="guide"></div>
       <div class="foot" id="foot" hidden>
         <span>🚻 = 가까운 화장실 3곳 · 확대하면 전부 표시 (OpenStreetMap 자료)</span>
+        <span>🚬 = 흡연실 21곳 · 공항·마카오 카지노 위주 (OpenStreetMap 자료 11/14)</span>
         <span>「🚏 실시간」 = 근처 MTR·KMB 버스 도착 시간(정부 공개 자료). 지도 위 🚏 = 내 위치(없으면 지도 가운데) 근처. 시티버스(홍콩섬 대부분)는 안 나옵니다.</span>
         <span>🧭 길찾기 = 내 위치(홍콩 밖이면 이전 장소)에서 도보·MTR·택시 중 빠른 길 · 이동 줄을 눌러도 같은 안내</span>
         <span>영업시간은 Google 지도 기준이며 바뀔 수 있습니다.</span>
@@ -1029,6 +1033,15 @@ function drawToilets(){
         const bt = h('button', null, '🧭 길찾기'); bt.type = 'button'; bt.addEventListener('click', () => { map.closePopup(); showRoute(o, originNear()); }); box.append(bt); return box; })
       .addTo(toiletLayer); }
 }
+// smoking rooms: few are mapped, street smoking outside no-smoking areas is legal in both cities
+const SMOKE = [[22.31773,113.93009,"공항 흡연실"],[22.3372,114.17543,"흡연 구역"],[22.31307,113.91665,"공항 흡연실"],[22.31002,113.91714,"공항 흡연실"],[22.3095,113.91735,"공항 흡연실"],[22.30722,113.91884,"공항 흡연실"],[22.33734,114.17532,"흡연 구역"],[22.31389,114.04047,"흡연 구역"],[22.39036,114.20954,"흡연 구역"],[22.14696,113.56542,"런더너 카지노 안 흡연실"],[22.14494,113.5654,"런더너 그랜드 카지노 안 흡연실"],[22.14442,113.57439,"그랜드 리스보아 팰리스 카지노 안 흡연실"],[22.1463,113.56795,"MGM 코타이 카지노 안 흡연실"],[22.14568,113.55184,"브로드웨이 카지노 안 흡연실"],[22.1413,113.56167,"스튜디오 시티 카지노 안 흡연실"],[22.14789,113.57209,"윈 팰리스 카지노 안 흡연실"],[22.14853,113.56049,"베네시안 카지노 안 흡연실"],[22.14838,113.55432,"갤럭시 카지노 안 흡연실"],[22.14543,113.56267,"플라자 마카오 카지노 안 흡연실"],[22.31512,113.93303,"공항 흡연실"],[22.30536,114.16438,"흡연 구역"]], smokeLayer = L.layerGroup().addTo(map);
+function toggleSmoke(){ const btn = document.getElementById('zsmoke'), on = btn.getAttribute('aria-pressed') !== 'true'; btn.setAttribute('aria-pressed', on); smokeLayer.clearLayers();
+  if(!on){ if(routeCur && routeCur.s.id === 'smoke') clearRoute(); return; }
+  const obj = t => ({id:'smoke', name:t[2], lat:t[0], lng:t[1]});
+  for(const t of SMOKE) L.marker([t[0], t[1]], {icon:L.divIcon({className:'', html:'<div class="tpin sm">🚬</div>', iconSize:[22,22], iconAnchor:[11,11]}), zIndexOffset:-300, title:t[2]})
+    .bindPopup(() => { const box = h('div','pop'), bt = h('button', null, '🧭 길찾기'); bt.type = 'button'; bt.addEventListener('click', () => { map.closePopup(); showRoute(obj(t), originNear()); }); box.append(h('b', null, t[2]), bt); return box; }).addTo(smokeLayer);
+  const [o, lbl] = originNear(), near = SMOKE.map(t => [dist(o.lat, o.lng, t[0], t[1]), t]).sort((a, b) => a[0] - b[0])[0];
+  if(near[0] < 1500) showRoute(obj(near[1]), [o, lbl]); else toast('근처 흡연실 없음 · 길거리는 금연구역 밖 가능'); }
 async function toggleToilet(){
   const btn = document.getElementById('ztoilet'); showToilet = !showToilet; btn.setAttribute('aria-pressed', showToilet);
   if(!showToilet){ toiletLayer.clearLayers(); if(routeCur && routeCur.s.id === 'wc') clearRoute(); return; }
@@ -1783,6 +1796,8 @@ document.addEventListener('keydown', e => { if(e.key === 'Escape' && !document.g
   else if(e.key === 'ArrowRight' || e.key === 'ArrowLeft') lbs.scrollBy({left:(e.key === 'ArrowRight' ? 1 : -1) * lbs.clientWidth, behavior:'smooth'}); });
 ZH.lordstowt = ZH.lordstow; if(PH.lordstow) PH.lordstowt = PH.lordstow.map(x => [x[0], x[1], x[2], 2]);
 const GUIDE = [["📅 여행 4일 휴관·행사", [["11/16 월", "M+ 휴관"], ["11/17 화", "고궁박물관 휴관"], ["11/18 수", "심포니 오브 라이트 마지막 공연 20:00 + 불꽃 · 윈터페스트 개막 · 미도카페 휴무"], ["11/19 목", "홍콩미술관 휴관 · 오스트레일리아 데일리컴퍼니 휴무 · 심포니 오브 라이트 없음 · 마카오 그랑프리 연습일"], ["날씨 평년", "최고 24.5° · 최저 20.3° · 얇은 겉옷"]]], ["🚇 교통·결제", [["옥토퍼스(관광객용)", "HK$39 · 보증금 없음 · 잔액만 환불"], ["아이폰", "'Octopus for Tourists' 앱 · 해외 Visa·Mastercard 충전 (한국 카드 미확인)"], ["A21 버스", "공항→침사추이 이스트 · HK$34.6 · 10~20분 간격 · 60~75분"], ["공항철도", "구룡역 HK$105 · 홍콩역 HK$120 · 약 24분"], ["MTR", "하늘색 개찰구에서 Visa·Mastercard 컨택리스"], ["택시(빨간색)", "기본 2km HK$29 · 이후 200m당 HK$2.1 · 해저터널 HK$25~50 · 짐 1개 HK$6"], ["스타페리", "위층 평일 HK$5 · 주말 HK$6.5"], ["피크트램", "편도 HK$82 · 왕복 HK$116 (자료 엇갈림)"]]], ["⚠️ 현지 규칙", [["MTR 안 음식·음료", "물 포함 금지 · 최고 HK$2,000"], ["쓰레기·침", "HK$3,000"], ["흡연", "금연구역·대중교통 줄에서 HK$3,000"], ["전자담배", "반입 금지 · 공공장소에서 갖고만 있어도 HK$3,000"], ["담배·술 면세", "궐련 19개비 · 술 1L"], ["무단횡단", "최고 HK$2,000"], ["비둘기·원숭이 먹이", "HK$5,000"], ["호텔", "일회용 세면도구·생수 무료 제공 안 함"], ["식당", "봉사료 10% (차찬탱은 없음) · 딤섬집 찻값 1인 HK$3~20 · 합석 기본"], ["택시 결제", "QR·옥토퍼스·카드 중 차마다 다름 · 현금 가능"], ["MTR 막차", "침사추이 → 센트럴 00:54쯤"], ["전압", "220V · G형 3핀"], ["입국", "입국카드 없음 · 무비자 90일 · 자동출입국은 도착 후 현장 등록"], ["마카오", "여권 필수 · 무비자 90일 · 홍콩달러 1:1 통용(거스름돈은 파타카) · 옥토퍼스는 버스에서 안 됨"]]], ["🛍️ 쇼핑 메모", [["세금", "부가세·환급 없음 · 식당은 봉사료 10% 많음"], ["쇼핑몰", "10~11시 개점 · 22시 폐점"], ["결제", "몰·체인 카드 OK · 노포·간식집은 현금·옥토퍼스"], ["비닐봉투", "장당 HK$1 이상"], ["드럭스토어", "백화유 · 타이거밤 · 달리 치약 · 닌지옴 캔디 (매닝스·왓슨스)"], ["과자 선물", "제니 베이커리 쿠키 · 기화병가 펑리수·에그롤 · 이금기 소스"], ["11/18부터", "윈터페스트 할인(알리페이 QR)"]]], ["⛴️ 마카오 가는 법", [["침사추이 페리터미널", "마카오행 없음 (주하이행만)"], ["터보젯", "셩완 → 마카오 외항 · 07:30~22:30 · 약 60분 · 평일 HK$194 · 주말 HK$212 · 야간 HK$242"], ["코타이 워터젯", "셩완 → 타이파 · 07:30~22:30 · 평일 HK$192 · 베네시안 무료 셔틀"], ["원버스", "조던 캔톤로드 505 → 샌즈·런더너·베네시안 · 평일 낮 HK$160 · 저녁·주말 HK$180"], ["대교 셔틀버스", "HK$65 · 24시간 · 홍콩 쪽 터미널까지 1시간 이상"], ["11/19~22", "그랑프리로 외항 터미널 주변 통제 → 타이파행 배·원버스"]]]];
+{ const g = GUIDE.find(x => x[0].includes('현지 규칙')), k = g ? g[1].findIndex(r => r[0] === '흡연') : -1;
+  if(k >= 0) g[1].splice(k + 1, 0, ['흡연 가능', '금연구역 밖 길거리 (전면 금지 아님) · 🚬 버튼 = 흡연실'], ['흡연 금지', '실내 공공장소 · 해변·수영장 · 대중교통과 타는 줄 · 학교·병원 출입구 3m · 공항은 흡연실만'], ['마카오 흡연', '실내 금지 · 버스·택시 정류장 10m 안 금지 · 카지노는 흡연실만 · 벌금 MOP 1,500']); }
 { const g = GUIDE.find(x => x[0].includes('마카오 가는 법')); if(g) g[1].push(['워터젯 셩완 → 타이파', boats(true, false).map(hm).join(' ') + ' · 토요일 증편'], ['워터젯 타이파 → 셩완', boats(false, false).map(hm).join(' ')]); }
 { const g = document.getElementById('guide');
   for(const [t, rows] of GUIDE){ const d = h('div','gd'), dl = h('dl'); d.dataset.t = t;
@@ -1925,6 +1940,7 @@ const GUIDE = [["📅 여행 4일 휴관·행사", [["11/16 월", "M+ 휴관"], 
 document.getElementById('gps').addEventListener('click', toggleGps);
 document.getElementById('routeclr').addEventListener('click', clearRoute);
 document.getElementById('ztoilet').addEventListener('click', toggleToilet);
+document.getElementById('zsmoke').addEventListener('click', toggleSmoke);
 document.getElementById('bshare').addEventListener('click', sharePlan);
 map.on('moveend', () => { if(showToilet && !document.getElementById('mapwrap').classList.contains('popon')) drawToilets(); });
 map.on('click', () => { if(mm && sel && shState === 'peek'){ sel = null; render(); } });

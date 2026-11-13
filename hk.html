@@ -6,25 +6,25 @@
 <title>홍콩 동선 지도</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
 <style>
 /* layout: sticky schematic map on top (left on wide screens), numbered stop list below; tram-red route on harbour-teal water */
 :root{
-  --bg:#f3f1ec; --surface:#ffffff; --ink:#1c2326; --muted:#6a7478; --line:#d9d6ce;
-  --water:#bfdcdc; --land:#e9e6de; --accent:#c8102e; --accent-ink:#ffffff; --done:#9aa3a6; --alt:#0d6b6e;
-  --display:"Black Han Sans","IBM Plex Sans KR",sans-serif;
-  --body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --bg:#fff6ee; --surface:#ffffff; --ink:#3a2f35; --muted:#8a7a80; --line:#f3dfd4;
+  --water:#cdeeea; --land:#fdf0e6; --accent:#ff6f91; --accent-ink:#ffffff; --done:#c9bcc0; --alt:#24a99a;
+  --display:"Jua","Gowun Dodum",sans-serif;
+  --body:"Gowun Dodum","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#12181a; --surface:#1b2326; --ink:#eef1f0; --muted:#98a3a6; --line:#2e393d;
-    --water:#17444a; --land:#202a2d; --accent:#ff4d63; --accent-ink:#1a0a0d; --done:#5d686b; --alt:#58c4c0;
+    --bg:#221a1e; --surface:#2d2429; --ink:#fbeff2; --muted:#b9a6ad; --line:#45373d;
+    --water:#1d4a47; --land:#2d2429; --accent:#ff86a3; --accent-ink:#2a0f17; --done:#6d6064; --alt:#5fd3c4;
     color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#12181a; --surface:#1b2326; --ink:#eef1f0; --muted:#98a3a6; --line:#2e393d;
-  --water:#17444a; --land:#202a2d; --accent:#ff4d63; --accent-ink:#1a0a0d; --done:#5d686b; --alt:#58c4c0;
+  --bg:#221a1e; --surface:#2d2429; --ink:#fbeff2; --muted:#b9a6ad; --line:#45373d;
+  --water:#1d4a47; --land:#2d2429; --accent:#ff86a3; --accent-ink:#2a0f17; --done:#6d6064; --alt:#5fd3c4;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
@@ -36,20 +36,20 @@ button{font:inherit;color:inherit;cursor:pointer}
 
 .wrap{max-width:1080px;margin:0 auto;padding:0 16px 48px}
 header{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;padding:16px 0 10px}
-h1{font-family:var(--display);font-weight:400;font-size:26px;letter-spacing:.01em;margin:0;text-wrap:balance}
+h1{font-family:var(--display);font-weight:400;font-size:28px;color:var(--accent);letter-spacing:.01em;margin:0;text-wrap:balance}
 .stay{color:var(--muted);font-size:13px}
 
 .tabs{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px}
-.tab{flex:0 0 auto;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 14px;font-weight:600;font-size:14px}
+.tab{flex:0 0 auto;border:2px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px;font-family:var(--display);font-size:15px}
 .tab small{font-weight:400;color:var(--muted);margin-left:4px}
-.tab[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tab[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);box-shadow:0 3px 0 rgba(0,0,0,.08)}
 .tab[aria-selected="true"] small{color:inherit;opacity:.7}
 
 .grid{display:grid;gap:14px}
 .mapbox{position:sticky;top:0;z-index:5;background:var(--bg);padding-bottom:6px}
-.map{position:relative;height:300px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--land)}
+.map{position:relative;height:300px;border:3px solid var(--surface);box-shadow:0 0 0 2px var(--line);border-radius:22px;overflow:hidden;background:var(--land)}
 .zoom{position:absolute;right:8px;top:8px;display:flex;flex-direction:column;gap:6px}
-.zoom button{width:36px;height:36px;border-radius:8px;border:1px solid var(--line);background:var(--surface);font-size:18px;line-height:1}
+.zoom button{width:36px;height:36px;border-radius:12px;border:2px solid var(--line);background:var(--surface);font-size:18px;line-height:1}
 .zoom button.fit{font-size:11px;font-weight:600}
 .maphint{position:absolute;left:8px;bottom:8px;font-size:11px;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:2px 6px}
 .nomap{border:1px dashed var(--line);border-radius:12px;padding:14px;color:var(--muted);font-size:13px}
@@ -58,30 +58,32 @@ h1{font-family:var(--display);font-weight:400;font-size:26px;letter-spacing:.01e
 .progress b{color:var(--ink)}
 .progress button{border:0;background:none;text-decoration:underline;color:var(--muted);font-size:12px;padding:4px}
 
-h2{font-size:17px;margin:0 0 8px;font-weight:600}
+h2{font-family:var(--display);font-weight:400;font-size:19px;margin:0 0 8px}
 ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
 .leg{font-size:12px;color:var(--muted);padding:0 0 0 14px;border-left:2px dashed var(--line);margin-left:17px}
-.stop{display:grid;grid-template-columns:36px 1fr;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}
-.stop.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.stop{display:grid;grid-template-columns:36px 1fr;gap:10px;background:var(--surface);border:2px solid var(--line);border-radius:20px;padding:12px;box-shadow:0 4px 0 var(--line);cursor:pointer;transition:transform .12s ease-out}
+.stop:active{transform:translateY(2px)}
+.stop.sel{border-color:var(--accent);box-shadow:0 4px 0 var(--accent)}
 .stop.done .name{text-decoration:line-through;color:var(--muted)}
-.num{width:34px;height:34px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:600;font-variant-numeric:tabular-nums;border:0;padding:0}
+.num{width:34px;height:34px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-family:var(--display);font-size:16px;font-variant-numeric:tabular-nums;border:0;padding:0}
 .stop.alt .num{background:transparent;color:var(--alt);border:2px solid var(--alt)}
 .stop.done .num{background:var(--done);color:var(--surface)}
 .stop.plain .num{background:transparent;color:var(--muted);border:2px dashed var(--line)}
-.name{font-weight:600;font-size:15px}
+.name{font-family:var(--display);font-size:17px}
 .tag{display:inline-block;font-size:11px;font-weight:600;border-radius:4px;padding:1px 6px;margin-left:6px;vertical-align:1px;border:1px solid var(--line);color:var(--muted)}
 .tag.next{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .tag.opt{color:var(--alt);border-color:var(--alt)}
 .note{font-size:13.5px;margin-top:2px}
 .hours{font-size:12px;color:var(--muted);margin-top:2px}
 .acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.acts a,.acts button{font-size:13px;font-weight:500;text-decoration:none;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:6px 10px}
-.acts a.go{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.acts a,.acts button{font-size:13px;font-weight:700;text-decoration:none;border:2px solid var(--line);background:var(--bg);border-radius:999px;padding:5px 11px}
+.acts .go{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.acts .rtb{background:var(--alt);color:#fff;border-color:var(--alt)}
 .acts button[aria-pressed="true"]{background:var(--done);color:var(--surface);border-color:var(--done)}
-.taxi{margin-top:8px;border:1px solid var(--line);border-radius:8px;padding:10px;background:var(--bg)}
+.taxi{margin-top:8px;border:2px dashed var(--line);border-radius:14px;padding:10px;background:var(--bg)}
 .taxi .lbl{font-size:11px;color:var(--muted)}
 .taxi .addr{font-size:19px;font-weight:600;line-height:1.35;margin:2px 0 6px}
-.grouphead{font-size:13px;font-weight:600;color:var(--alt);padding:4px 2px 0}
+.grouphead{font-family:var(--display);font-size:15px;color:var(--alt);padding:4px 2px 0}
 
 .foot{margin-top:18px;font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
 .foot a{text-decoration:underline}
@@ -100,21 +102,34 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .zoom button.fit{width:auto;min-width:44px;padding:0 8px;font-size:12px}
 #gps[aria-pressed="true"]{background:#1a73e8;color:#fff;border-color:#1a73e8}
 .gpsmsg{font-size:12.5px;color:var(--muted);padding:6px 2px 0}
-.pin{width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-ink);border:2px solid #fff;display:grid;place-items:center;font:600 12px var(--body);box-shadow:0 1px 4px rgba(0,0,0,.4)}
-.pin.alt{background:#fff;color:#0d6b6e;border-color:#0d6b6e}
+.routemsg{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;padding:8px 12px;border-radius:14px;background:#1a73e8;color:#fff;font-size:13.5px;font-weight:600}
+.routemsg[hidden]{display:none}
+.routemsg button{flex:0 0 auto;border:1px solid rgba(255,255,255,.6);background:none;color:#fff;border-radius:6px;padding:4px 8px;font-size:12px}
+.pin{width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-ink);border:3px solid #fff;display:grid;place-items:center;font:13px var(--display);box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.pin.alt{background:#fff;color:#24a99a;border-color:#24a99a}
 .pin.done{background:var(--done)}
 .pin.sel{outline:3px solid var(--ink)}
-.pin.next{box-shadow:0 0 0 6px rgba(200,16,46,.3),0 1px 4px rgba(0,0,0,.4)}
+.pin.next{box-shadow:0 0 0 6px rgba(255,111,145,.35),0 1px 4px rgba(0,0,0,.4)}
 .pin.multi{font-size:10px}
 .me{width:18px;height:18px;border-radius:50%;background:#1a73e8;border:3px solid #fff;box-shadow:0 0 0 2px rgba(26,115,232,.4)}
 .leaflet-container{font-family:var(--body)}
+.rt{margin-top:8px;border:2px dashed var(--alt);border-radius:16px;padding:8px 10px;background:var(--bg);cursor:default}
+.rt h4{margin:6px 0 2px;font:400 14.5px var(--display);color:var(--alt)}
+.rt h4:first-child{margin-top:0}
+.rt .r{display:flex;align-items:center;gap:6px;font-size:13px;padding:2px 0}
+.rt .ln{flex:0 0 auto;color:#fff;border-radius:6px;padding:0 6px;font-size:11px;font-weight:700}
+.rt .rn{flex:0 0 auto;min-width:38px;text-align:center;background:var(--ink);color:var(--surface);border-radius:6px;padding:0 5px;font-weight:700;font-size:12px}
+.rt .d{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rt .t{margin-left:auto;flex:0 0 auto;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}
+.rt .ft{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11.5px;color:var(--muted);margin-top:6px}
+.rt .ft button{border:2px solid var(--line);background:var(--surface);border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <h1>홍콩 동선 지도</h1>
-    <span class="stay">호텔 아이콘 · 16~19일</span>
+    <h1>🥟 홍콩 동선 지도</h1>
+    <span class="stay">🏨 호텔 아이콘 · 16~19일</span>
   </header>
   <div class="tabs" role="tablist" id="tabs"></div>
   <div class="grid">
@@ -124,9 +139,12 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
         <div class="zoom">
           <button type="button" id="gps" class="fit" aria-pressed="false">내 위치</button>
           <button type="button" id="zfit" class="fit" aria-label="전체 보기">전체</button>
+          <button type="button" id="zrt" class="fit" aria-label="여기 근처 실시간">🚏</button>
         </div>
       </div>
       <div class="gpsmsg" id="gpsmsg" hidden></div>
+      <div id="herert"></div>
+      <div class="routemsg" id="routemsg" hidden><span id="routetxt"></span><button type="button" id="routeclr">경로 지우기</button></div>
       <div class="nomap" id="nomap" hidden></div>
       <div class="progress"><span id="prog"></span><button type="button" id="reset">이 날 체크 지우기</button></div>
     </div>
@@ -135,7 +153,8 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
       <ol class="stops" id="list"></ol>
       <div class="foot">
         <span>화장실 찾기: <a href="https://toilets.hk/en/map" target="_blank" rel="noopener">toilets.hk 지도</a></span>
-        <span>「내 위치」를 누르면 지도에 현재 위치가 표시됩니다. 실제 경로는 각 장소의 「길찾기」로 Google 지도에서 열립니다.</span>
+        <span>「🚏 실시간」 = 근처 MTR·KMB 버스 도착 시간(정부 공개 자료). 지도 위 🚏 = 내 위치(없으면 지도 가운데) 근처. 시티버스(홍콩섬 대부분)는 안 나옵니다.</span>
+        <span>「지도에 경로」 = 내 위치에서 그 장소까지 도보 경로(4km 넘으면 차 경로). 버스·지하철 경로는 「구글 길찾기」.</span>
         <span>영업시간은 Google 지도 기준이며 바뀔 수 있습니다.</span>
       </div>
     </section>
@@ -146,7 +165,7 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 <script>
 const HOTEL = {name:'호텔 아이콘', sub:'Hotel ICON', lat:22.3007586, lng:114.1796973};
 const DAYS = [
- {id:'day1', tab:'Day 1', date:'16일', title:'도착 → 체크인 → 저녁', stops:[
+ {id:'day1', tab:'✈️ Day 1', date:'16일', title:'도착 → 체크인 → 저녁', stops:[
   {id:'apt', far:true, name:'홍콩 국제공항', sub:'Hong Kong International Airport', lat:22.3137, lng:113.9309,
    note:'출국장 세븐일레븐에서 옥토퍼스카드 구매 (adult octopus HK$200)'},
   {id:'sci', leg:'A21 버스 · Hung Hom 방향 · 79~90분', name:'Hong Kong Science Museum 정류장', sub:'하차', lat:22.301088, lng:114.176539,
@@ -159,7 +178,7 @@ const DAYS = [
   {id:'ohw', kind:'alt', name:'Oh Wahh Street Food (豪華小食)', sub:'침사추이 · 호텔 근처', lat:22.2983486, lng:114.1741485,
    note:'길거리 간식, 서서 먹는 곳', hours:'12:00–03:00 (일 17:00부터)', link:'https://maps.app.goo.gl/MvSaBnZ6WPj9GVwa6?g_st=ic'}
  ]},
- {id:'day2', tab:'Day 2', date:'17일', title:'홍콩섬 한 바퀴 → 야경 → 애문생', stops:[
+ {id:'day2', tab:'🚋 Day 2', date:'17일', title:'홍콩섬 한 바퀴 → 야경 → 애문생', stops:[
   {id:'icon2', name:HOTEL.name, sub:'출발', lat:HOTEL.lat, lng:HOTEL.lng, note:'조식 조금만 먹고 출발'},
   {id:'mcot', name:'마이컵오브티', sub:'My Cup of Tea · 차찬탱 · 완차이', lat:22.2761048, lng:114.1729032,
    note:'밀크티, 번, 토마토쌀국수 등', hours:'07:00–18:30', link:'https://maps.app.goo.gl/AnbzQ4uPYMt8o1nw8?g_st=ic'},
@@ -177,13 +196,13 @@ const DAYS = [
    note:'흑후추 소고기 감자볶음, 소금후추 오징어 튀김, 검은콩소스 조개볶음, 소금후추 생선튀김', hours:'16:30–23:00',
    link:'https://maps.app.goo.gl/MVPRVxn2vteizhnw6?g_st=ic', taxi:'目的地：愛文生，九龍深水埗石硤尾街1A-1C號地下'}
  ]},
- {id:'day3', tab:'Day 3', date:'18일', title:'조식 → 차찬탱 (이후 미정)', stops:[
+ {id:'day3', tab:'🍮 Day 3', date:'18일', title:'조식 → 차찬탱 (이후 미정)', stops:[
   {id:'icon3', name:HOTEL.name, sub:'출발', lat:HOTEL.lat, lng:HOTEL.lng, note:'조식 및 밥 먹기'},
   {id:'adc', name:'오스트레일리아 데일리컴퍼니', sub:'Australia Dairy Company · 차찬탱 · 조던', lat:22.304628, lng:114.1705439,
    note:'우유푸딩, 스크램블에그', hours:'07:30–22:00 · 목 휴무', link:'https://maps.app.goo.gl/HJQ5vXXJayFiS4En7?g_st=ic'},
   {id:'tbd3', kind:'plain', name:'이후 일정 미정', note:'일정표에 아직 적힌 내용이 없습니다'}
  ]},
- {id:'macau', tab:'마카오', date:'', title:'마카오', stops:[
+ {id:'macau', tab:'🎰 마카오', date:'', title:'마카오', stops:[
   {id:'north', name:'북방관 (North)', sub:'베네시안 마카오 Level 1 · Shop 1015', lat:22.1484167, lng:113.5624207,
    note:'일정표에 「북방관」으로만 적혀 있어 베네시안 지점으로 넣었습니다. 다른 지점이면 알려주세요', hours:'11:00–23:00'}
  ]}
@@ -201,7 +220,73 @@ const fmt = m => m>=1000 ? (m/1000).toFixed(1)+'km' : Math.round(m/10)*10+'m';
 
 const map = L.map('map', {zoomControl:true}); map.attributionControl.setPrefix(false);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19, attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(map);
-const layer = L.layerGroup().addTo(map), meLayer = L.layerGroup().addTo(map);
+const layer = L.layerGroup().addTo(map), routeLayer = L.layerGroup().addTo(map), meLayer = L.layerGroup().addTo(map);
+let pendingRoute = null;
+const MTR = [["AWE","博覽館","AEL",22.32199,113.94222],["AIR","機場","AEL",22.31592,113.93655],["TSY","青衣","AEL/TCL",22.3585,114.10675],["KOW","九龍","AEL/TCL",22.30493,114.1616],["HOK","香港","AEL/TCL",22.28472,114.15807],["SUN","欣澳","DRL/TCL",22.33198,114.02891],["DIS","迪士尼","DRL",22.31539,114.04514],["LOW","羅湖","EAL",22.52818,114.11334],["SHS","上水","EAL",22.50116,114.12803],["FAN","粉嶺","EAL",22.49199,114.13881],["TWO","太和","EAL",22.45107,114.16106],["TAP","大埔墟","EAL",22.44465,114.17063],["UNI","大學","EAL",22.41357,114.2101],["FOT","火炭","EAL",22.39529,114.19811],["SHT","沙田","EAL",22.383,114.18774],["TAW","大圍","EAL/TML",22.37305,114.17845],["KOT","九龍塘","EAL/KTL",22.337,114.17586],["MKK","旺角東","EAL",22.32219,114.17271],["HUH","紅磡","EAL/TML",22.3029,114.18225],["EXC","會展","EAL",22.28161,114.17569],["ADM","金鐘","EAL/ISL/TWL/SIL",22.27863,114.16552],["LMC","落馬洲","EAL",22.51446,114.06568],["CHW","柴灣","ISL",22.26445,114.23704],["HFC","杏花邨","ISL",22.27667,114.23972],["SKW","筲箕灣","ISL",22.27917,114.22884],["SWH","西灣河","ISL",22.28163,114.22229],["TAK","太古","ISL",22.28464,114.21632],["QUB","鰂魚涌","ISL/TKL",22.28817,114.20899],["NOP","北角","ISL/TKL",22.29091,114.20075],["FOH","炮台山","ISL",22.28756,114.19331],["TIH","天后","ISL",22.28228,114.19192],["CAB","銅鑼灣","ISL",22.27939,114.18374],["WAC","灣仔","ISL",22.27758,114.17286],["CEN","中環","ISL/TWL",22.28191,114.1592],["SHW","上環","ISL",22.28684,114.15216],["SYP","西營盤","ISL",22.28543,114.14264],["HKU","香港大學","ISL",22.28398,114.13551],["KET","堅尼地城","ISL",22.28123,114.12838],["TIK","調景嶺","KTL/TKL",22.30408,114.25237],["YAT","油塘","KTL/TKL",22.29779,114.23716],["LAT","藍田","KTL",22.30689,114.23308],["KWT","觀塘","KTL",22.31213,114.22651],["NTK","牛頭角","KTL",22.31545,114.21896],["KOB","九龍灣","KTL",22.32347,114.21409],["CHH","彩虹","KTL",22.33499,114.20882],["DIH","鑽石山","KTL/TML",22.3397,114.20144],["WTS","黃大仙","KTL",22.34157,114.19401],["LOF","樂富","KTL",22.33802,114.18723],["SKM","石硤尾","KTL",22.33202,114.16885],["PRE","太子","KTL/TWL",22.32445,114.1683],["MOK","旺角","KTL/TWL",22.31931,114.16937],["YMT","油麻地","KTL/TWL",22.3128,114.17058],["HOM","何文田","KTL/TML",22.30952,114.18262],["WHA","黃埔","KTL",22.30495,114.18954],["WKS","烏溪沙","TML",22.42913,114.2439],["MOS","馬鞍山","TML",22.42482,114.23161],["HEO","恆安","TML",22.41751,114.22575],["TSH","大水坑","TML",22.4086,114.2228],["SHM","石門","TML",22.38766,114.20832],["CIO","第一城","TML",22.38288,114.20355],["STW","沙田圍","TML",22.37703,114.19499],["CKT","車公廟","TML",22.37477,114.18618],["HIK","顯徑","TML",22.36396,114.17081],["KAT","啟德","TML",22.3305,114.19937],["SUW","宋皇臺","TML",22.3259,114.19133],["TKW","土瓜灣","TML",22.31697,114.18765],["ETS","尖東","TML",22.29556,114.17507],["AUS","柯士甸","TML",22.30424,114.1666],["NAC","南昌","TML/TCL",22.32636,114.15358],["MEF","美孚","TML/TWL",22.33889,114.13656],["TWW","荃灣西","TML",22.36835,114.10993],["KSR","錦上路","TML",22.4348,114.06342],["YUL","元朗","TML",22.44565,114.03464],["LOP","朗屏","TML",22.44767,114.02545],["TIS","天水圍","TML",22.4494,114.00604],["SIH","兆康","TML",22.41201,113.97827],["TUM","屯門","TML",22.39382,113.97311],["TUC","東涌","TCL",22.28924,113.94137],["LAK","茘景","TCL/TWL",22.34832,114.12606],["OLY","奧運","TCL",22.3177,114.16028],["POA","寶琳","TKL",22.32249,114.2579],["HAH","坑口","TKL",22.31557,114.26444],["TKO","將軍澳","TKL",22.30736,114.25992],["LHP","康城","TKL",22.29556,114.26875],["TSW","荃灣","TWL",22.37374,114.11764],["TWH","大窩口","TWL",22.37082,114.12501],["KWH","葵興","TWL",22.36317,114.1312],["KWF","葵芳","TWL",22.35684,114.1278],["LCK","茘枝角","TWL",22.3374,114.14841],["CSW","長沙灣","TWL",22.33551,114.15616],["SSP","深水埗","TWL",22.33073,114.16234],["JOR","佐敦","TWL",22.30467,114.17175],["TST","尖沙咀","TWL",22.29726,114.1724],["OCP","海洋公園","SIL",22.24858,114.17437],["WCH","黃竹坑","SIL",22.24786,114.16751],["LET","利東","SIL",22.24219,114.15583],["SOH","海怡半島","SIL",22.24284,114.14875]];
+const LINES = {AEL:['공항철도','#00888A'],TCL:['퉁청선','#F7943E'],TML:['툰마선','#923011'],TKL:['청관오선','#7D499D'],EAL:['동철선','#53B7E8'],SIL:['남항도선','#BAC429'],TWL:['췬완선','#E2231A'],ISL:['홍콩섬선','#0071CE'],KTL:['관통선','#00AB4E'],DRL:['디즈니선','#F173AC']};
+const stName = c => (MTR.find(s => s[0]===c) || [c,c])[1];
+const getJ = async u => { const r = await fetch(u); if(!r.ok) throw new Error(r.status); return r.json(); };
+let kmbStops = null;
+const rtOpen = new Map();
+const etaTxt = list => list.sort((a,b) => a-b).slice(0,3).map(m => m<=0 ? '곧' : m+'분').join(' · ');
+async function fillRt(o){
+  const {lat, lng, el} = o;
+  const sts = MTR.map(s => [dist(lat,lng,s[3],s[4]), s]).filter(x => x[0] < 900).sort((a,b) => a[0]-b[0]).slice(0,2);
+  const mtrJobs = sts.flatMap(([d,s]) => s[2].split('/').map(ln => getJ(`https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=${ln}&sta=${s[0]}`)
+    .then(r => ({s, ln, k: r.data && r.data[ln+'-'+s[0]]})).catch(() => ({s, ln, k:null}))));
+  if(!kmbStops) kmbStops = getJ('https://data.etabus.gov.hk/v1/transport/kmb/stop').then(r => r.data).catch(e => { kmbStops = null; throw e; });
+  const kmbJob = kmbStops.then(all => {
+    const near = all.map(x => [dist(lat,lng,+x.lat,+x.long), x]).filter(x => x[0] < 350).sort((a,b) => a[0]-b[0]);
+    const seen = new Set(), pick = [];
+    for(const n of near){ if(seen.has(n[1].name_tc)) continue; seen.add(n[1].name_tc); pick.push(n); if(pick.length===3) break; }
+    return Promise.all(pick.map(([d,x]) => getJ('https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/'+x.stop).then(r => ({d, x, e:r.data})).catch(() => ({d, x, e:[]}))));
+  });
+  const [mtr, kmb] = await Promise.all([Promise.all(mtrJobs), kmbJob.catch(() => null)]);
+  if(![...rtOpen.values()].includes(o)) return;
+  const box = h('div'); let any = false;
+  for(const [d,s] of sts){
+    const rows = [];
+    for(const m of mtr.filter(m => m.s===s && m.k)) for(const dir of ['UP','DOWN']){
+      const g = {}; for(const t of (m.k[dir]||[])) (g[t.dest] = g[t.dest] || []).push(+t.ttnt);
+      for(const dest in g){ const r = h('div','r'), b = h('span','ln', LINES[m.ln] ? LINES[m.ln][0] : m.ln); b.style.background = LINES[m.ln] ? LINES[m.ln][1] : '#888';
+        r.append(b, h('span','d','→ '+stName(dest)), h('span','t',etaTxt(g[dest]))); rows.push(r); } }
+    if(rows.length){ any = true; box.append(h('h4',null,`🚇 ${s[1]}역 · ${fmt(d)}`), ...rows); }
+  }
+  if(kmb) for(const {d,x,e} of kmb){
+    const g = {}; for(const t of e){ if(!t.eta) continue; const k = t.route+'|'+t.dest_tc; (g[k] = g[k] || []).push(Math.round((new Date(t.eta) - Date.now())/60000)); }
+    const ks = Object.keys(g); if(!ks.length) continue; any = true;
+    box.append(h('h4',null,`🚌 ${x.name_tc} · ${fmt(d)}`));
+    for(const k of ks.slice(0,8)){ const [rn,dest] = k.split('|'), r = h('div','r'); r.append(h('span','rn',rn), h('span','d','→ '+dest), h('span','t',etaTxt(g[k]))); box.append(r); }
+  }
+  if(!any) box.append(h('div','r','근처(지하철 900m · 버스 350m)에 실시간 정보가 없어요 🥲'));
+  const ft = h('div','ft'), now = new Date();
+  ft.append(h('span',null,`${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} 기준 · 30초마다 새로고침`));
+  const x = h('button',null,'닫기'); x.type = 'button';
+  x.addEventListener('click', ev => { ev.stopPropagation(); for(const [k,v] of rtOpen) if(v===o){ rtOpen.delete(k); v.el.remove(); } });
+  ft.append(x); box.append(ft); el.textContent = ''; el.append(box);
+}
+function openRt(key, lat, lng, host){
+  if(rtOpen.has(key)){ rtOpen.get(key).el.remove(); rtOpen.delete(key); return; }
+  const el = h('div','rt','실시간 불러오는 중… 🚃'); el.addEventListener('click', ev => ev.stopPropagation());
+  const o = {lat, lng, el}; rtOpen.set(key, o); host.append(el); fillRt(o);
+}
+setInterval(() => { if(!document.hidden) for(const o of rtOpen.values()) fillRt(o); }, 30000);
+function clearRoute(){ routeLayer.clearLayers(); pendingRoute = null; document.getElementById('routemsg').hidden = true; }
+function routeMsg(t){ document.getElementById('routemsg').hidden = false; document.getElementById('routetxt').textContent = t; }
+// shortcut: route drawn once from where you are when tapped; tap again to refresh as you walk
+async function routeTo(s){
+  if(!me){ pendingRoute = s; routeMsg('내 위치 찾는 중…'); if(watchId===null) toggleGps(); return; }
+  const car = dist(me.lat,me.lng,s.lat,s.lng) > 4000, prof = car ? 'car' : 'foot';
+  routeMsg('경로 찾는 중…');
+  try{
+    const r = await (await fetch(`https://routing.openstreetmap.de/routed-${prof}/route/v1/${car?'driving':'foot'}/${me.lng},${me.lat};${s.lng},${s.lat}?overview=full&geometries=geojson`)).json();
+    const rt = r.routes && r.routes[0]; if(!rt) throw new Error(r.code);
+    routeLayer.clearLayers();
+    const line = L.polyline(rt.geometry.coordinates.map(c => [c[1],c[0]]), {color:'#1a73e8', weight:6, opacity:.9}).addTo(routeLayer);
+    map.fitBounds(line.getBounds(), {padding:[30,30], maxZoom:17});
+    routeMsg(`${s.name}까지 ${car?'차로':'걸어서'} ${fmt(rt.distance)} · 약 ${Math.max(1,Math.round(rt.duration/60))}분`);
+  }catch(e){ routeMsg('경로를 못 찾았습니다. 「구글 길찾기」를 눌러 주세요.'); }
+}
 
 function fit(){ const pts = mapStops(day).map(s => [s.lat,s.lng]); if(!pts.length) return;
   map.invalidateSize(); if(pts.length===1) map.setView(pts[0], 16); else map.fitBounds(pts, {padding:[36,36], maxZoom:16}); }
@@ -209,8 +294,8 @@ function focus(s){ if(s.lat) map.setView([s.lat,s.lng], Math.max(map.getZoom()||
 function drawMap(){
   layer.clearLayers(); const rs = routeStops(day), nx = nextStop(day);
   for(let i=1;i<rs.length;i++) L.polyline([[rs[i-1].lat,rs[i-1].lng],[rs[i].lat,rs[i].lng]],
-    {color: done[rs[i].id] ? '#9aa3a6' : '#c8102e', weight:4, opacity:.85, dashArray: rs[i-1].far ? '2 9' : rs[i].opt ? '8 8' : null}).addTo(layer);
-  for(const s of day.stops.filter(x=>x.kind==='alt')) L.polyline([[HOTEL.lat,HOTEL.lng],[s.lat,s.lng]], {color:'#0d6b6e', weight:2, dashArray:'4 7', opacity:.8}).addTo(layer);
+    {color: done[rs[i].id] ? '#c9bcc0' : '#ff6f91', weight:5, opacity:.85, dashArray: rs[i-1].far ? '2 9' : rs[i].opt ? '8 8' : null}).addTo(layer);
+  for(const s of day.stops.filter(x=>x.kind==='alt')) L.polyline([[HOTEL.lat,HOTEL.lng],[s.lat,s.lng]], {color:'#24a99a', weight:3, dashArray:'4 7', opacity:.8}).addTo(layer);
   for(const s of day.stops.filter(x=>x.lat)){ const alt = s.kind==='alt';
     const grp = alt ? [s] : day.stops.filter(o => o.lat===s.lat && o.lng===s.lng && o.kind!=='alt'); if(grp[0]!==s) continue;
     const cls = 'pin' + (alt?' alt':'') + (grp.every(o=>done[o.id])&&!alt?' done':'') + (grp.includes(sel)?' sel':'') + (grp.includes(nx)?' next':'') + (grp.length>1?' multi':'');
@@ -225,14 +310,16 @@ function drawMe(){ meLayer.clearLayers(); if(!me) return;
   L.marker([me.lat,me.lng], {icon: L.divIcon({className:'', html:'<div class="me"></div>', iconSize:[18,18], iconAnchor:[9,9]}), zIndexOffset:2000, interactive:false}).addTo(meLayer); }
 function gpsMsg(t){ const e = document.getElementById('gpsmsg'); e.hidden = !t; e.textContent = t || ''; }
 function toggleGps(){ const b = document.getElementById('gps');
-  if(watchId!==null){ navigator.geolocation.clearWatch(watchId); watchId = null; me = null; b.setAttribute('aria-pressed','false'); gpsMsg(''); drawMe(); drawList(); return; }
+  if(watchId!==null){ navigator.geolocation.clearWatch(watchId); watchId = null; me = null; b.setAttribute('aria-pressed','false'); gpsMsg(''); clearRoute(); drawMe(); drawList(); return; }
   if(!navigator.geolocation){ gpsMsg('이 브라우저는 위치 기능을 지원하지 않습니다.'); return; }
   if(!window.isSecureContext){ gpsMsg('위치는 https 주소에서만 켜집니다. 이 파일을 https 사이트에 올려서 열어 주세요.'); return; }
   b.setAttribute('aria-pressed','true'); gpsMsg('위치 찾는 중…'); let first = true;
   watchId = navigator.geolocation.watchPosition(p => { me = {lat:p.coords.latitude, lng:p.coords.longitude, acc:p.coords.accuracy};
       gpsMsg('내 위치 표시 중 · 오차 약 '+Math.round(me.acc)+'m'); drawMe(); drawList();
-      if(first){ first = false; map.setView([me.lat,me.lng], Math.max(map.getZoom(), 15)); } },
+      if(pendingRoute){ const s = pendingRoute; pendingRoute = null; first = false; routeTo(s); }
+      else if(first){ first = false; map.setView([me.lat,me.lng], Math.max(map.getZoom(), 15)); } },
     e => { gpsMsg(e.code===1 ? '위치 권한이 거부되었습니다. 브라우저 설정에서 이 사이트의 위치 접근을 허용해 주세요.' : '위치를 가져오지 못했습니다. 잠시 후 다시 눌러 주세요.');
+      if(pendingRoute){ clearRoute(); }
       if(e.code===1){ navigator.geolocation.clearWatch(watchId); watchId = null; b.setAttribute('aria-pressed','false'); } },
     {enableHighAccuracy:true, maximumAge:5000, timeout:20000}); }
 
@@ -247,6 +334,7 @@ function drawList(){
     const li = h('li', 'stop' + (s.kind==='alt'?' alt':'') + (s.kind==='plain'?' plain':'') + (done[s.id]?' done':'') + (s===sel?' sel':'')); li.id = 'stop-'+s.id;
     const num = h('button','num',s.far ? '✈' : label(day,s)); num.type = 'button'; num.setAttribute('aria-label', s.name+' 지도에서 보기');
     num.addEventListener('click', () => select(s, false));
+    if(s.lat) li.addEventListener('click', e => { if(e.target.closest('a,button,.rt')) return; select(s, false); document.getElementById('mapwrap').scrollIntoView({block:'nearest', behavior:'smooth'}); });
     const body = h('div');
     const nm = h('div','name',s.name);
     if(s===nx) nm.append(h('span','tag next','다음'));
@@ -261,12 +349,15 @@ function drawList(){
       cp.addEventListener('click', async () => { try{ await navigator.clipboard.writeText(s.taxi); cp.textContent='복사됨'; }catch(e){ cp.textContent='복사 실패 · 길게 눌러 복사'; } });
       t.append(cp); body.append(t); }
     if(s.lat){ const acts = h('div','acts');
-      const go = h('a','go','길찾기'); go.href = `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}&travelmode=transit`; go.target='_blank'; go.rel='noopener';
+      const rb = h('button','go','🗺️ 지도에 경로'); rb.type='button'; rb.addEventListener('click', () => { sel = s; render(); document.getElementById('mapwrap').scrollIntoView({block:'nearest'}); routeTo(s); });
+      const go = h('a',null,'구글 길찾기'); go.href = `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}&travelmode=transit`; go.target='_blank'; go.rel='noopener';
       const open = h('a',null,'Google 지도'); open.href = s.link || `https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lng}`; open.target='_blank'; open.rel='noopener';
-      acts.append(go, open);
+      const rtb = h('button','rtb','🚏 실시간'); rtb.type='button'; rtb.addEventListener('click', () => openRt(s.id, s.lat, s.lng, body));
+      acts.append(rb, go, open, rtb);
       if(s.kind!=='alt'){ const ck = h('button',null, done[s.id] ? '완료됨' : '완료 체크'); ck.type='button'; ck.id='done-'+s.id; ck.setAttribute('aria-pressed', !!done[s.id]);
         ck.addEventListener('click', () => { done[s.id] = !done[s.id]; save(); render(); }); acts.append(ck); }
       body.append(acts); }
+    if(rtOpen.has(s.id)) body.append(rtOpen.get(s.id).el);
     li.append(num, body); list.append(li);
   }
   const rs = routeStops(day), n = rs.filter(s=>done[s.id]).length;
@@ -288,6 +379,7 @@ for(const d of DAYS){ const b = h('button','tab',d.tab); b.type='button'; b.id='
   if(d.date) b.append(h('small',null,d.date)); b.addEventListener('click', () => setDay(d.id, true)); tabs.append(b); }
 
 document.getElementById('gps').addEventListener('click', toggleGps);
+document.getElementById('zrt').addEventListener('click', () => { const c = me || map.getCenter(); openRt('_here', c.lat, c.lng, document.getElementById('herert')); });
 document.getElementById('zfit').addEventListener('click', () => { sel = null; fit(); render(); });
 document.getElementById('reset').addEventListener('click', () => { for(const s of day.stops) delete done[s.id]; save(); render(); });
 window.addEventListener('resize', () => map.invalidateSize());

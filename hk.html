@@ -188,7 +188,7 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .steps .cmp{display:grid}
 .cmpr{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:2px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:7px 10px;font:inherit;font-size:13.5px;text-decoration:none}
 .cmpr[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--surface))}
-.cmpr .k{flex:0 0 88px;font-weight:700;white-space:nowrap}
+.cmpr .k{flex:0 0 auto;min-width:88px;font-weight:700;white-space:nowrap}
 .cmpr .t{flex:0 0 42px;font-variant-numeric:tabular-nums}
 .cmpr .c{flex:1;min-width:0;color:var(--muted);font-size:12.5px}
 .cmpr .tag{margin-left:auto;flex:0 0 auto}
@@ -199,13 +199,14 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .tpin.sm{background:#7d6b72}
 .tab .wx{margin-left:4px;font-size:12px}
 .dwx{font-size:12.5px;color:var(--muted)}
-.pin{width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-ink);border:3px solid #fff;display:grid;place-items:center;font:13px var(--display);box-shadow:0 1px 4px rgba(0,0,0,.4)}
-.pin.alt{background:#fff;color:#24a99a;border-color:#24a99a}
+.pin{width:36px;height:36px;box-sizing:border-box;border-radius:50%;background:var(--accent);color:#fff;border:3px solid #fff;display:grid;place-items:center;font:18px/1 var(--display);box-shadow:0 0 0 2.5px #3b2a33,0 3px 7px rgba(0,0,0,.45)}
+.pin.alt{background:#24a99a;color:#fff}
 .pin.done{background:var(--done)}
 .pin.sel{outline:3px solid var(--ink)}
-.pin.next{box-shadow:0 0 0 6px rgba(255,111,145,.35),0 1px 4px rgba(0,0,0,.4)}
-.pin.multi{font-size:10px}
+.pin.next{box-shadow:0 0 0 2.5px #3b2a33,0 0 0 9px rgba(255,111,145,.45),0 3px 7px rgba(0,0,0,.45)}
+.pin.multi{font-size:12.5px}
 .me{position:relative;width:48px;height:52px}
+.run svg{display:block;filter:drop-shadow(0 0 1.2px #fff) drop-shadow(0 0 1.2px #fff) drop-shadow(0 2px 2px rgba(0,0,0,.3))}
 .me svg{position:absolute;left:0;top:0;filter:drop-shadow(0 0 1.2px #fff) drop-shadow(0 0 1.2px #fff) drop-shadow(0 2px 2px rgba(0,0,0,.3))}
 .me::after{content:"";position:absolute;left:50%;top:46px;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:#1a73e8;border:2px solid #fff;box-shadow:0 0 0 2px rgba(26,115,232,.35)}
 .me i{position:absolute;left:50%;top:46px;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;z-index:-1;background:conic-gradient(from -32deg,rgba(26,115,232,.5) 0 64deg,transparent 64deg);-webkit-mask:radial-gradient(circle,transparent 9px,#000 10px,transparent 28px);mask:radial-gradient(circle,transparent 9px,#000 10px,transparent 28px)}
@@ -485,7 +486,7 @@ html.mm .dayhead h2{display:none}
       <div class="guide" id="guide"></div>
       <div class="foot" id="foot" hidden>
         <span>🚻 = 가까운 화장실 3곳 · 확대하면 전부 표시 (OpenStreetMap 자료)</span>
-        <span>🚬 = 흡연실 21곳 · 공항·마카오 카지노 위주 (OpenStreetMap 자료 11/14)</span>
+        <span>🚬 = 흡연실·흡연 부스 25곳 · 공항·마카오 카지노 위주 (OpenStreetMap·공항·MTR 공식·마카오 보도 11/14)</span>
         <span>「🚏 실시간」 = 근처 MTR·KMB 버스 도착 시간(정부 공개 자료). 지도 위 🚏 = 내 위치(없으면 지도 가운데) 근처. 시티버스(홍콩섬 대부분)는 안 나옵니다.</span>
         <span>🧭 길찾기 = 내 위치(홍콩 밖이면 이전 장소)에서 도보·MTR·택시 중 빠른 길 · 이동 줄을 눌러도 같은 안내</span>
         <span>영업시간은 Google 지도 기준이며 바뀔 수 있습니다.</span>
@@ -496,6 +497,7 @@ html.mm .dayhead h2{display:none}
         <span>📷 사진: Wikimedia Commons (사진 누르면 작가·라이선스)</span>
         <span>가격·영업시간: 2025~26년 공식 페이지·여행 자료 기준 · 현지에서 다를 수 있음</span>
         <span>마카오 배 시간표: 코타이 워터젯 공식 (11/14 확인)</span>
+        <span>MTR 요금: MTR 공개 자료 · 버스·트램 노선과 요금: 홍콩 교통국 공개 자료 (11/14)</span>
         <span>편집 내용: 이 폰 브라우저에만 저장</span>
       </div>
       </div>
@@ -860,7 +862,7 @@ function fareOf(m){ const f = (a, b) => { if(a === b) return 0; let i = FIDX.get
   if(!ae) return f(A, B);
   const p = ae.codes[0], q = ae.codes[ae.codes.length - 1], x = AEFARE[p + q], pre = f(A, p), post = f(q, B); return x == null ? f(A, B) : pre == null || post == null ? null : x + pre + post; }
 // all options for one leg, best first. cost = HK$ for the two of them (fares x 2, one taxi); score = minutes + HK$3 a minute, long walks and hailing a taxi weigh a little extra
-function legOpts(a, b){ const d = dist(a.lat,a.lng,b.lat,b.lng);
+function legOpts(a, b, all){ const d = dist(a.lat,a.lng,b.lat,b.lng);
   if(b.legMin && b.legMin[0] === a.id) return [{mode:'given', min:b.legMin[1], d, cost:/A21/.test(b.leg || '') ? 69.2 : 0}];
   if(d < 30) return [{mode:'same', min:0, d, cost:0}];
   // shortcut: one fixed crossing (Sheung Wan pier, ~60 min boat + Taipa shuttle, weekday day fare HK$192 each); other piers and the bridge bus are not modelled
@@ -872,8 +874,27 @@ function legOpts(a, b){ const d = dist(a.lat,a.lng,b.lat,b.lng);
   if(d > 700 || !out.length) out.push({mode:'taxi', min:taxiMin(d), d, cross, cost:taxiFare(d, cross) + (cross ? 35 : 0)});
   if(cross){ const k = onIsland(a) ? b : a, i = onIsland(a) ? a : b, dk = dist(k.lat, k.lng, SFP[0].lat, SFP[0].lng), di = dist(i.lat, i.lng, SFP[1].lat, SFP[1].lng);
     if(dk < 1500 && di < 1500) out.push({mode:'sf', min:Math.round(WALKM(dk) + WALKM(di)) + 16, d, cost:10, fromK:k === a, wa:Math.round(WALKM(k === a ? dk : di)), wb:Math.round(WALKM(k === a ? di : dk))}); }
+  if(all && d > 500) out.push(...busOpts(a, b));
   for(const o of out) o.score = o.min + (o.cost || 0) / 3 + (o.mode === 'walk' ? Math.max(0, o.min - 10) * .5 : o.mode === 'taxi' ? 4 : 0);
   return out.sort((x, y) => x.score - y.score); }
+// ---- direct buses and trams: bus.json = regular routes around Kowloon and Hong Kong Island north (stops, minutes from the route start, full fare) ----
+let BUSD = null, busWant = false;
+function loadBus(){ if(busWant) return; busWant = true;
+  getJ('bus.json').then(j => { const at = new Map(); j.r.forEach((r, ri) => { for(let k = 0; k < r[3].length; k += 3){ const l = at.get(r[3][k]); if(l) l.push([ri, k]); else at.set(r[3][k], [[ri, k]]); } });
+    BUSD = {s:j.s, r:j.r, at}; if(routeCur) redrawRoute(false); }).catch(() => { busWant = false; }); }
+// the quickest direct bus and the quickest direct tram between two points (no changes); the wait is a guess, the fare is the route's full fare
+function busOpts(a, b){ if(!BUSD) return [];
+  const near = q => { const o = []; BUSD.s.forEach((x, i) => { const d = dist(q.lat, q.lng, x[0], x[1]); if(d < 400) o.push([i, d]); }); return o; }, A = near(a), B = near(b); if(!A.length || !B.length) return [];
+  const on = new Map(), best = {};
+  for(const [si, d] of A) for(const [ri, k] of BUSD.at.get(si) || []){ if(!(BUSD.r[ri][3][k + 2] & 1)) continue; const c = on.get(ri); if(!c || d < c[1]) on.set(ri, [k, d]); }
+  for(const [si, d] of B) for(const [ri, k] of BUSD.at.get(si) || []){ const c = on.get(ri), r = BUSD.r[ri]; if(!c || k <= c[0] || !(r[3][k + 2] & 2)) continue;
+    const ride = (r[3][k + 1] - r[3][c[0] + 1]) / 10; if(!(ride > 0)) continue;
+    const co = r[0], t = WALKM(c[1]) + (co === 'T' ? 4 : 7) + ride + WALKM(d), x = {ri, k0:c[0], k1:k, ride, t, wa:WALKM(c[1]), wb:WALKM(d)};
+    (best[co] = best[co] || []).push(x); }
+  return Object.entries(best).map(([co, list]) => { list.sort((x, y) => x.t - y.t); const x = list[0], r = BUSD.r[x.ri], pts = []; for(let k = x.k0; k <= x.k1; k += 3) pts.push([BUSD.s[r[3][k]][0], BUSD.s[r[3][k]][1]]);
+    const alt = [...new Set(list.slice(1).filter(y => y.t - x.t < 5 && BUSD.r[y.ri][3][y.k0] === r[3][x.k0]).map(y => BUSD.r[y.ri][1]))].filter(n => n !== r[1]).slice(0, 3);
+    return {mode:co === 'T' ? 'tram' : 'bus', min:Math.round(x.t), d:dist(a.lat, a.lng, b.lat, b.lng), cost:Math.round(r[2] * 20) / 10,
+      bus:{no:r[1], alt, s0:BUSD.s[r[3][x.k0]][2], s1:BUSD.s[r[3][x.k1]][2], n:(x.k1 - x.k0) / 3, ride:Math.round(x.ride), wa:Math.max(1, Math.round(x.wa)), wb:Math.max(1, Math.round(x.wb)), pts}}; }); }
 function legOf(a, b){ if(b.legMin && b.legMin[0] === a.id) return legOpts(a, b)[0];
   const k = a.lat+','+a.lng+'>'+b.lat+','+b.lng; if(!legCache.has(k)) legCache.set(k, legOpts(a, b)[0]); return legCache.get(k); }
 const taxiMin = d => Math.round(5 + Math.min(d, 5000) * 1.3 / 350 + Math.max(0, d - 5000) * 1.3 / 1000);
@@ -891,6 +912,7 @@ const optText = o => `${legIcon[o.mode] || ''} ${o.min}분` + (costTxt(o) ? ' ·
 function legText(leg){ const c = costTxt(leg); return legText0(leg) + (c ? ' · ' + c : ''); }
 function legText0(leg){
   if(leg.mode === 'sf') return `⛴️ 스타페리 약 ${leg.min}분 · ${leg.fromK ? '침사추이 → 센트럴' : '센트럴 → 침사추이'}`;
+  if(leg.bus) return `${legIcon[leg.mode]} ${leg.mode === 'tram' ? '트램' : '버스 ' + leg.bus.no} 약 ${leg.min}분 · ${leg.bus.s0} → ${leg.bus.s1}`;
   if(leg.mode === 'walk') return `🚶 도보 약 ${leg.min}분 · ${fmt(leg.d)}`;
   if(leg.mode === 'taxi') return `🚕 택시 약 ${leg.min}분 · ${fmt(leg.d)}`;
   if(leg.mode === 'boat') return `⛴️ 배 약 ${leg.min}분 · ${leg.pier ? '셩완 터미널까지 택시 + ' : ''}${leg.fromHk ? '셩완 → 타이파' : '타이파 → 셩완'} 코타이 워터젯`;
@@ -908,6 +930,7 @@ function legSteps(leg){
     S.push({t:`🚶 ${m.to.exit ? m.to.exit+' 출구로 나가서 ' : ''}도보 ${Math.max(1, Math.round(WALKM(m.to.d)))}분 · ${fmt(m.to.d)}`});
     return S; }
   if(leg.mode === 'taxi') return [{t:`🚕 택시 약 ${leg.min}분 · ${fmt(leg.d)}`}];
+  if(leg.bus){ const u = leg.bus; return [{t:`🚶 ${u.s0} 정류장까지 도보 ${u.wa}분`}, {t:leg.mode === 'tram' ? `🚋 트램 ${u.no}행 · ${u.n}정거장 · 약 ${u.ride}분` : `🚌 ${u.no}번${u.alt.length ? ' (또는 ' + u.alt.join('·') + ')' : ''} · ${u.n}정거장 · 약 ${u.ride}분`}, {t:`🚶 ${u.s1}에서 내려 도보 ${u.wb}분`}]; }
   if(leg.mode === 'sf') return [{t:`🚶 ${leg.fromK ? '침사추이' : '센트럴 7번'} 부두까지 도보 ${leg.wa}분`}, {t:'⛴️ 스타페리 약 10분 · 6~12분 간격 · 옥토퍼스'}, {t:`🚶 ${leg.fromK ? '센트럴 7번' : '침사추이'} 부두에서 도보 ${leg.wb}분`}];
   if(leg.mode === 'boat') return [leg.fromHk ? leg.pier && {t:'🚕 셩완 홍콩마카오 페리터미널까지 택시'} : {t:'🚌 타이파 페리터미널까지 셔틀·택시 약 15분'}, {t:`⛴️ 코타이 워터젯 ${leg.fromHk ? '셩완 → 타이파' : '타이파 → 셩완'} 약 60분 · 30분 전 도착 · 여권`}, {t:'🕒 ' + boats(leg.fromHk, false).map(hm).join(' ')}, leg.fromHk ? {t:'🚌 타이파 터미널 → 숙소 무료 셔틀·택시 약 15분'} : leg.pier && {t:'🚕 셩완 터미널 → 다음 장소 택시'}].filter(Boolean);
   if(leg.mode === 'walk') return [{t:`🚶 도보 약 ${leg.min}분 · ${fmt(leg.d)}`}];
@@ -992,6 +1015,7 @@ function legShapes(leg, a, b){
     for(const r of m.rides){ const pts = r.codes.map(c => [ST[c].lat, ST[c].lng]); S.push({pts, st:'mtr:' + r.line}); }
     S.push({pts:[[A.lat, A.lng], S[1].pts[0]], st:'link'}, {pts:[S[S.length-1].pts[S[S.length-1].pts.length-1], [B.lat, B.lng]], st:'link'});
     S.push({pts:geo('foot', B, b) || st(B, b), st:'walk'}); }
+  else if(leg.bus){ const q = leg.bus.pts, f = {lat:q[0][0], lng:q[0][1]}, t = {lat:q[q.length - 1][0], lng:q[q.length - 1][1]}; S.push({pts:geo('foot', a, f) || st(a, f), st:'walk'}, {pts:q, st:'bus'}, {pts:geo('foot', t, b) || st(t, b), st:'walk'}); }
   else if(leg.mode === 'sf'){ const [p1, p2] = leg.fromK ? SFP : [SFP[1], SFP[0]]; S.push({pts:geo('foot', a, p1) || st(a, p1), st:'walk'}, {pts:st(p1, p2), st:'link'}, {pts:geo('foot', p2, b) || st(p2, b), st:'walk'}); }
   else if(leg.mode === 'boat') S.push({pts:st(a, b), st:'link'});
   else if(leg.mode !== 'same') S.push({pts:geo('car', a, b) || st(a, b), st:'car'});
@@ -999,7 +1023,8 @@ function legShapes(leg, a, b){
 }
 function drawShape(sh, grp, op, big){
   const w = big ? 1.3 : 1, o = {opacity:op, interactive:false, pane:big ? 'route' : 'overlayPane'};
-  if(sh.st.startsWith('mtr:')){ const c = (LINES[sh.st.slice(4)] || [0, '#888'])[1];
+  if(sh.st === 'bus'){ L.polyline(sh.pts, {...o, color:'#fff', weight:10 * w}).addTo(grp); L.polyline(sh.pts, {...o, color:'#e8710a', weight:6 * w}).addTo(grp); }
+  else if(sh.st.startsWith('mtr:')){ const c = (LINES[sh.st.slice(4)] || [0, '#888'])[1];
     L.polyline(sh.pts, {...o, color:'#fff', weight:10 * w}).addTo(grp);
     L.polyline(sh.pts, {...o, color:c, weight:6 * w}).addTo(grp);
     for(const p of sh.pts) L.circleMarker(p, {...o, radius:3.5 * w, color:c, weight:2, fillColor:'#fff', fillOpacity:op}).addTo(grp); }
@@ -1010,8 +1035,24 @@ function drawShape(sh, grp, op, big){
 
 // ---- in-page directions ----
 let routeCur = null;
-function clearRoute(){ routeCur = null; pendingRoute = null; redrawRoute(false); }
-const legIcon = {walk:'🚶', mtr:'🚇', taxi:'🚕', given:'🚌', boat:'⛴️', sf:'⛴️'}, MODE = {walk:'도보', mtr:'지하철', taxi:'택시', given:'버스', boat:'배', sf:'스타페리'};
+function clearRoute(){ routeCur = null; pendingRoute = null; stopRun(); redrawRoute(false); }
+// a tap on a way to go runs the little couple along it, fast
+let runRaf = 0, runT = 0; const runLayer = L.layerGroup().addTo(map);
+function stopRun(){ cancelAnimationFrame(runRaf); clearTimeout(runT); runRaf = runT = 0; runLayer.clearLayers(); }
+function runRoute(shapes, mode){ stopRun(); if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const pts = shapes.filter(sh => !(mode === 'mtr' && sh.st === 'link')).flatMap(sh => sh.pts.map(q => Array.isArray(q) ? q : [q.lat, q.lng])), cum = [0];
+  for(let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + dist(pts[i - 1][0], pts[i - 1][1], pts[i][0], pts[i][1]));
+  const total = cum[cum.length - 1]; if(pts.length < 2 || !(total > 30)) return;
+  const dur = Math.min(6000, Math.max(2200, total * 1.6)), trail = L.polyline([pts[0]], {color:'#ff6f91', weight:7, opacity:.95, interactive:false, pane:'route'}).addTo(runLayer),
+    mk = L.marker(pts[0], {icon:L.divIcon({className:'', html:'<div class="run">' + COUPLE + '</div>', iconSize:[48,44], iconAnchor:[24,42]}), interactive:false, zIndexOffset:3000}).addTo(runLayer);
+  let t0 = 0, i = 1;
+  const tick = t => { if(!t0) t0 = t; const f = Math.min(1, (t - t0) / dur), e = f < .5 ? 2 * f * f : 1 - Math.pow(-2 * f + 2, 2) / 2, at = e * total;
+    while(i < pts.length - 1 && cum[i] < at) i++;
+    const k = Math.max(0, Math.min(1, (at - cum[i - 1]) / (cum[i] - cum[i - 1] || 1))), q = [pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * k, pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * k];
+    mk.setLatLng(q); trail.setLatLngs(pts.slice(0, i).concat([q]));
+    if(f < 1) runRaf = requestAnimationFrame(tick); else runT = setTimeout(stopRun, 1400); };
+  runT = setTimeout(() => { runRaf = requestAnimationFrame(tick); }, 350); } // after the map has settled on the route
+const legIcon = {walk:'🚶', mtr:'🚇', taxi:'🚕', given:'🚌', boat:'⛴️', sf:'⛴️', bus:'🚌', tram:'🚋'}, MODE = {walk:'도보', mtr:'지하철', taxi:'택시', given:'버스', boat:'배', sf:'스타페리', bus:'버스', tram:'트램'};
 const legShort = lg => lg.mode === 'same' ? '바로 옆' : `${legIcon[lg.mode] || ''} 약 ${lg.min}분 · ${fmt(lg.d)}`;
 // tapping a place answers "how far from here": my position, else the selected stop, else the hotel
 function fromHere(p){ return me && nearHK(me) && dist(me.lat, me.lng, p.lat, p.lng) < 60000 ? [me, '내 위치'] : sel && sel.lat && dist(sel.lat, sel.lng, p.lat, p.lng) > 30 ? [sel, sel.name] : [home(), home().name]; }
@@ -1022,7 +1063,7 @@ function originFor(s){
   const rs = routeStops(day), i = rs.indexOf(s);
   return i > 0 ? [rs[i-1], rs[i-1].name] : [home(), home().name];
 }
-function showRoute(s, o, alts){ pendingRoute = null; noSheets(); if(mm && !wide() && shState !== 'peek') setSheet('peek'); const [from, lbl] = o || originFor(s); routeCur = {s, from:{lat:from.lat, lng:from.lng}, lbl, alts, nt:{}}; redrawRoute(true); }
+function showRoute(s, o, alts){ pendingRoute = null; noSheets(); loadBus(); if(mm && !wide() && shState !== 'peek') setSheet('peek'); const [from, lbl] = o || originFor(s); routeCur = {s, from:{lat:from.lat, lng:from.lng}, lbl, alts, nt:{}}; redrawRoute(true); }
 // shortcut: route is drawn from where you are when tapped; tap again to refresh as you walk
 function routeTo(s){
   showRoute(s);
@@ -1032,8 +1073,9 @@ function redrawRoute(fitIt){
   routeLayer.clearLayers(); const box = document.getElementById('routebox');
   map.getContainer().classList.toggle('routing', !!routeCur);
   if(!routeCur){ box.hidden = true; return; }
-  const {s, from, lbl, alts} = routeCur, opts = legOpts(from, s), leg = opts.find(o => o.mode === routeCur.mode) || opts.find(o => o.mode === legOf(from, s).mode) || opts[0], shapes = legShapes(leg, from, s);
+  const {s, from, lbl, alts} = routeCur, opts = legOpts(from, s, true), leg = opts.find(o => o.mode === routeCur.mode) || opts.find(o => o.mode === legOf(from, s).mode) || opts[0], shapes = legShapes(leg, from, s);
   for(const sh of shapes) drawShape(sh, routeLayer, 1, true);
+  if(routeCur.run){ routeCur.run = false; runRoute(shapes, leg.mode); }
   L.circleMarker([from.lat, from.lng], {radius:7, color:'#fff', weight:3, fillColor:'#1a73e8', fillOpacity:1, interactive:false, pane:'route'}).addTo(routeLayer);
   if(routeCur.preview){ box.hidden = true; return; } // line only; the steps open from the popup button
   if(s.id === 'wc') L.marker([s.lat, s.lng], {icon:L.divIcon({className:'', html:'<div class="tpin">🚻</div>', iconSize:[22,22], iconAnchor:[11,11]}), interactive:false, zIndexOffset:1500}).addTo(routeLayer);
@@ -1043,11 +1085,9 @@ function redrawRoute(fitIt){
   const ol = document.getElementById('routesteps'); ol.textContent = '';
   if(opts.length > 1 || leg.cost){ const li = h('li', 'alts cmp');
     opts.forEach((o, n) => { const b = h('button', 'cmpr'); b.type = 'button'; b.setAttribute('aria-pressed', o.mode === leg.mode);
-      b.append(h('span', 'k', (legIcon[o.mode] || '') + ' ' + (MODE[o.mode] || '')), h('span', 't', o.min + '분'), h('span', 'c', o.mode === 'walk' ? '무료' : costTxt(o, true) || '–'));
+      b.append(h('span', 'k', (legIcon[o.mode] || '') + ' ' + (MODE[o.mode] || '') + (o.mode === 'bus' ? ' ' + o.bus.no : '')), h('span', 't', o.min + '분'), h('span', 'c', o.mode === 'walk' ? '무료' : costTxt(o, true) || '–'));
       if(!n && opts.length > 1) b.append(h('span', 'tag next', '추천'));
-      b.addEventListener('click', () => { routeCur.mode = o.mode; redrawRoute(true); }); li.append(b); });
-    if(!inMacau(s) && opts[0].mode !== 'boat' && opts[0].d > 600){ const a = h('a', 'cmpr'); a.href = `https://www.google.com/maps/dir/?api=1&origin=${from.lat},${from.lng}&destination=${s.lat},${s.lng}&travelmode=transit`; a.target = '_blank'; a.rel = 'noopener';
-      a.append(h('span', 'k', '🚌 버스·트램'), h('span', 'c', 'Google 지도')); li.append(a); }
+      b.addEventListener('click', () => { routeCur.mode = o.mode; routeCur.run = true; redrawRoute(true); }); li.append(b); });
     ol.append(li); }
   for(const st of legSteps(leg)){ const li = h('li', null, st.t); ol.append(li); if(!st.line) continue;
     const k = st.line + st.sta + st.up, nt = routeCur.nt[k];
@@ -1082,7 +1122,7 @@ function drawToilets(){
       .addTo(toiletLayer); }
 }
 // smoking rooms: few are mapped, street smoking outside no-smoking areas is legal in both cities
-const SMOKE = [[22.31773,113.93009,"공항 흡연실"],[22.3372,114.17543,"흡연 구역"],[22.31307,113.91665,"공항 흡연실"],[22.31002,113.91714,"공항 흡연실"],[22.3095,113.91735,"공항 흡연실"],[22.30722,113.91884,"공항 흡연실"],[22.33734,114.17532,"흡연 구역"],[22.31389,114.04047,"흡연 구역"],[22.39036,114.20954,"흡연 구역"],[22.14696,113.56542,"런더너 카지노 안 흡연실"],[22.14494,113.5654,"런더너 그랜드 카지노 안 흡연실"],[22.14442,113.57439,"그랜드 리스보아 팰리스 카지노 안 흡연실"],[22.1463,113.56795,"MGM 코타이 카지노 안 흡연실"],[22.14568,113.55184,"브로드웨이 카지노 안 흡연실"],[22.1413,113.56167,"스튜디오 시티 카지노 안 흡연실"],[22.14789,113.57209,"윈 팰리스 카지노 안 흡연실"],[22.14853,113.56049,"베네시안 카지노 안 흡연실"],[22.14838,113.55432,"갤럭시 카지노 안 흡연실"],[22.14543,113.56267,"플라자 마카오 카지노 안 흡연실"],[22.31512,113.93303,"공항 흡연실"],[22.30536,114.16438,"흡연 구역"]], smokeLayer = L.layerGroup().addTo(map);
+const SMOKE = [[22.31773,113.93009,"공항 흡연실 · 출국 심사 후"],[22.3372,114.17543,"흡연 구역"],[22.31307,113.91665,"공항 흡연실 · 출국 심사 후"],[22.31002,113.91714,"공항 흡연실 · 출국 심사 후"],[22.3095,113.91735,"공항 흡연실 · 출국 심사 후"],[22.30722,113.91884,"공항 흡연실 · 출국 심사 후"],[22.33734,114.17532,"흡연 구역"],[22.31389,114.04047,"흡연 구역"],[22.39036,114.20954,"흡연 구역"],[22.14696,113.56542,"런더너 카지노 안 흡연실"],[22.14494,113.5654,"런더너 그랜드 카지노 안 흡연실"],[22.14442,113.57439,"그랜드 리스보아 팰리스 카지노 안 흡연실"],[22.1463,113.56795,"MGM 코타이 카지노 안 흡연실"],[22.14568,113.55184,"브로드웨이 카지노 안 흡연실"],[22.1413,113.56167,"스튜디오 시티 카지노 안 흡연실"],[22.14789,113.57209,"윈 팰리스 카지노 안 흡연실"],[22.14853,113.56049,"베네시안 카지노 안 흡연실"],[22.14838,113.55432,"갤럭시 카지노 안 흡연실"],[22.14543,113.56267,"플라자 마카오 카지노 안 흡연실"],[22.31512,113.93303,"공항 흡연실 · 출국 심사 후"],[22.30368,114.16493,"서구룡역 흡연실 · 개찰 후 B3"],[22.18817,113.55147,"NAPE 야외 흡연 부스·흡연 지점 (카를로스 공원 주변 9곳)"],[22.15744,113.57434,"마카오 공항 흡연 라운지 · 출국 심사 후"],[22.14917,113.56651,"시티 오브 드림스 카지노 안 흡연실"],[22.18581,113.54788,"MGM 마카오 카지노 안 흡연실"]], smokeLayer = L.layerGroup().addTo(map);
 for(const t of SMOKE) L.marker([t[0], t[1]], {icon:L.divIcon({className:'', html:'<div class="tpin sm">🚬</div>', iconSize:[22,22], iconAnchor:[11,11]}), zIndexOffset:-200, title:t[2]})
   .bindPopup(() => { const box = h('div','pop'), bt = h('button', null, '🧭 길찾기'); bt.type = 'button'; bt.addEventListener('click', () => { map.closePopup(); showRoute({id:'smoke', name:t[2], lat:t[0], lng:t[1]}, originNear()); }); box.append(h('b', null, t[2]), bt); return box; }).addTo(smokeLayer);
 async function toggleToilet(){
@@ -1461,10 +1501,10 @@ function drawMap(){
     const grp = alt ? [s] : day.stops.filter(o => o.lat===s.lat && o.lng===s.lng && o.kind!=='alt'); if(grp[0]!==s) continue;
     const cls = 'pin' + (alt?' alt':'') + (grp.every(o=>done[o.id])&&!alt?' done':'') + (grp.includes(sel)?' sel':'') + (grp.includes(nx)?' next':'') + (grp.length>1?' multi':'');
     const pid = s.far || grp.length > 1 ? null : phId(s), nm = s.far ? '' : shortName(grp.map(o => o.name).join(' · '));
-    const m = L.marker([s.lat,s.lng], {icon: L.divIcon({className:'', html:`<div class="${cls} mk">${s.far ? '✈' : grp.map(o=>label(day,o)).join('·')}${nm ? nmTag(nm, 1) : ''}${phImg(pid)}</div>`, iconSize:[28,28], iconAnchor:[14,14]}),
-      title:s.name, zIndexOffset: grp.includes(sel)?1000:0}).addTo(layer);
-    if(nm) mkList.push({m, pri:grp.includes(sel) ? 0 : alt ? 20 : 10, day:1, name:nm, ph:!!pid, r:14});
-    m.bindTooltip(s.name, {direction:'top', offset:[0,-14]});
+    const m = L.marker([s.lat,s.lng], {icon: L.divIcon({className:'', html:`<div class="${cls} mk">${s.far ? '✈' : grp.map(o=>label(day,o)).join('·')}${nm ? nmTag(nm, 1) : ''}${phImg(pid)}</div>`, iconSize:[36,36], iconAnchor:[18,18]}),
+      title:s.name, zIndexOffset: grp.includes(sel)?1500:alt?700:900}).addTo(layer);
+    if(nm) mkList.push({m, pri:grp.includes(sel) ? 0 : alt ? 20 : 10, day:1, name:nm, ph:!!pid, r:18});
+    m.bindTooltip(s.name, {direction:'top', offset:[0,-18]});
     m.on('click', () => { const p0 = map.latLngToContainerPoint([s.lat, s.lng]);
       const near = day.stops.filter(o => o.lat && (o.lat !== s.lat || o.lng !== s.lng) && map.latLngToContainerPoint([o.lat, o.lng]).distanceTo(p0) < 24);
       if(near.length && map.getZoom() < 16){ map.fitBounds([[s.lat, s.lng], ...near.map(o => [o.lat, o.lng])], fitOpt(50, {maxZoom:17})); return; }
@@ -1480,7 +1520,7 @@ function drawMap(){
     const m = L.marker([p.lat,p.lng], {icon, title:p.n, pid:p.id, zIndexOffset:LM[p.id] ? -400 : -500}).addTo(recLayer);
     m.on('popupopen', () => { recOpen = p.id; previewRoute(p); }).on('popupclose', () => { if(recOpen === p.id) recOpen = null; if(routeCur && routeCur.preview) clearRoute(); if(geoDirty && !recOpen){ geoDirty = false; setTimeout(drawMap, 0); } });
     mkList.push({m, pri:LM[p.id] ? 30 : p.c === 'food' ? 40 : 50, name:nm, ph:!!pid, r:LM[p.id] ? 20 : 13});
-    m.bindPopup(() => { const box = h('div','pop'); if(pid) box.append(phBox(pid, p.n)); box.append(h('b',null,p.n)); const o = fromHere(p); { const lg = legOf(o[0], p), others = legOpts(o[0], p).filter(x => x.mode !== lg.mode).map(x => optText(x)); box.append(h('div','rt1', legShort(lg) + ' · ' + shortName(o[1]) + '에서')); if(others.length) box.append(h('div','m', others.join(' · '))); } const inf = INFO[p.id]; if(inf && inf.d) box.append(h('div','d',inf.d)); { const t = kv(placeRows(p, p.id)); if(t) box.append(t); }
+    m.bindPopup(() => { const box = h('div','pop'); if(pid) box.append(phBox(pid, p.n)); box.append(h('b',null,p.n)); const o = fromHere(p); { const lg = legOf(o[0], p), others = legOpts(o[0], p, true).filter(x => x.mode !== lg.mode).slice(0, 3).map(x => optText(x)); box.append(h('div','rt1', legShort(lg) + ' · ' + shortName(o[1]) + '에서')); if(others.length) box.append(h('div','m', others.join(' · '))); } const inf = INFO[p.id]; if(inf && inf.d) box.append(h('div','d',inf.d)); { const t = kv(placeRows(p, p.id)); if(t) box.append(t); }
       const ol = orLink(p.id); if(ol) box.append(ol);
       if(ZH[p.id]){ const zb = h('button', 'zhb', '🀄 ' + ZH[p.id]); zb.type = 'button'; zb.addEventListener('click', () => showZh({rec:p.id, name:p.n})); box.append(zb); }
       const row = h('div','prow'), go = h('button','ghost','🧭 길찾기'), b = h('button',null,'＋ '+day.tab.replace(/^\S+\s/,'')); go.type = b.type = 'button';
@@ -1491,9 +1531,10 @@ function drawMap(){
   declutter();
   if(recOpen){ const k = recLayer.getLayers().find(m => m.options.pid === recOpen); if(k) k.openPopup(); else recOpen = null; }
 }
+const COUPLE = '<svg viewBox="0 0 48 44" width="48" height="44" aria-hidden="true"><path d="M6.5 15.500a9 9 0 0 1 18 0v9.500a2.500 2.500 0 0 1-2.500 2.500h-13a2.500 2.500 0 0 1-2.500-2.500z" fill="#7a4a35"/><path d="M9 32.500c0-4 2.900-6.500 6.500-6.500s6.500 2.500 6.500 6.500l1.600 9.500h-16.200z" fill="#ff6f91"/><circle cx="15.500" cy="16.500" r="7.600" fill="#ffe3d1"/><path d="M7.700 15.800c.500-5.600 4.200-8.600 7.800-8.600s7.300 3 7.800 8.600c-3.200-.300-5.900-1.900-7.300-4.400-1.700 2.600-4.700 4.100-8.300 4.400z" fill="#7a4a35"/><circle cx="12.700" cy="17.600" r="1.100" fill="#3b2a2a"/><circle cx="18.300" cy="17.600" r="1.100" fill="#3b2a2a"/><ellipse cx="10.800" cy="20" rx="1.700" ry="1" fill="#ff8fab" opacity=".75"/><ellipse cx="20.200" cy="20" rx="1.700" ry="1" fill="#ff8fab" opacity=".75"/><path d="M14.100 20.600q1.400 1.300 2.800 0" stroke="#3b2a2a" stroke-width=".9" fill="none" stroke-linecap="round"/><path d="M26 32.500c0-4 2.900-6.500 6.500-6.500s6.500 2.500 6.500 6.500l.900 9.500h-14.800z" fill="#24a99a"/><circle cx="32.500" cy="16.500" r="7.600" fill="#ffe3d1"/><path d="M24.600 16c-.400-5.800 3.400-9.200 7.900-9.200s8.300 3.400 7.900 9.200c-1.900-.400-3.400-1.500-4.300-3.100-2.800 1.800-6.800 2.800-11.500 3.100z" fill="#3b3340"/><circle cx="29.700" cy="17.600" r="1.100" fill="#3b2a2a"/><circle cx="35.300" cy="17.600" r="1.100" fill="#3b2a2a"/><ellipse cx="27.800" cy="20" rx="1.700" ry="1" fill="#ffb199" opacity=".7"/><ellipse cx="37.200" cy="20" rx="1.700" ry="1" fill="#ffb199" opacity=".7"/><path d="M31.100 20.600q1.400 1.300 2.800 0" stroke="#3b2a2a" stroke-width=".9" fill="none" stroke-linecap="round"/><path d="M24 5.600c-1.500-2.600-5-.900-3.700 1.800.700 1.400 2.300 2.600 3.700 3.800 1.400-1.200 3-2.400 3.700-3.800 1.300-2.700-2.200-4.400-3.700-1.800z" fill="#ff6f91"/></svg>';
 function drawMe(){ meLayer.clearLayers(); if(!me) return;
   L.circle([me.lat,me.lng], {radius:me.acc, color:'#1a73e8', weight:1, fillOpacity:.12, interactive:false}).addTo(meLayer);
-  L.marker([me.lat,me.lng], {icon: L.divIcon({className:'', html:`<div class="me"><i ${meHead == null ? 'hidden' : `style="transform:rotate(${meHead}deg)"`}></i><svg viewBox="0 0 48 44" width="48" height="44" aria-hidden="true"><path d="M6.5 15.500a9 9 0 0 1 18 0v9.500a2.500 2.500 0 0 1-2.500 2.500h-13a2.500 2.500 0 0 1-2.500-2.500z" fill="#7a4a35"/><path d="M9 32.500c0-4 2.900-6.500 6.500-6.500s6.500 2.500 6.500 6.500l1.600 9.500h-16.200z" fill="#ff6f91"/><circle cx="15.500" cy="16.500" r="7.600" fill="#ffe3d1"/><path d="M7.700 15.800c.500-5.600 4.200-8.600 7.800-8.600s7.300 3 7.800 8.600c-3.200-.300-5.900-1.900-7.300-4.400-1.700 2.600-4.700 4.100-8.300 4.400z" fill="#7a4a35"/><circle cx="12.700" cy="17.600" r="1.100" fill="#3b2a2a"/><circle cx="18.300" cy="17.600" r="1.100" fill="#3b2a2a"/><ellipse cx="10.800" cy="20" rx="1.700" ry="1" fill="#ff8fab" opacity=".75"/><ellipse cx="20.200" cy="20" rx="1.700" ry="1" fill="#ff8fab" opacity=".75"/><path d="M14.100 20.600q1.400 1.300 2.800 0" stroke="#3b2a2a" stroke-width=".9" fill="none" stroke-linecap="round"/><path d="M26 32.500c0-4 2.900-6.500 6.500-6.500s6.500 2.500 6.500 6.500l.900 9.500h-14.800z" fill="#24a99a"/><circle cx="32.500" cy="16.500" r="7.600" fill="#ffe3d1"/><path d="M24.600 16c-.400-5.800 3.400-9.200 7.900-9.200s8.300 3.400 7.900 9.200c-1.900-.400-3.400-1.500-4.300-3.100-2.800 1.800-6.800 2.800-11.500 3.100z" fill="#3b3340"/><circle cx="29.700" cy="17.600" r="1.100" fill="#3b2a2a"/><circle cx="35.300" cy="17.600" r="1.100" fill="#3b2a2a"/><ellipse cx="27.800" cy="20" rx="1.700" ry="1" fill="#ffb199" opacity=".7"/><ellipse cx="37.200" cy="20" rx="1.700" ry="1" fill="#ffb199" opacity=".7"/><path d="M31.100 20.600q1.400 1.300 2.800 0" stroke="#3b2a2a" stroke-width=".9" fill="none" stroke-linecap="round"/><path d="M24 5.600c-1.500-2.600-5-.900-3.700 1.800.700 1.400 2.300 2.600 3.700 3.800 1.400-1.200 3-2.400 3.700-3.800 1.300-2.700-2.200-4.400-3.700-1.800z" fill="#ff6f91"/></svg></div>`, iconSize:[48,52], iconAnchor:[24,46]}), zIndexOffset:2000, interactive:false}).addTo(meLayer); }
+  L.marker([me.lat,me.lng], {icon: L.divIcon({className:'', html:`<div class="me"><i ${meHead == null ? 'hidden' : `style="transform:rotate(${meHead}deg)"`}></i>${COUPLE}</div>`, iconSize:[48,52], iconAnchor:[24,46]}), zIndexOffset:2000, interactive:false}).addTo(meLayer); }
 // compass: iOS gives webkitCompassHeading (after a permission tap), Android an absolute alpha
 let meHead = null, compassOn = false;
 const arrived = new Set();
@@ -2028,7 +2069,7 @@ document.getElementById('breset').addEventListener('click', () => { if(!confirm(
   day.stops = JSON.parse(ORIG[day.id]); day.edited = false; day.newer = false; delete day.base; sel = null; savePlan(); render(); });
 let pinPop = null;
 map.on('contextmenu', e => { const p = {id:'pin', n:'지정 위치', sub:'지도에서 고른 곳', c:'search', lat:+e.latlng.lat.toFixed(6), lng:+e.latlng.lng.toFixed(6), stay:30};
-  const box = h('div','pop'), o = fromHere(p), lg = legOf(o[0], p), others = legOpts(o[0], p).filter(x => x.mode !== lg.mode).map(x => optText(x));
+  const box = h('div','pop'), o = fromHere(p), lg = legOf(o[0], p), others = legOpts(o[0], p, true).filter(x => x.mode !== lg.mode).slice(0, 3).map(x => optText(x));
   box.append(h('b', null, '📍 지정 위치'), h('div','rt1', legShort(lg) + ' · ' + shortName(o[1]) + '에서')); if(others.length) box.append(h('div','m', others.join(' · ')));
   const row = h('div','prow'), go = h('button','ghost','🧭 길찾기'), b = h('button', null, '＋ ' + day.tab.replace(/^\S+\s/, '') + '에 추가'); go.type = b.type = 'button';
   go.addEventListener('click', () => { showRoute({id:'pin', name:'지정 위치', lat:p.lat, lng:p.lng}, fromHere(p)); map.closePopup(); });
@@ -2074,6 +2115,7 @@ setDay((firstOpen && todayId && !/^#plan=/.test(location.hash) ? todayId : locat
 try{ if(localStorage.getItem('hk-mm')) setMM(true); }catch(e){}
 importPlan().then(ch => { if(ch) setDay('day1', false); });
 loadWx();
+setTimeout(loadBus, 4000);
 </script>
 </body>
 </html>

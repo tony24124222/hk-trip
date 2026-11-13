@@ -77,6 +77,16 @@ button,a,summary,label,select{touch-action:manipulation;-webkit-tap-highlight-co
 .map{--ctop:8px}
 .abbar{position:absolute;z-index:1001;top:var(--ctop);left:50%;transform:translateX(-50%);max-width:calc(100% - 130px);display:flex;align-items:center;gap:6px;background:#1a73e8;color:#fff;border-radius:999px;padding:5px 6px 5px 12px;font:700 13px/1.3 var(--body);box-shadow:0 2px 8px rgba(0,0,0,.3)}
 .abbar[hidden]{display:none}
+.navbar{position:absolute;z-index:1002;top:var(--ctop);left:8px;right:8px;display:flex;align-items:center;gap:8px;background:#1a73e8;color:#fff;border-radius:16px;padding:8px 10px;box-shadow:0 3px 10px rgba(0,0,0,.3)}
+.navbar[hidden]{display:none}
+.navbar b{flex:0 0 auto;min-width:34px;text-align:center;font-size:30px;line-height:1}
+.nvt{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:1px}
+#navt{font:700 16px/1.25 var(--body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#navs{font-size:12px;opacity:.92;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.navbar button{flex:0 0 auto;height:30px;min-width:30px;border:0;border-radius:999px;background:rgba(255,255,255,.24);color:#fff;font:700 12px var(--body);padding:0 8px}
+#navv[aria-pressed="false"]{opacity:.5}
+html.naving .zoom,html.naving .lay,html.naving .catp,html.naving .abbar{margin-top:62px}
+html.naving .routebox{display:none}
 .abbar span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .abbar button{flex:0 0 auto;width:26px;height:26px;border:0;border-radius:50%;background:rgba(255,255,255,.25);color:#fff;font-size:13px}
 .zoom,.lay{position:absolute;top:var(--ctop);display:flex;flex-direction:column;gap:6px;z-index:500;transition:opacity .15s}
@@ -202,7 +212,7 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .newer[hidden]{display:none}
 .routebox .rh{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .routebox .rh b{font:400 15.5px var(--display);color:#1a73e8;flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.routebox .rh #routerun{background:#1a73e8;border-color:#1a73e8;color:#fff}
+.routebox .rh #routerun,.routebox .rh #routenav{background:#1a73e8;border-color:#1a73e8;color:#fff}
 .rpick{display:flex;align-items:center;gap:6px;margin:6px 0 4px}
 .rpick label{flex:1 1 0;min-width:0;display:flex;align-items:center;gap:4px;font-size:11.5px;font-weight:700;color:var(--muted);white-space:nowrap}
 .rpick input{width:100%;min-width:0;box-sizing:border-box;font:16px var(--body);padding:3px 7px;border:2px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
@@ -220,6 +230,7 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .steps li{padding:3px 0 3px 2px;border-bottom:1px dashed var(--line)}
 .steps li:last-child{border-bottom:0}
 .steps .nt{color:var(--accent);font-weight:700}
+.steps a.svc{display:inline-block;text-decoration:none;background:#111;color:#fff;border-color:#111}
 .steps .svc{border:2px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:0 8px;font:700 11.5px var(--body);white-space:nowrap}
 .steps .alts{display:flex;flex-wrap:wrap;gap:6px;border:0;padding-top:6px}
 .steps .cmp{display:grid}
@@ -229,10 +240,11 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .cmpr .t{flex:0 0 42px;font-variant-numeric:tabular-nums}
 .cmpr .c{flex:1;min-width:0;color:var(--muted);font-size:12.5px}
 .cmpr .tag{margin-left:auto;flex:0 0 auto}
-.routebox .cmp{display:flex;gap:6px}
-.routebox .cmpr{flex:1 1 0;min-width:0;flex-wrap:wrap;gap:0 6px;padding:4px 8px;position:relative}
+.routebox .cmp{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-top:8px;margin-top:-4px}
+.routebox .cmp::-webkit-scrollbar{display:none}
+.routebox .cmpr{flex:1 0 auto;min-width:0;flex-wrap:wrap;gap:0 6px;padding:4px 8px;position:relative}
 .routebox .cmpr .k{min-width:0}
-.routebox .cmpr .c{flex:1 0 100%;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.routebox .cmpr .c{flex:1 0 100%;font-size:12px;white-space:nowrap}
 .routebox .cmpr .tag{position:absolute;top:-8px;right:6px;font-size:10px;padding:0 5px}
 .routebox .sph img{width:104px;height:72px}
 #routefrom:empty{display:none}
@@ -505,6 +517,7 @@ html.mm .dayhead h2{display:none}
     <div class="mapbox">
       <div class="map" id="mapwrap">
         <div id="map"></div>
+        <div class="navbar" id="navbar" hidden><b id="navi"></b><div class="nvt" id="navre"><span id="navt"></span><small id="navs"></small></div><button type="button" id="navv" aria-pressed="true" aria-label="음성 안내">🔊</button><button type="button" id="navlog">기록</button><button type="button" id="navx" aria-label="안내 끝내기">✕</button></div>
         <div class="abbar" id="abbar" hidden><span id="abtxt"></span><button type="button" id="abx" aria-label="출발 지정 취소">✕</button></div>
         <div class="zoom">
           <button type="button" id="gps" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4"/></svg><span>내 위치</span></button>
@@ -525,7 +538,7 @@ html.mm .dayhead h2{display:none}
       <div class="trk" id="trk" hidden><span id="trkt"></span><button type="button" id="trkx">지우기</button></div>
       <div id="herert"></div>
       <div class="routebox" id="routebox" hidden>
-        <div class="rh"><b id="routetxt"></b><button type="button" id="routerun">▶ 경로 미리보기</button><button type="button" id="routeclr">닫기</button></div>
+        <div class="rh"><b id="routetxt"></b><button type="button" id="routerun">▶ 미리보기</button><button type="button" id="routenav">🚶 안내</button><button type="button" id="routeclr">닫기</button></div>
         <div class="rpick"><label>출발<input id="rpa" type="text" autocomplete="off" enterkeyhint="search" placeholder="장소 이름"></label><button type="button" id="rswap" aria-label="출발·도착 바꾸기">⇅</button><label>도착<input id="rpb" type="text" autocomplete="off" enterkeyhint="search" placeholder="장소 이름"></label></div>
         <div class="rsug" id="rsug" hidden></div>
         <div class="m" id="routefrom"></div>
@@ -1032,7 +1045,7 @@ function legSteps(leg, a, b){
     { const lr = m.rides[m.rides.length - 1], tc = lr.codes[lr.codes.length - 1];
       S.push({t:`🚶 ${stKo(tc)}역 ${m.to.exit ? m.to.exit+' 출구로 나가서 ' : '에서 '}${way(m.to, b)}${fmt(m.to.d)} · 도보 ${Math.max(1, Math.round(WALKM(m.to.d)))}분${near(b)}`, ph:exPh(tc, m.to.exit), sv:m.to}); }
     return S; }
-  if(leg.mode === 'taxi') return [{t:`🚕 택시 약 ${leg.min}분 · ${fmt(leg.d)}`}];
+  if(leg.mode === 'taxi') return [{t:`🚕 택시 약 ${leg.min}분 · ${fmt(leg.d)}`, uber:1}];
   if(leg.bus){ const u = leg.bus; return [{t:`🚶 ${u.s0} 정류장까지 도보 ${u.wa}분`}, {t:leg.mode === 'tram' ? `🚋 트램 ${u.no}행 · ${u.n}정거장 · 약 ${u.ride}분` : `🚌 ${u.no}번${u.alt.length ? ' (또는 ' + u.alt.join('·') + ')' : ''} · ${u.n}정거장 · 약 ${u.ride}분`}, {t:`🚶 ${u.s1}에서 내려 도보 ${u.wb}분`}]; }
   if(leg.mode === 'sf') return [{t:`🚶 ${leg.fromK ? '침사추이' : '센트럴 7번'} 부두까지 도보 ${leg.wa}분`}, {t:'⛴️ 스타페리 약 10분 · 6~12분 간격 · 옥토퍼스'}, {t:`🚶 ${leg.fromK ? '센트럴 7번' : '침사추이'} 부두에서 도보 ${leg.wb}분`}];
   if(leg.mode === 'boat') return [leg.fromHk ? leg.pier && {t:'🚕 셩완 홍콩마카오 페리터미널까지 택시'} : {t:'🚌 타이파 페리터미널까지 셔틀·택시 약 15분'}, {t:`⛴️ 코타이 워터젯 ${leg.fromHk ? '셩완 → 타이파' : '타이파 → 셩완'} 약 60분 · 30분 전 도착 · 여권`}, {t:'🕒 ' + boats(leg.fromHk, false).map(hm).join(' ')}, leg.fromHk ? {t:'🚌 타이파 터미널 → 숙소 무료 셔틀·택시 약 15분'} : leg.pier && {t:'🚕 셩완 터미널 → 다음 장소 택시'}].filter(Boolean);
@@ -1202,6 +1215,72 @@ function originFor(s){
 }
 function showRoute(s, o, alts){ pendingRoute = null; noSheets(); loadBus(); if(mm && !wide() && shState !== 'peek') setSheet('peek'); const [from, lbl] = o || originFor(s); routeCur = {s, from:{lat:from.lat, lng:from.lng}, lbl, alts, nt:{}}; redrawRoute(true); }
 // shortcut: route is drawn from where you are when tapped; tap again to refresh as you walk
+function uberUrl(from, to, lbl){ const q = [['action', 'setPickup']], pt = (k, o, n) => q.push([k + '[latitude]', o.lat.toFixed(6)], [k + '[longitude]', o.lng.toFixed(6)], [k + '[nickname]', n]);
+  if(me && dist(me.lat, me.lng, from.lat, from.lng) < 80) q.push(['pickup', 'my_location']); else pt('pickup', from, lbl || '출발');
+  pt('dropoff', to, to.name || '도착'); return 'https://m.uber.com/ul/?' + q.map(x => x.map(encodeURIComponent).join('=')).join('&'); }
+// ---- walking guidance: follows the GPS along a foot route and names the next turn; rides are not guided
+const NAVMOD = {left:['↰', '왼쪽'], right:['↱', '오른쪽'], 'slight left':['↖', '왼쪽 방향'], 'slight right':['↗', '오른쪽 방향'], 'sharp left':['↰', '왼쪽으로 크게'], 'sharp right':['↱', '오른쪽으로 크게'], straight:['↑', '직진'], uturn:['↶', '뒤로 돌기']};
+let nav = null, navVoice = true; try{ navVoice = localStorage.getItem('hk-navv') !== '0'; }catch(e){}
+const navLayer = L.layerGroup().addTo(map), navLog = [];
+// the record for the 기록 button: timings and distances only, never a position or a place name
+const nlog = (ev, o) => { navLog.push(Object.assign({t:new Date().toTimeString().slice(0, 8), ev}, o)); if(navLog.length > 400) navLog.shift(); };
+function navSay(t){ if(!navVoice || !window.speechSynthesis) return; try{ speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t); u.lang = 'ko-KR'; speechSynthesis.speak(u); }catch(e){} }
+function navBar(icon, t, sub){ document.getElementById('navi').textContent = icon; document.getElementById('navt').textContent = t; document.getElementById('navs').textContent = sub || ''; }
+async function navWake(){ try{ if(nav && navigator.wakeLock && document.visibilityState === 'visible') nav.wake = await navigator.wakeLock.request('screen'); }catch(e){} }
+document.addEventListener('visibilitychange', navWake);
+function navDrag(){ if(nav) nav.follow = false; }
+function navStart(){ if(!routeCur) return; if(nav) navEnd();
+  const {s, from} = routeCur, opts = legOpts(from, s, true), leg = opts.find(o => o.mode === routeCur.mode) || opts.find(o => o.mode === legOf(from, s).mode) || opts[0];
+  // walk the whole way, or walk to where the ride starts (station entrance, stop)
+  let to = {lat:s.lat, lng:s.lng, name:shortName(s.name || s.n || '도착'), fin:true};
+  if(leg.mode === 'mtr') to = {lat:leg.m.from.lat, lng:leg.m.from.lng, name:stKo(leg.m.from.c) + '역' + (leg.m.from.exit ? ' ' + leg.m.from.exit + ' 출구' : '')};
+  else if(leg.bus) to = {lat:leg.bus.pts[0][0], lng:leg.bus.pts[0][1], name:leg.bus.s0 + ' 정류장'};
+  else if(leg.mode !== 'walk' && !(leg.mode === 'given' && leg.d < 1200)){ toast('걷는 구간만 안내'); return; }
+  nav = {to, pts:null, cum:null, steps:[], said:-1, off:0, re:0, follow:true, wake:null, busy:false};
+  document.getElementById('navbar').hidden = false; document.documentElement.classList.add('naving'); document.getElementById('navv').setAttribute('aria-pressed', navVoice);
+  navBar('🧭', '위치 찾는 중…', to.name); nlog('start', {fin:!!to.fin, mode:leg.mode, gps:watchId !== null, fix:!!me}); navWake(); stopRun(); map.on('dragstart', navDrag);
+  if(me) navRoute(); else if(watchId === null) toggleGps(); }
+function navEnd(msg){ if(!nav) return; nlog('end', {msg:msg || ''}); if(nav.wake) nav.wake.release().catch(() => {}); nav = null; navLayer.clearLayers(); map.off('dragstart', navDrag);
+  document.getElementById('navbar').hidden = true; document.documentElement.classList.remove('naving'); if(window.speechSynthesis) speechSynthesis.cancel(); if(msg) toast(msg); }
+async function navRoute(){ const n = nav; if(!n || n.busy || !me) return;
+  if(dist(me.lat, me.lng, n.to.lat, n.to.lng) > 30000){ nlog('far', {}); navEnd('너무 멀어서 안내 불가'); return; }
+  n.busy = true; n.re = Date.now(); const t0 = Date.now();
+  try{ const r = await getJ(`https://routing.openstreetmap.de/routed-foot/route/v1/foot/${me.lng},${me.lat};${n.to.lng},${n.to.lat}?overview=full&geometries=geojson&steps=true`), rt = r.routes[0];
+    if(nav !== n) return;
+    n.pts = rt.geometry.coordinates.map(c => [c[1], c[0]]); n.cum = [0]; for(let i = 1; i < n.pts.length; i++) n.cum.push(n.cum[i - 1] + dist(n.pts[i - 1][0], n.pts[i - 1][1], n.pts[i][0], n.pts[i][1]));
+    n.total = n.cum[n.cum.length - 1]; n.steps = []; let at = 0; const sc = n.total / (rt.distance || n.total || 1);
+    // a step's turn sits where the step begins, i.e. after the lengths of the steps before it
+    for(const st of rt.legs[0].steps){ const m = st.maneuver, md = NAVMOD[m.modifier] || NAVMOD.straight, nm = String(st.name || '').replace(/^[^A-Za-z]*(?=[A-Za-z])/, '').trim();
+      if(m.type === 'arrive') n.steps.push({at:n.total, icon:'🏁', t:n.to.name});
+      else if(m.type !== 'depart' && !(m.type === 'new name' && (m.modifier || 'straight') === 'straight')) n.steps.push({at:at * sc, icon:md[0], t:md[1] + (nm ? ' · ' + nm : '')});
+      at += st.distance; }
+    if(!n.steps.length) n.steps.push({at:n.total, icon:'🏁', t:n.to.name});
+    n.said = -1; n.off = 0; navLayer.clearLayers();
+    L.polyline(n.pts, {color:'#fff', weight:10, opacity:.9, interactive:false, pane:'route'}).addTo(navLayer); L.polyline(n.pts, {color:'#1a73e8', weight:6, interactive:false, pane:'route'}).addTo(navLayer);
+    nlog('route', {status:200, ms:Date.now() - t0, m:Math.round(n.total), steps:n.steps.length, pts:n.pts.length}); n.busy = false; navTick(true);
+  }catch(e){ nlog('route-fail', {ms:Date.now() - t0, err:String(e && e.message || e).slice(0, 60)}); if(nav === n) navBar('⚠️', '길을 못 받아옴', '움직이면 다시 시도'); }
+  finally{ n.busy = false; } }
+function navTick(fresh){ const n = nav; if(!n || !me) return; if(!n.pts){ if(Date.now() - n.re > 8000) navRoute(); return; }
+  // the nearest point of the route line gives how far along and how far off
+  let off = 1e9, prog = 0; const kx = Math.cos(me.lat * Math.PI / 180);
+  for(let i = 1; i < n.pts.length; i++){ const a = n.pts[i - 1], b = n.pts[i], ax = (a[1] - me.lng) * kx, ay = a[0] - me.lat, dx = (b[1] - a[1]) * kx, dy = b[0] - a[0], l2 = dx * dx + dy * dy,
+      t = l2 ? Math.max(0, Math.min(1, -(ax * dx + ay * dy) / l2)) : 0, d = Math.hypot(ax + dx * t, ay + dy * t) * 111320;
+    if(d < off){ off = d; prog = n.cum[i - 1] + (n.cum[i] - n.cum[i - 1]) * t; } }
+  const rem = Math.max(0, n.total - prog), toEnd = dist(me.lat, me.lng, n.to.lat, n.to.lng);
+  if(toEnd < Math.max(18, Math.min(me.acc, 35)) || rem < 12){ nlog('arrive', {rem:Math.round(rem), acc:Math.round(me.acc)}); navSay(n.to.name + ' 도착'); const fin = n.to.fin, name = n.to.name; navEnd();
+    toast(fin ? `🎉 ${name} 도착` : `📍 ${name} 도착`); return; }
+  n.off = off > Math.max(45, me.acc * 1.5) ? n.off + 1 : 0;
+  if(n.off >= 3 && Date.now() - n.re > 12000){ nlog('reroute', {off:Math.round(off), acc:Math.round(me.acc)}); navSay('경로를 다시 찾습니다'); n.pts = null; n.re = 0; navRoute(); return; }
+  const k = Math.max(0, n.steps.findIndex(x => x.at > prog + 5)), st = n.steps[k], d = Math.max(0, st.at - prog);
+  navBar(st.icon, (d > 15 ? fmt(d) + ' 앞 ' : '곧 ') + st.t, `남은 ${fmt(rem)} · 약 ${Math.max(1, Math.round(WALKM(rem)))}분 · ${n.to.name}`);
+  if(d < 35 && n.said !== k){ n.said = k; navSay((d > 15 ? Math.round(d / 10) * 10 + '미터 앞 ' : '곧 ') + st.t.split(' · ')[0] + (st.icon === '🏁' ? ' 도착' : '')); }
+  else if(fresh) navSay(`${n.to.name}까지 ${Math.max(10, Math.round(rem / 10) * 10)}미터`);
+  nlog('fix', {acc:Math.round(me.acc), off:Math.round(off), prog:Math.round(prog), rem:Math.round(rem), k, d:Math.round(d), follow:n.follow});
+  if(n.follow) centerOn(me.lat, me.lng, Math.max(map.getZoom(), 17)); }
+document.getElementById('navx').addEventListener('click', () => navEnd('안내 끝'));
+document.getElementById('navre').addEventListener('click', () => { if(nav){ nav.follow = true; if(me) centerOn(me.lat, me.lng, Math.max(map.getZoom(), 17)); } });
+document.getElementById('navv').addEventListener('click', e => { navVoice = !navVoice; e.currentTarget.setAttribute('aria-pressed', navVoice); try{ localStorage.setItem('hk-navv', navVoice ? '1' : '0'); }catch(x){} if(!navVoice && window.speechSynthesis) speechSynthesis.cancel(); });
+document.getElementById('navlog').addEventListener('click', async () => { const t = navLog.map(x => JSON.stringify(x)).join('\n'); try{ await navigator.clipboard.writeText(t); toast('기록 복사됨'); }catch(e){ toast('복사 실패'); } });
 function routeTo(s){
   showRoute(s);
   if(!me && watchId === null && navigator.geolocation && window.isSecureContext){ pendingRoute = s; toggleGps(); }
@@ -1230,6 +1309,7 @@ function redrawRoute(fitIt){
     ol.append(li); }
   for(const st of legSteps(leg, from, s)){ const li = h('li', null, st.t); ol.append(li);
     if(st.sv) li.append(' ', svBtn(() => svView(st.sv.lat, st.sv.lng, false), 'svc'));
+    if(st.uber && !inMacau(from) && !inMacau(s)){ const a = h('a', 'svc', '우버 부르기 ↗'); a.href = uberUrl(from, s, lbl); a.target = '_blank'; a.rel = 'noopener'; li.append(' ', a); }
     if(st.ph){ const box = h('div', 'sph'); li.append(box); exitPhotos(st.ph).then(list => { if(!list.length){ box.remove(); return; }
         const four = list.slice(0, 4); for(const x of four){ const a = h('a'), im = h('img'); a.href = x.page; a.title = x.credit; a.addEventListener('click', e => { e.preventDefault(); lbList(four, four.indexOf(x), st.ph.ko + '역 출구'); }); im.src = x.thumb; im.alt = x.title; im.loading = 'lazy'; im.addEventListener('error', () => a.remove()); a.append(im); box.append(a); } }); }
     if(!st.line) continue;
@@ -1769,14 +1849,14 @@ function gpsMsg(t){ const e = document.getElementById('gpsmsg'); e.hidden = !t; 
 function toggleGps(){ const b = document.getElementById('gps');
   // second tap = back to me, a tap while already centred = off
   if(watchId!==null && me && nearHK(me) && map.latLngToContainerPoint([me.lat, me.lng]).distanceTo(map.latLngToContainerPoint(viewCenter())) > 48){ centerOn(me.lat, me.lng, Math.max(map.getZoom(), 16)); return; }
-  if(watchId!==null){ navigator.geolocation.clearWatch(watchId); watchId = null; me = null; b.setAttribute('aria-pressed','false'); gpsMsg(''); if(routeCur && routeCur.lbl === '내 위치') clearRoute(); drawMe(); drawList(); return; }
+  if(watchId!==null){ navEnd(); navigator.geolocation.clearWatch(watchId); watchId = null; me = null; b.setAttribute('aria-pressed','false'); gpsMsg(''); if(routeCur && routeCur.lbl === '내 위치') clearRoute(); drawMe(); drawList(); return; }
   if(!navigator.geolocation){ gpsMsg('이 브라우저는 위치 기능을 지원하지 않습니다.'); return; }
   if(!window.isSecureContext){ gpsMsg('위치는 https 주소에서만 켜집니다. 이 파일을 https 사이트에 올려서 열어 주세요.'); return; }
   b.setAttribute('aria-pressed','true'); gpsMsg('위치 찾는 중…'); let first = true; startCompass();
   watchId = navigator.geolocation.watchPosition(p => { const was = me; me = {lat:p.coords.latitude, lng:p.coords.longitude, acc:p.coords.accuracy};
       // walking = the phone reports speed, or the fix moved more than its noise since the last one
       { const d = was ? dist(was.lat, was.lng, me.lat, me.lng) : 0; me.mv = p.coords.speed > .4 || d > Math.max(6, me.acc / 3); me.fl = me.mv && was && Math.abs(me.lng - was.lng) > 1e-5 ? me.lng < was.lng : !!(was && was.fl); }
-      gpsMsg(nearHK(me) ? '내 위치 · 오차 약 '+Math.round(me.acc)+'m' : '지금은 홍콩 밖 · 도착하면 지도에 표시'); drawMe(); trackAdd();
+      gpsMsg(nearHK(me) ? '내 위치 · 오차 약 '+Math.round(me.acc)+'m' : '지금은 홍콩 밖 · 도착하면 지도에 표시'); drawMe(); trackAdd(); if(nav) navTick();
       if(DATES[day.id] === hkIso()){ const nx0 = nextStop(day), rng = 60 + Math.min(me.acc, 60),
           nx = routeStops(day).filter(s => s.lat && !done[s.id] && !arrived.has(s.id) && (s === nx0 || !isHome(s))).map(s => [dist(me.lat, me.lng, s.lat, s.lng), s]).filter(x => x[0] < rng).sort((a, b) => a[0] - b[0]).map(x => x[1])[0];
         if(nx){ arrived.add(nx.id); noteArr(nx.id);
@@ -1784,7 +1864,7 @@ function toggleGps(){ const b = document.getElementById('gps');
       if(pendingRoute){ const s = pendingRoute; pendingRoute = null; first = false; routeTo(s); }
       else if(first){ first = false; if(nearHK(me)) centerOn(me.lat, me.lng, Math.max(map.getZoom(), 15)); } },
     e => { gpsMsg(e.code===1 ? '위치 권한이 거부되었습니다. 브라우저 설정에서 이 사이트의 위치 접근을 허용해 주세요.' : '위치를 가져오지 못했습니다. 잠시 후 다시 눌러 주세요.');
-      pendingRoute = null;
+      pendingRoute = null; if(nav && !me) navEnd('위치를 못 받아 안내 끝');
       if(e.code===1){ navigator.geolocation.clearWatch(watchId); watchId = null; b.setAttribute('aria-pressed','false'); } },
     {enableHighAccuracy:true, maximumAge:5000, timeout:20000}); }
 
@@ -2297,6 +2377,7 @@ const GUIDE = [["📅 여행 4일 휴관·행사", [["11/16 월", "M+ 휴관"], 
     }catch(e){ msg.textContent = '실패'; } finally{ idle(busy); } });
 }
 document.getElementById('gps').addEventListener('click', toggleGps);
+document.getElementById('routenav').addEventListener('click', navStart);
 document.getElementById('routerun').addEventListener('click', () => { if(!routeCur) return; routeCur.run = Date.now(); redrawRoute(true); });
 document.getElementById('routeclr').addEventListener('click', clearRoute);
 document.getElementById('ztoilet').addEventListener('click', toggleToilet);

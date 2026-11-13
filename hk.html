@@ -50,7 +50,7 @@ a{color:inherit}
 button{font:inherit;color:inherit;cursor:pointer}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 @media (pointer:coarse){ input,select,textarea{font-size:16px !important} }
-@media (max-width:819px){ html:not(.mm) .stop{scroll-margin-top:372px} }
+@media (max-width:819px){ html:not(.mm) .stop{scroll-margin-top:calc(var(--mbh, 360px) + 12px)} html:not(.mm) #herert .rt{max-height:190px;overflow:auto} }
 button,a,summary,label,select{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 @media (hover:hover){ button:not(:disabled):hover,.tab:hover,summary:hover{filter:brightness(.96)} }
 
@@ -610,7 +610,7 @@ const label = (d, s) => s.kind==='alt' ? String.fromCharCode(65 + d.stops.filter
 const dist = (a,b,c,d) => { const R=6371000,t=Math.PI/180,x=(d-b)*t*Math.cos((a+c)/2*t),y=(c-a)*t; return Math.hypot(x,y)*R; };
 const fmt = m => m>=1000 ? (m/1000).toFixed(1)+'km' : Math.round(m/10)*10+'m';
 
-const map = L.map('map', {zoomControl:true, maxZoom:19}); map.attributionControl.setPrefix(false);
+const map = L.map('map', {zoomControl:true, maxZoom:19, tapHold:L.Browser.touchNative && L.Browser.mobile}); map.attributionControl.setPrefix(false);
 const darkMq = matchMedia('(prefers-color-scheme: dark)');
 const PALS = [{land:'#fdf4ec', land2:'#fbeee3', park:'#d9f0cf', water:'#bde6df', waterText:'#3b8f85', sand:'#fbf0cf', bldg:'#f4e1d4', bldgLine:'#ead0c0', road:'#ffffff', casing:'#efd9cc', major:'#ffe4eb', majCasing:'#f6c3d1', waterEdge:'#8fd3c8', path:'#ffffff', rail:'#d6c3c9', text:'#5b4a51', halo:'#ffffff', poi:'#8a6f78'},
   {land:'#2a2125', land2:'#2f252a', park:'#2d3b2d', water:'#1d4744', waterText:'#86d6cc', sand:'#3a3424', bldg:'#3a2e33', bldgLine:'#463840', road:'#46383e', casing:'#2a2125', major:'#6a4352', majCasing:'#2a2125', waterEdge:'#2f6b66', path:'#55464c', rail:'#6a5a60', text:'#f2e4e9', halo:'#221a1e', poi:'#d6bcc6'}];
@@ -675,7 +675,7 @@ const stName = c => (MTR.find(s => s[0]===c) || [c,c])[1];
 const BUS = {apt:['001837', 'A21', 'I', '시내행'], sci:['001419', 'A21', 'O', '공항행']};
 const busOpen = new Set(), busLast = {};
 // the list redraws on every GPS fix: reuse an answer younger than 30 s
-async function busEta(el, b){ const c = busLast[b[0]]; el.textContent = c ? c.txt : `🚌 ${b[1]} ${b[3]} · 불러오는 중…`; if(c && (c.busy || Date.now() - c.t < 30000)) return;
+async function busEta(el, b){ const c = busLast[b[0]]; el.textContent = c ? c.txt : `🚌 ${b[1]} ${b[3]} · 불러오는 중…`; if(c && (c.busy || Date.now() - c.t < 25000)) return;
   busLast[b[0]] = {t:c ? c.t : 0, txt:el.textContent, busy:true};
   try{ const j = await getJ(`https://rt.data.gov.hk/v2/transport/citybus/eta/CTB/${b[0]}/${b[1]}`);
     const ts = (j.data || []).filter(e => e.dir === b[2] && e.eta).map(e => Math.round((Date.parse(e.eta) - Date.now()) / 60000)).filter(m => m >= 0).sort((x, y) => x - y).slice(0, 3);
@@ -888,7 +888,7 @@ function originFor(s){
   const rs = routeStops(day), i = rs.indexOf(s);
   return i > 0 ? [rs[i-1], rs[i-1].name] : [HOTEL, HOTEL.name];
 }
-function showRoute(s, o, alts){ if(mm && !wide() && shState !== 'peek') setSheet('peek'); const [from, lbl] = o || originFor(s); routeCur = {s, from:{lat:from.lat, lng:from.lng}, lbl, alts, nt:{}}; redrawRoute(true); }
+function showRoute(s, o, alts){ pendingRoute = null; if(mm && !wide() && shState !== 'peek') setSheet('peek'); const [from, lbl] = o || originFor(s); routeCur = {s, from:{lat:from.lat, lng:from.lng}, lbl, alts, nt:{}}; redrawRoute(true); }
 // shortcut: route is drawn from where you are when tapped; tap again to refresh as you walk
 function routeTo(s){
   showRoute(s);
@@ -989,7 +989,7 @@ async function importPlan(){
     const o = JSON.parse(txt); history.replaceState(null, '', location.pathname + '#day1');
     if(!confirm('공유받은 일정으로 바꿀까요? 이 폰의 편집 내용은 덮어씁니다.')) return true;
     for(const d of DAYS){ const p = o[d.id]; if(!p) continue; if(/^\d\d:\d\d$/.test(p.start || '')) d.start = p.start;
-      if(Array.isArray(p.stops) && p.stops.length < 60 && p.stops.every(x => x && typeof x.name === 'string' && (x.lat == null ? x.kind === 'plain' : typeof x.lat === 'number' && typeof x.lng === 'number' && isFinite(x.lat) && isFinite(x.lng)))){ d.stops = p.stops; d.edited = true; d.base = hsh(ORIG[d.id]); d.newer = false; } else { d.stops = JSON.parse(ORIG[d.id]); d.edited = false; } }
+      if(Array.isArray(p.stops) && p.stops.length < 60 && p.stops.every(x => x && typeof x.name === 'string' && (x.lat == null ? x.kind === 'plain' : typeof x.lat === 'number' && typeof x.lng === 'number' && isFinite(x.lat) && isFinite(x.lng)))){ d.stops = p.stops; d.edited = true; d.base = hsh(ORIG[d.id]); d.newer = false; } else { d.stops = JSON.parse(ORIG[d.id]); d.edited = false; d.newer = false; delete d.base; } }
     savePlan(); toast('공유 일정 적용됨');
   }catch(e){ history.replaceState(null, '', location.pathname + '#day1'); toast('공유 링크를 읽지 못함'); }
   return true;
@@ -1336,7 +1336,7 @@ function drawMap(){
   if(recOpen){ const k = recLayer.getLayers().find(m => m.options.pid === recOpen); if(k) k.openPopup(); else recOpen = null; }
 }
 function drawMe(){ meLayer.clearLayers(); if(!me) return;
-  L.circle([me.lat,me.lng], {radius:me.acc, color:'#1a73e8', weight:1, fillOpacity:.12}).addTo(meLayer);
+  L.circle([me.lat,me.lng], {radius:me.acc, color:'#1a73e8', weight:1, fillOpacity:.12, interactive:false}).addTo(meLayer);
   L.marker([me.lat,me.lng], {icon: L.divIcon({className:'', html:`<div class="me"><i ${meHead == null ? 'hidden' : `style="transform:rotate(${meHead}deg)"`}></i></div>`, iconSize:[18,18], iconAnchor:[9,9]}), zIndexOffset:2000, interactive:false}).addTo(meLayer); }
 // compass: iOS gives webkitCompassHeading (after a permission tap), Android an absolute alpha
 let meHead = null, compassOn = false;
@@ -1461,12 +1461,12 @@ function pick(lbl, opts, cur, set){
 }
 function toast(msg, undo, label){
   let t = document.getElementById('toast'); if(!t){ t = h('div','toast'); t.id = 'toast'; t.setAttribute('role','status'); document.body.append(t); }
-  t.textContent = msg;
+  t.textContent = msg; t.dataset.undo = undo ? '1' : '';
   if(undo){ const b = h('button', null, label || '되돌리기'); b.type = 'button'; b.addEventListener('click', () => { t.hidden = true; undo(); }); t.append(b); }
   t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, undo ? 6000 : 2500);
 }
 const MACAU = {lat:22.1687, lng:113.5519};
-function refPoint(){ if(me && nearHK(me)) return me; if(sel && sel.lat) return sel; const pts = mapStops(day);
+function refPoint(){ const home = day.id === 'macau' ? MACAU : HOTEL; if(me && dist(me.lat, me.lng, home.lat, home.lng) < 35000) return me; if(sel && sel.lat) return sel; const pts = mapStops(day);
   return day.id === 'macau' ? pts[0] || MACAU : pts.some(s => s.lat === HOTEL.lat) || !pts.length ? HOTEL : pts[0]; }
 function drawSheet(){
   const sh = document.getElementById('sheet'); sh.hidden = !sheetOpen; document.getElementById('badd').setAttribute('aria-pressed', sheetOpen); if(!sheetOpen) return;
@@ -1497,7 +1497,7 @@ function drawEvents(){
     const r = h('div','evt'); r.append(h('span',null,'🎆'), h('b',null,e.n), h('span','m',e.when+' · '+e.sub));
     if(e.lat){ const has = day.stops.some(s => s.rec===e.id), b = h('button','chip', has ? '일정에 있음' : '＋ 일정에 추가'); b.type = 'button'; b.disabled = has; b.addEventListener('click', () => addPlace(e)); r.append(b); }
     if(e.src){ const a = h('a',null,'출처'); a.href = e.src; a.target = '_blank'; a.rel = 'noopener'; r.append(a); }
-    if(e.lat){ r.style.cursor = 'pointer'; r.addEventListener('click', ev => { if(ev.target.closest('a,button')) return; centerOn(e.lat, e.lng, 16); document.getElementById('mapwrap').scrollIntoView({block:'nearest', behavior:'smooth'});
+    if(e.lat){ r.style.cursor = 'pointer'; r.addEventListener('click', ev => { if(ev.target.closest('a,button')) return; if(mm && !wide() && shState === 'full') setSheet('half'); centerOn(e.lat, e.lng, 16); document.getElementById('mapwrap').scrollIntoView({block:'nearest', behavior:'smooth'});
       const mk = recLayer.getLayers().find(x => x.options.pid === e.id); if(mk) setTimeout(() => mk.openPopup(), 60); }); }
     box.append(r); }
   if(day.stops.some(x => x.kind === 'plain' && /^tbd/.test(x.id)) || day.id === 'macau') for(const c of COURSES.filter(c => c.only === day.id && !c.ids.every(id => day.stops.some(x => x.rec === id)))){
@@ -1603,7 +1603,7 @@ function select(s, scroll){ sel = s; if(mm && !wide() && shState === 'full') set
   if(scroll && !mm && s.lat) L.popup(Object.assign(popOpt(), {offset:[0, -12]})).setLatLng([s.lat, s.lng]).setContent(stopPop(s)).openOn(map);
   if(scroll){ const li = document.getElementById('stop-'+s.id); if(li) li.scrollIntoView({block:'nearest', behavior:'smooth'}); } }
 function setDay(id, push){ day = DAYS.find(d=>d.id===id) || DAYS[0]; sel = null; recOpen = null; map.closePopup();
-  { const t = document.getElementById('toast'); if(t) t.hidden = true; } // its undo would act on the day being left
+  { const t = document.getElementById('toast'); if(t && t.dataset.undo) t.hidden = true; } // its undo would act on the day being left
   for(const b of document.querySelectorAll('.tab')) b.setAttribute('aria-selected', b.dataset.id===day.id);
   document.getElementById('mapwrap').hidden = !!day.nomap; fit(); render();
   if(push){ try{ history.replaceState(null, '', '#' + day.id); }catch(e){} } } // no history entry per tab: the back swipe should leave the page
@@ -1680,12 +1680,12 @@ const GUIDE = [["📅 여행 4일 휴관·행사", [["11/16 월", "M+ 휴관"], 
     d.append(ul); g.append(d); }
   // currency: daily ECB rate, last value kept for offline
   { const d = h('details','gd'), box = h('div','fx'), inp = h('input'), out = h('b'), note = h('small'); d.append(h('summary', null, '💱 환율 계산'));
-    let fx = {r:170.06, d:'2026-11-12'}; try{ fx = JSON.parse(localStorage.getItem('hk-fx')) || fx; }catch(e){}
+    let fx = {r:170.06, d:'2026-11-12'}; try{ const v = JSON.parse(localStorage.getItem('hk-fx')); if(v && typeof v.r === 'number' && v.r > 50 && typeof v.d === 'string') fx = v; }catch(e){}
     inp.type = 'number'; inp.inputMode = 'decimal'; inp.min = 0; inp.value = 100; inp.setAttribute('aria-label', '홍콩달러');
     const draw = () => { const v = +inp.value || 0; out.textContent = '≈ ' + Math.round(v * fx.r).toLocaleString('ko-KR') + '원'; note.textContent = `HK$1 = ${fx.r.toFixed(1)}원 · ${fx.d.slice(5).replace('-', '/')} 기준 · MOP 1 ≈ ${(fx.r / 1.03).toFixed(0)}원`; };
     inp.addEventListener('input', draw); box.append('HK$ ', inp, ' ', out, note); d.append(box); g.append(d); draw();
     d.addEventListener('toggle', () => { if(!d.open || d.dataset.got) return; d.dataset.got = 1;
-      getJ('https://api.frankfurter.dev/v1/latest?base=HKD&symbols=KRW').then(j => { if(j && j.rates && j.rates.KRW > 50){ fx = {r:j.rates.KRW, d:j.date}; try{ localStorage.setItem('hk-fx', JSON.stringify(fx)); }catch(e){} draw(); } }).catch(() => {}); }); } }
+      getJ('https://api.frankfurter.dev/v1/latest?base=HKD&symbols=KRW').then(j => { if(j && j.rates && j.rates.KRW > 50 && typeof j.date === 'string'){ fx = {r:j.rates.KRW, d:j.date}; try{ localStorage.setItem('hk-fx', JSON.stringify(fx)); }catch(e){} draw(); } }).catch(() => {}); }); } }
 document.getElementById('gps').addEventListener('click', toggleGps);
 document.getElementById('routeclr').addEventListener('click', clearRoute);
 document.getElementById('ztoilet').addEventListener('click', toggleToilet);
@@ -1710,11 +1710,11 @@ map.on('contextmenu', e => { const p = {id:'pin', n:'지정 위치', sub:'지도
   b.addEventListener('click', () => { map.closePopup(); addPlace(Object.assign({}, p, {id:'pin' + Date.now().toString(36)})); });
   row.append(go, b); box.append(row);
   pinPop = L.popup(popOpt()).setLatLng(e.latlng).setContent(box).openOn(map); previewRoute(p); });
-map.on('popupclose', e => { if(e.popup === pinPop){ pinPop = null; if(routeCur && routeCur.preview) clearRoute(); } });
+map.on('popupclose', e => { if(e.popup === pinPop){ pinPop = null; if(routeCur && routeCur.preview) clearRoute(); } if(showToilet) setTimeout(() => { if(!document.getElementById('mapwrap').classList.contains('popon')) drawToilets(); }, 0); });
 // ⭐ opens a category picker for the recommended places shown on the map
-let recCats = new Set(Object.keys(CATS)); try{ const v = JSON.parse(localStorage.getItem('hk-cats')); if(Array.isArray(v)) recCats = new Set(v.filter(k => CATS[k])); }catch(e){}
+let recCats = new Set(Object.keys(CATS)); try{ const v = JSON.parse(localStorage.getItem('hk-cats-off')); if(Array.isArray(v)) for(const k of v) recCats.delete(k); }catch(e){}
 function drawCats(){ const box = document.getElementById('catp'); box.textContent = '';
-  const mk = (lbl, on, f) => { const b = h('button', 'chip', lbl); b.type = 'button'; b.setAttribute('aria-pressed', on); b.addEventListener('click', () => { f(); try{ localStorage.setItem('hk-cats', JSON.stringify([...recCats])); }catch(e){} drawCats(); drawMap(); }); box.append(b); };
+  const mk = (lbl, on, f) => { const b = h('button', 'chip', lbl); b.type = 'button'; b.setAttribute('aria-pressed', on); b.addEventListener('click', () => { f(); try{ localStorage.setItem('hk-cats-off', JSON.stringify(Object.keys(CATS).filter(k => !recCats.has(k)))); }catch(e){} drawCats(); drawMap(); }); box.append(b); };
   for(const [k, v] of Object.entries(CATS)) mk(v[0] + ' ' + v[1], recCats.has(k), () => { if(recCats.has(k)) recCats.delete(k); else recCats.add(k); });
   mk(recCats.size ? '모두 끄기' : '모두 켜기', false, () => { recCats = new Set(recCats.size ? [] : Object.keys(CATS)); });
   showRec = recCats.size > 0; document.getElementById('zrec').setAttribute('aria-pressed', showRec); }
@@ -1731,6 +1731,7 @@ document.getElementById('q').addEventListener('input', () => {
       drawSheet(); }catch(err){ toast('검색 실패'); } }, 450);
 });
 window.addEventListener('resize', () => { if(mm) setSheet(shState); map.invalidateSize(); });
+if(window.ResizeObserver) new ResizeObserver(() => { if(!mm) document.documentElement.style.setProperty('--mbh', document.querySelector('.mapbox').offsetHeight + 'px'); }).observe(document.querySelector('.mapbox'));
 if('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 window.addEventListener('hashchange', () => { if(/^#plan=/.test(location.hash)) importPlan().then(() => setDay('day1', false)); else setDay(location.hash.slice(1), false); });
 const today = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10), todayId = (Object.entries(DATES).find(([, v]) => v === today) || [])[0]; // Hong Kong date

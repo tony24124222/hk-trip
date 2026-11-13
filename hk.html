@@ -243,6 +243,7 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .m{font-size:12px;color:var(--muted)}
 .rec button,.pop button{border:0;background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:6px 12px;font-weight:700;font-size:13px}
 .rec button:disabled{background:var(--done)}
+.more{list-style:none;padding:6px 0}.more button{border:1px solid var(--line);background:none;color:inherit;border-radius:999px;padding:8px 14px;font:inherit;font-size:13px}
 .pop{display:flex;flex-direction:column;gap:4px;min-width:170px}
 .pop b{font:400 15px var(--display)}
 .pop .d{font-size:13px;line-height:1.45}
@@ -403,7 +404,7 @@ html.mm .dayhead h2{display:none}
       <div class="sheet" id="sheet" hidden>
         <div class="cats" id="courses"></div>
         <div class="cats" id="cats"></div>
-        <input type="search" id="q" name="q" aria-label="장소 검색" placeholder="장소 이름 검색 (영어·한자)…" autocomplete="off">
+        <input type="search" id="q" name="q" aria-label="장소 검색" placeholder="장소 이름 검색…" autocomplete="off">
         <div class="sref" id="sref"></div>
         <ul class="recs" id="recs"></ul>
       </div>
@@ -578,7 +579,18 @@ const REC = [
  {id:'redsugar', c:'bar', n:"레드 슈거 · 테라스 바", sub:"Red Sugar · 케리 호텔 7층 · 홍함", lat:22.301418, lng:114.189005, stay:75, hours:'16:00–24:00', best:[1020,1320]},
  {id:'eyebar', c:'bar', n:"아이바 · 루프톱", sub:"eyebar · 아이스퀘어 30층", lat:22.296943, lng:114.171857, stay:60, hours:'15:00–24:00', best:[1080,1380]},
  {id:'hkmft', c:'go', n:"홍콩마카오 페리터미널", sub:"Shun Tak Centre · 셩완", lat:22.288671, lng:114.152437, stay:30},
- {id:'onebus', c:'go', n:"원버스 정류장 · 마카오 직행", sub:"One Bus · 조던 캔톤로드 505", lat:22.306039, lng:114.167949, stay:15}
+ {id:'onebus', c:'go', n:"원버스 정류장 · 마카오 직행", sub:"One Bus · 조던 캔톤로드 505", lat:22.306039, lng:114.167949, stay:15},
+  {id:'wynnpalace', c:'sight', n:"윈 팰리스 · 분수 쇼", sub:"Wynn Palace · 마카오 코타이", lat:22.148099, lng:113.571403, stay:45, best:[1080,1380]},
+  {id:'venetian', c:'sight', n:"베네시안 마카오", sub:"The Venetian Macao · 마카오 코타이", lat:22.1482, lng:113.560472, stay:60},
+  {id:'londoner', c:'photo', n:"런더너 마카오", sub:"The Londoner Macao · 마카오 코타이", lat:22.145812, lng:113.565336, stay:40},
+  {id:'galaxy', c:'sight', n:"갤럭시 마카오", sub:"Galaxy Macau · 마카오 코타이", lat:22.147446, lng:113.554569, stay:45},
+  {id:'cod', c:'sight', n:"시티 오브 드림스", sub:"City of Dreams · 마카오 코타이", lat:22.149179, lng:113.566413, stay:45},
+  {id:'studiocity', c:'photo', n:"스튜디오 시티", sub:"Studio City · 마카오 코타이", lat:22.141022, lng:113.560719, stay:30},
+  {id:'lordstow', c:'sweet', n:"로드 스토우 · 에그타르트", sub:"Lord Stow's Bakery · 쿤하 거리 · 마카오 타이파", lat:22.153456, lng:113.557116, stay:15},
+  {id:'taipahouses', c:'photo', n:"타이파 주택 박물관", sub:"Taipa Houses · 마카오 타이파", lat:22.153941, lng:113.559734, stay:30},
+  {id:'grandlisboa', c:'photo', n:"그랜드 리스보아", sub:"Grand Lisboa · 마카오 반도", lat:22.190773, lng:113.543326, stay:20},
+  {id:'mactower', c:'sight', n:"마카오 타워", sub:"Macau Tower · 마카오 반도", lat:22.1798, lng:113.536796, stay:60},
+  {id:'ama', c:'sight', n:"아마 사원", sub:"A-Ma Temple · 마카오 반도", lat:22.186109, lng:113.531267, stay:30}
 ];
 const EVENTS = [
  {id:'sol', c:'event', from:'2026-11-18', to:'2026-11-18', when:'11/18(수) 20:00', n:'심포니 오브 라이트 마지막 공연 + 불꽃', sub:'침사추이 해변 · 19:30 전 자리 잡기', lat:22.2934, lng:114.1705, stay:60, fixed:1170, src:'https://www.thestandard.com.hk/news/article/348049/'},
@@ -882,7 +894,7 @@ function clearRoute(){ routeCur = null; pendingRoute = null; redrawRoute(false);
 const legIcon = {walk:'🚶', mtr:'🚇', taxi:'🚕', given:'🚌'};
 const legShort = lg => lg.mode === 'same' ? '바로 옆' : `${legIcon[lg.mode] || ''} 약 ${lg.min}분 · ${fmt(lg.d)}`;
 // tapping a place answers "how far from here": my position, else the selected stop, else the hotel
-function fromHere(p){ return me && nearHK(me) && dist(me.lat, me.lng, p.lat, p.lng) < 60000 ? [me, '내 위치'] : sel && sel.lat && dist(sel.lat, sel.lng, p.lat, p.lng) > 30 ? [sel, sel.name] : [HOTEL, HOTEL.name]; }
+function fromHere(p){ return me && nearHK(me) && dist(me.lat, me.lng, p.lat, p.lng) < 60000 ? [me, '내 위치'] : sel && sel.lat && dist(sel.lat, sel.lng, p.lat, p.lng) > 30 ? [sel, sel.name] : (o => o && dist(o.lat, o.lng, p.lat, p.lng) > 30 ? [o, o.name] : [HOTEL, HOTEL.name])(day.id === 'macau' && mapStops(day)[0]); }
 function previewRoute(p){ if(routeCur && !routeCur.preview) return; const o = fromHere(p);
   routeCur = {s:{id:'rec-' + p.id, name:p.n, lat:p.lat, lng:p.lng}, from:{lat:o[0].lat, lng:o[0].lng}, lbl:o[1], nt:{}, preview:true}; redrawRoute(false); }
 function originFor(s){
@@ -1147,7 +1159,17 @@ const INFO = {
  sisterwah:{d:"맑은 국물 소고기 양지 국수, 미쉐린 수록.", t:"카드 불가 · 현금·옥토퍼스·알리페이"},
  ozone:{d:"118층 호텔 바, 하버 전체 조망.", t:"스마트 캐주얼(슬리퍼·운동복 불가) · 테이블 최소 주문 있음"},
  redsugar:{d:"하버 쪽 야외 테라스가 넓은 호텔 바.", t:"해피아워 16–20시 · 호텔 아이콘에서 해변 산책로로 도보 15~20분"},
- eyebar:{d:"30층 루프톱 바, 하버 정면 야경.", t:"2026년 영업시간 미확인 · 가기 전 확인"}
+ eyebar:{d:"30층 루프톱 바, 하버 정면 야경.", t:"2026년 영업시간 미확인 · 가기 전 확인"},
+ wynnpalace:{d:"호수 분수 쇼와 호수 위를 도는 케이블카(스카이캡).", t:"분수 12시~자정 20~30분 간격 · 스카이캡 10시~자정 (공식 확인 못 함)", p:"무료"},
+ venetian:{d:"실내 운하와 곤돌라가 있는 리조트·쇼핑몰.", t:"북방관이 이 건물 1층"},
+ londoner:{d:"빅벤 모형이 선 런던풍 리조트."},
+ cod:{d:"하우스 오브 댄싱 워터 공연이 열리는 리조트.", t:"윈 팰리스 바로 옆"},
+ studiocity:{d:"8자 모양 관람차가 건물에 달린 리조트."},
+ lordstow:{d:"마카오식 에그타르트로 알려진 빵집의 타이파 지점.", t:"본점은 콜로안"},
+ taipahouses:{d:"민트색 포르투갈풍 주택 다섯 채.", t:"쿤하 거리에서 도보 5분"},
+ grandlisboa:{d:"연꽃 모양 건물, 마카오 반도 야경의 상징."},
+ mactower:{d:"338m 전망 타워."},
+ ama:{d:"마카오에서 가장 오래된 사원, 세계유산."}
 };
 const COURSES = [
  {e:"🛍️", n:"침사추이 쇼핑", ids:["jenny", "bakehouse", "harbourcity", "cheunghing", "theone", "donki", "hashtagb"], min:270},
@@ -1158,7 +1180,7 @@ const COURSES = [
  {e:"🎰", n:"마카오 반도 → 타이파", ids:["senado", "stpaul", "monte", "margaret", "cunha", "eiffel"], min:300, only:"macau"}
 ];
 /*INFO-END*/
-const ZH = {"hkmft": "港澳碼頭（信德中心）", "onebus": "港澳一號（廣東道505號）", "timho": "添好運", "tsimchai": "沾仔記", "kaukee": "九記牛腩", "lanfong": "蘭芳園", "taicheong": "泰昌餅家", "singheung": "勝香園", "yatlok": "一樂燒鵝", "maxim": "美心皇宮（大會堂）", "hohung": "何洪記", "joyhing": "再興燒臘飯店", "mido": "美都餐室", "fourseasons": "四季煲仔飯", "onedim": "一點心", "kamwah": "金華冰廳", "wongchikei": "黃枝記", "margaret": "瑪嘉烈蛋撻", "lordstow": "安德魯餅店", "aos": "星光大道", "ferry": "天星碼頭", "st428": "凌霄閣摩天台", "temple": "廟街夜市", "manmo": "文武廟", "mplus": "M+博物館", "palace": "香港故宮文化博物館", "wts": "黃大仙祠", "repulse": "淺水灣", "buddha": "天壇大佛", "senado": "議事亭前地", "stpaul": "大三巴牌坊", "mtower": "澳門旅遊塔", "ama": "媽閣廟", "k11": "K11 MUSEA", "harbourcity": "海港城", "taikwun": "大館", "lkf": "蘭桂坊", "starst": "星街", "taiping": "太平山街", "ladies": "女人街", "stanley": "赤柱市集", "cunha": "官也街", "lugard": "盧吉道", "artpark": "西九藝術公園", "wheel": "香港摩天輪", "monster": "益昌大廈", "choihung": "彩虹邨", "bluehouse": "藍屋", "nanlian": "南蓮園池", "goldfish": "金魚街", "monte": "大炮台", "eiffel": "澳門巴黎人", "peak": "山頂纜車總站", "esc": "中環至半山自動扶梯", "soho": "蘇豪區", "pmq": "元創方 PMQ", "hkma": "香港藝術館", "mcot": "我杯茶", "oms": "愛文生", "adc": "澳洲牛奶公司", "yung": "榕哥陳皮燒鵝", "kam": "甘牌燒鵝", "ohw": "豪華小食", "north": "北方館（威尼斯人）", "apt": "香港國際機場", "sci": "香港科學館", "jenny": "珍妮曲奇", "god": "住好啲 G.O.D.", "donki": "驚安之殿堂（美麗華廣場）", "theone": "The ONE", "sneakers": "波鞋街", "langham": "朗豪坊", "timessq": "時代廣場", "hysan": "希慎廣場", "sogo": "崇光百貨", "fashionwalk": "名店坊", "ifc": "國際金融中心商場", "leetung": "利東街", "catst": "摩羅上街", "citygate": "東薈城名店倉", "bakehouse": "Bakehouse（漢口道44號）", "hashtagb": "Hashtag B（加拿芬道49號）", "cheunghing": "祥興記上海生煎包", "kaikai": "佳佳甜品", "feijie": "肥姐小食店", "kungwo": "公和荳品廠", "hopyik": "合益泰小食", "luklam": "綠林甜品", "leekeung": "利強記北角雞蛋仔", "makman": "麥文記麵家", "linheung": "蓮香樓（金巴利道25號）", "hingkee": "避風塘興記", "hohochak": "好好吃", "sisterwah": "華姐清湯腩", "ozone": "OZONE（麗思卡爾頓酒店）", "redsugar": "嘉里酒店 Red Sugar", "eyebar": "eyebar（iSQUARE 國際廣場30樓）"};
+const ZH = {"wynnpalace": "永利皇宮", "venetian": "澳門威尼斯人", "londoner": "澳門倫敦人", "galaxy": "澳門銀河", "cod": "新濠天地", "studiocity": "新濠影滙", "lordstow": "安德魯餅店（官也街）", "taipahouses": "龍環葡韻", "grandlisboa": "新葡京", "mactower": "澳門旅遊塔", "ama": "媽閣廟", "hkmft": "港澳碼頭（信德中心）", "onebus": "港澳一號（廣東道505號）", "timho": "添好運", "tsimchai": "沾仔記", "kaukee": "九記牛腩", "lanfong": "蘭芳園", "taicheong": "泰昌餅家", "singheung": "勝香園", "yatlok": "一樂燒鵝", "maxim": "美心皇宮（大會堂）", "hohung": "何洪記", "joyhing": "再興燒臘飯店", "mido": "美都餐室", "fourseasons": "四季煲仔飯", "onedim": "一點心", "kamwah": "金華冰廳", "wongchikei": "黃枝記", "margaret": "瑪嘉烈蛋撻", "lordstow": "安德魯餅店", "aos": "星光大道", "ferry": "天星碼頭", "st428": "凌霄閣摩天台", "temple": "廟街夜市", "manmo": "文武廟", "mplus": "M+博物館", "palace": "香港故宮文化博物館", "wts": "黃大仙祠", "repulse": "淺水灣", "buddha": "天壇大佛", "senado": "議事亭前地", "stpaul": "大三巴牌坊", "mtower": "澳門旅遊塔", "ama": "媽閣廟", "k11": "K11 MUSEA", "harbourcity": "海港城", "taikwun": "大館", "lkf": "蘭桂坊", "starst": "星街", "taiping": "太平山街", "ladies": "女人街", "stanley": "赤柱市集", "cunha": "官也街", "lugard": "盧吉道", "artpark": "西九藝術公園", "wheel": "香港摩天輪", "monster": "益昌大廈", "choihung": "彩虹邨", "bluehouse": "藍屋", "nanlian": "南蓮園池", "goldfish": "金魚街", "monte": "大炮台", "eiffel": "澳門巴黎人", "peak": "山頂纜車總站", "esc": "中環至半山自動扶梯", "soho": "蘇豪區", "pmq": "元創方 PMQ", "hkma": "香港藝術館", "mcot": "我杯茶", "oms": "愛文生", "adc": "澳洲牛奶公司", "yung": "榕哥陳皮燒鵝", "kam": "甘牌燒鵝", "ohw": "豪華小食", "north": "北方館（威尼斯人）", "apt": "香港國際機場", "sci": "香港科學館", "jenny": "珍妮曲奇", "god": "住好啲 G.O.D.", "donki": "驚安之殿堂（美麗華廣場）", "theone": "The ONE", "sneakers": "波鞋街", "langham": "朗豪坊", "timessq": "時代廣場", "hysan": "希慎廣場", "sogo": "崇光百貨", "fashionwalk": "名店坊", "ifc": "國際金融中心商場", "leetung": "利東街", "catst": "摩羅上街", "citygate": "東薈城名店倉", "bakehouse": "Bakehouse（漢口道44號）", "hashtagb": "Hashtag B（加拿芬道49號）", "cheunghing": "祥興記上海生煎包", "kaikai": "佳佳甜品", "feijie": "肥姐小食店", "kungwo": "公和荳品廠", "hopyik": "合益泰小食", "luklam": "綠林甜品", "leekeung": "利強記北角雞蛋仔", "makman": "麥文記麵家", "linheung": "蓮香樓（金巴利道25號）", "hingkee": "避風塘興記", "hohochak": "好好吃", "sisterwah": "華姐清湯腩", "ozone": "OZONE（麗思卡爾頓酒店）", "redsugar": "嘉里酒店 Red Sugar", "eyebar": "eyebar（iSQUARE 國際廣場30樓）"};
 const zhOf = s => s.lat === HOTEL.lat && s.lng === HOTEL.lng ? '唯港薈 Hotel ICON' : ZH[s.rec || s.id];
 const infoOf = s => INFO[s.rec || s.id];
 const qOf = s => Q[s.rec || s.id];
@@ -1478,11 +1500,11 @@ function drawSheet(){
   const cats = document.getElementById('cats'); cats.textContent = '';
   for(const [k, lbl] of [['all','전체'], ...Object.entries(CATS).map(([k,v]) => [k, v[0]+' '+v[1]])]){
     const b = h('button','chip',lbl); b.type = 'button'; b.setAttribute('aria-pressed', sheetCat===k); b.addEventListener('click', () => { sheetCat = k; drawSheet(); }); cats.append(b); }
-  const ref = refPoint(), q = document.getElementById('q').value.trim().toLowerCase(), inDay = new Set(day.stops.map(s => s.rec));
+  const ref = refPoint(), q = document.getElementById('q').value.trim().toLowerCase(), nq = q.replace(/\s/g, ''), inDay = new Set(day.stops.map(s => s.rec));
   const cz = document.getElementById('courses'); cz.textContent = '';
   if(!day.nomap) for(const c of COURSES.filter(c => c.only ? c.only === day.id : !!DATES[day.id])){ const b = h('button','chip', `${c.e} ${c.n} · ${c.ids.length}곳 · 약 ${c.min >= 60 ? (c.min / 60) + '시간' : c.min + '분'}`); b.type = 'button';
     b.disabled = c.ids.every(id => inDay.has(id)); b.addEventListener('click', () => addCourse(c)); cz.append(b); }
-  let items = poolFor(day).filter(p => (sheetCat==='all' || p.c===sheetCat) && (!q || (p.n+' '+p.sub).toLowerCase().includes(q)))
+  let items = poolFor(day).filter(p => (sheetCat==='all' || p.c===sheetCat) && (!q || (p.n+' '+p.sub).toLowerCase().replace(/\s/g, '').includes(nq)))
     .map(p => [dist(ref.lat,ref.lng,p.lat,p.lng), p]).filter(x => q || x[0] < 30000).sort((a,b) => a[0]-b[0]);
   if(q) items = items.concat(searchRes.filter(p => !items.some(x => x[1].n===p.n)).map(p => [dist(ref.lat,ref.lng,p.lat,p.lng), p]));
   document.getElementById('sref').textContent = '거리·시간 기준: ' + (ref === me ? '내 위치' : ref === sel ? shortName(sel.name) : ref === HOTEL ? HOTEL.name : shortName(ref.name || '이 날 첫 장소'));
@@ -1494,7 +1516,9 @@ function drawSheet(){
     li.append(e, b, add);
     li.addEventListener('click', e => { if(e.target.closest('button')) return; if(mm && !wide() && shState === 'full') setSheet('half'); centerOn(p.lat, p.lng, 16); { const mk = recLayer.getLayers().find(x => x.options.pid === p.id); if(mk) setTimeout(() => mk.openPopup(), 60); } document.getElementById('mapwrap').scrollIntoView({block:'nearest', behavior:'smooth'}); });
     ul.append(li); }
-  if(!items.length) ul.append(h('li','m', q ? '검색 결과 없음' : '없음'));
+  const ko = /[가-힣]/.test(q);
+  if(!items.length) ul.append(h('li','m', q ? '검색 결과 없음' + (ko && moreQ === q ? ' · 영어 이름으로 검색' : '') : '없음'));
+  if(ko && q.length >= 2 && moreQ !== q){ const li = h('li','more'), b = h('button', null, '🔎 지도에서 더 찾기'); b.type = 'button'; b.addEventListener('click', moreSearch); li.append(b); ul.append(li); }
 }
 function drawEvents(){
   const box = document.getElementById('evts'); box.textContent = ''; const iso = DATES[day.id];
@@ -1735,8 +1759,17 @@ function drawCats(){ const box = document.getElementById('catp'); box.textConten
 document.getElementById('zrec').addEventListener('click', () => { const box = document.getElementById('catp'); box.hidden = !box.hidden; document.getElementById('zrec').setAttribute('aria-expanded', !box.hidden); });
 map.on('click', () => { document.getElementById('catp').hidden = true; });
 drawCats();
+let moreQ = '';
+async function moreSearch(){ const q = document.getElementById('q').value.trim().toLowerCase(); if(q.length < 2 || moreQ === q) return; moreQ = q; clearTimeout(qTimer);
+  try{ const r = await getJ('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=8&viewbox=113.5,22.6,114.45,22.05&bounded=1&accept-language=ko&q=' + encodeURIComponent(q));
+    if(document.getElementById('q').value.trim().toLowerCase() !== q) return;
+    for(const f of r){ if(!f.name || searchRes.some(p => p.id === 'osm' + f.osm_id)) continue;
+      searchRes.push({id:'osm'+f.osm_id, c:'search', n:f.name, sub:f.display_name.split(', ').slice(1, 3).join(' · '), lat:+f.lat, lng:+f.lon, stay:45}); }
+  }catch(err){ moreQ = ''; toast('검색 실패'); }
+  drawSheet(); }
+document.getElementById('q').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); moreSearch(); } });
 document.getElementById('q').addEventListener('input', () => {
-  clearTimeout(qTimer); const q = document.getElementById('q').value.trim(); searchRes = []; drawSheet(); if(q.length < 2) return;
+  clearTimeout(qTimer); const q = document.getElementById('q').value.trim(); searchRes = []; moreQ = ''; drawSheet(); if(q.length < 2) return;
   qTimer = setTimeout(async () => { const ref = refPoint();
     try{ const r = await getJ(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&lat=${ref.lat}&lon=${ref.lng}&limit=8&bbox=113.5,22.05,114.45,22.6`);
       if(document.getElementById('q').value.trim() !== q) return;

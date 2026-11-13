@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>홍콩 동선 지도 · 모바일</title>
+<link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
+<style>
+:root{--bg:#fff6ee;--ink:#3a2f35;--line:#f3dfd4;--frame:#3b2a33}
+@media (prefers-color-scheme:dark){:root{--bg:#221a1e;--ink:#fbeff2;--line:#45373d;--frame:#0f0a0c}}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:700 13px/1.3 system-ui,sans-serif}
+body{display:flex;align-items:center;justify-content:center;gap:24px}
+.ph{width:390px;height:min(844px,calc(100vh - 32px));border:12px solid var(--frame);border-radius:44px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.25);background:#fff}
+.ph iframe{width:100%;height:100%;border:0;display:block}
+a{position:fixed;left:16px;top:16px;color:var(--ink);text-decoration:none;border:2px solid var(--line);background:var(--bg);border-radius:999px;padding:8px 14px}
+</style>
+</head>
+<body>
+<a href="hk.html">🖥️ PC 화면</a>
+<div class="ph"><iframe src="hk.html" title="홍콩 동선 지도" allow="geolocation; fullscreen"></iframe></div>
+</body>
+</html>

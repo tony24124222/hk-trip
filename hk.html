@@ -59,6 +59,8 @@ button,a,summary,label,select{touch-action:manipulation;-webkit-tap-highlight-co
 .nav{position:fixed;z-index:2400;left:0;right:0;bottom:0;display:flex;justify-content:center;background:var(--surface);border-top:2px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
 .nav button{flex:1;max-width:160px;height:52px;display:grid;place-items:center;align-content:center;gap:3px;border:0;background:none;color:var(--muted);font:700 10.5px/1 var(--body)}
 .nav b{font-size:19px;font-weight:400;line-height:1;filter:grayscale(.6);opacity:.75}
+.nav .pcx{display:none;text-decoration:none}
+@media (min-width:820px){ html:not(.inframe) .nav .pcx{flex:1;max-width:160px;height:52px;display:grid;place-items:center;align-content:center;gap:3px;color:var(--muted);font:700 10.5px/1 var(--body)} }
 .nav button[aria-pressed="true"],.nav button[aria-expanded="true"]{color:var(--accent)}
 .nav button[aria-pressed="true"] b,.nav button[aria-expanded="true"] b{filter:none;opacity:1}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
@@ -475,6 +477,7 @@ html.mm .dayhead h2{display:none}
 </style>
 </head>
 <body>
+<script>if(self !== top) document.documentElement.classList.add('inframe');</script>
 <div class="wrap">
   <h1 class="sr">홍콩 동선 지도</h1>
   <div class="tabs" role="tablist" id="tabs"></div>
@@ -571,6 +574,7 @@ html.mm .dayhead h2{display:none}
   <button type="button" id="nmap" aria-pressed="false"><b>🗺️</b><span>지도</span></button>
   <button type="button" id="zinfo" aria-expanded="false" aria-controls="gi"><b>📒</b><span>정보</span></button>
   <button type="button" id="zask" aria-expanded="false" aria-controls="memo"><b>💬</b><span>질문</span></button>
+  <a class="pcx" href="phone.html"><b>📱</b><span>모바일 화면</span></a>
 </nav>
 <div class="gi" id="memo" role="dialog" aria-label="질문" data-m="ask" hidden>
   <div class="gih"><b class="mt" id="mtitle">💬 질문</b><button type="button" id="memox" class="gx" aria-label="닫기">✕</button></div>
@@ -960,8 +964,9 @@ function busOpts(a, b){ if(!BUSD) return [];
 function legOf(a, b){ if(b.legMin && b.legMin[0] === a.id) return legOpts(a, b)[0];
   const k = a.lat+','+a.lng+'>'+b.lat+','+b.lng; if(!legCache.has(k)) legCache.set(k, legOpts(a, b)[0]); return legCache.get(k); }
 const taxiMin = d => Math.round(5 + Math.min(d, 5000) * 1.3 / 350 + Math.max(0, d - 5000) * 1.3 / 1000);
-// red taxi: HK$29 for the first 2 km, then HK$2.1 per 200 m (road distance about 1.3 x straight line); harbour tunnels cost extra
-const taxiFare = (d, cross) => Math.round(29 + Math.max(0, d * (cross ? 1.6 : 1.3) - 2000) / 200 * 2.1); // the way round to a tunnel is longer
+// red taxi: HK$29 for the first 2 km, HK$2.1 per 200 m up to HK$102.5, then HK$1.4 (road distance about 1.3 x straight line); tunnels, tolls and bags cost extra
+const taxiFare = (d, cross) => { const u = Math.max(0, d * (cross ? 1.6 : 1.3) - 2000) / 200, k = (102.5 - 29) / 2.1; // the way round to a tunnel is longer
+  return Math.round(29 + Math.min(u, k) * 2.1 + Math.max(0, u - k) * 1.4); };
 const onIsland = p => p.lat < 22.2925 && p.lng > 114.1 && p.lng < 114.26;
 const fxRate = () => { try{ const v = JSON.parse(localStorage.getItem('hk-fx')); if(v && v.r > 50) return v.r; }catch(e){} return 170.06; };
 const krw = v => { const w = v * fxRate(); return w >= 10000 ? (w / 10000).toFixed(w >= 100000 ? 0 : 1).replace(/\.0$/, '') + '만원' : (Math.round(w / 100) * 100).toLocaleString('ko-KR') + '원'; };

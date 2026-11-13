@@ -491,7 +491,7 @@ const DATES = {day1:'2026-11-16', day2:'2026-11-17', day3:'2026-11-18'};
 const STAY = {apt:30, sci:0, icon1:20, icon2:0, mcot:45, peak:90, esc:30, soho:40, pmq:45, icon2b:90, hkma:60, oms:90, icon3:0, adc:45, north:90};
 const BEST = {esc:[600,1410], hkma:[1020,1140]};
 const LEGMIN = {sci:['apt',85], icon1:['sci',5]};
-const CATS = {food:['🍜','맛집'], sweet:['🍡','간식·디저트'], shop:['🛍️','쇼핑'], sight:['🏛️','명소'], hot:['✨','핫플'], bar:['🍸','바·전망'], photo:['📸','사진'], event:['🎆','이벤트']};
+const CATS = {food:['🍜','맛집'], sweet:['🍡','간식·디저트'], shop:['🛍️','쇼핑'], sight:['🏛️','명소'], hot:['✨','핫플'], bar:['🍸','바·전망'], go:['⛴️','마카오행'], photo:['📸','사진'], event:['🎆','이벤트']};
 // coords: OSM (Macau shops approx); hours/closed only where well known
 const REC = [
  {id:'timho', c:'food', n:'팀호완 · 딤섬', sub:'Tim Ho Wan · 홍콩역', lat:22.28449, lng:114.158146, stay:50, wait:'식사 시간 줄 · 번호표'},
@@ -574,7 +574,9 @@ const REC = [
  {id:'sisterwah', c:'food', n:"시스터 와 · 양지 국수", sub:"Sister Wah · 틴하우", lat:22.283178, lng:114.191531, stay:40, hours:'11:00–22:45', wait:'식사 시간 줄'},
  {id:'ozone', c:'bar', n:"오존 바 · 118층", sub:"OZONE · 리츠칼튼 ICC", lat:22.303379, lng:114.160226, stay:75, hours:'16:00–01:00', best:[1050,1380]},
  {id:'redsugar', c:'bar', n:"레드 슈거 · 테라스 바", sub:"Red Sugar · 케리 호텔 7층 · 홍함", lat:22.301418, lng:114.189005, stay:75, hours:'16:00–24:00', best:[1020,1320]},
- {id:'eyebar', c:'bar', n:"아이바 · 루프톱", sub:"eyebar · 아이스퀘어 30층", lat:22.296943, lng:114.171857, stay:60, hours:'15:00–24:00', best:[1080,1380]}
+ {id:'eyebar', c:'bar', n:"아이바 · 루프톱", sub:"eyebar · 아이스퀘어 30층", lat:22.296943, lng:114.171857, stay:60, hours:'15:00–24:00', best:[1080,1380]},
+ {id:'hkmft', c:'go', n:"홍콩마카오 페리터미널", sub:"Shun Tak Centre · 셩완", lat:22.288671, lng:114.152437, stay:30},
+ {id:'onebus', c:'go', n:"원버스 정류장 · 마카오 직행", sub:"One Bus · 조던 캔톤로드 505", lat:22.306039, lng:114.167949, stay:15}
 ];
 const EVENTS = [
  {id:'sol', c:'event', from:'2026-11-18', to:'2026-11-18', when:'11/18(수) 20:00', n:'심포니 오브 라이트 마지막 공연 + 불꽃', sub:'침사추이 해변 · 19:30 전 자리 잡기', lat:22.2934, lng:114.1705, stay:60, fixed:1170, src:'https://www.thestandard.com.hk/news/article/348049/'},
@@ -1047,6 +1049,8 @@ const OR = {singheung:'r-sing-heung-yuen-central-hong-kong-style-r10577', hohung
   fourseasons:'r-four-seasons-pot-rice-yau-ma-tei-hong-kong-style-r19509', onedim:'r-one-dim-sum-prince-edward-guangdong-dim-sum-r18164'};
 /*INFO-START*/
 const INFO = {
+ hkmft:{d:"마카오행 터보젯·코타이 워터젯이 떠나는 터미널.", t:"출발 30분 전 도착 · 여권 필수 · 셩완역에서 연결", p:"평일 HK$192~194 · 주말 HK$209~212"},
+ onebus:{d:"샌즈·런더너·베네시안으로 가는 직행버스.", t:"국경에서 내려 심사 후 20분 안에 다시 탑승 · 여권 필수", p:"평일 낮 HK$160 · 저녁·주말 HK$180"},
  peak:{d:"센트럴에서 피크까지 오르는 130년 넘은 산악 트램.", t:"해 질 무렵 줄이 가장 김 · 오후 4시 전 탑승, 내려올 땐 15번 버스·택시", p:"편도 HK$82 · 왕복 HK$116 (자료 엇갈림)"},
  st428:{d:"피크타워 옥상 해발 428m 유료 전망대.", t:"무료 전망은 피크 갤러리아 옥상·루가드 로드", p:"HK$80 · 트램 왕복 묶음 HK$182"},
  lugard:{d:"피크타워에서 걸어서 15~20분, 빌딩 숲과 하버가 한눈에 보이는 무료 전망 산책로.", t:"조명이 적어 밤엔 휴대폰 손전등", p:"무료"},
@@ -1150,7 +1154,7 @@ const COURSES = [
  {e:"🎰", n:"마카오 반도 → 타이파", ids:["senado", "stpaul", "monte", "margaret", "cunha", "eiffel"], min:300, only:"macau"}
 ];
 /*INFO-END*/
-const ZH = {"timho": "添好運", "tsimchai": "沾仔記", "kaukee": "九記牛腩", "lanfong": "蘭芳園", "taicheong": "泰昌餅家", "singheung": "勝香園", "yatlok": "一樂燒鵝", "maxim": "美心皇宮（大會堂）", "hohung": "何洪記", "joyhing": "再興燒臘飯店", "mido": "美都餐室", "fourseasons": "四季煲仔飯", "onedim": "一點心", "kamwah": "金華冰廳", "wongchikei": "黃枝記", "margaret": "瑪嘉烈蛋撻", "lordstow": "安德魯餅店", "aos": "星光大道", "ferry": "天星碼頭", "st428": "凌霄閣摩天台", "temple": "廟街夜市", "manmo": "文武廟", "mplus": "M+博物館", "palace": "香港故宮文化博物館", "wts": "黃大仙祠", "repulse": "淺水灣", "buddha": "天壇大佛", "senado": "議事亭前地", "stpaul": "大三巴牌坊", "mtower": "澳門旅遊塔", "ama": "媽閣廟", "k11": "K11 MUSEA", "harbourcity": "海港城", "taikwun": "大館", "lkf": "蘭桂坊", "starst": "星街", "taiping": "太平山街", "ladies": "女人街", "stanley": "赤柱市集", "cunha": "官也街", "lugard": "盧吉道", "artpark": "西九藝術公園", "wheel": "香港摩天輪", "monster": "益昌大廈", "choihung": "彩虹邨", "bluehouse": "藍屋", "nanlian": "南蓮園池", "goldfish": "金魚街", "monte": "大炮台", "eiffel": "澳門巴黎人", "peak": "山頂纜車總站", "esc": "中環至半山自動扶梯", "soho": "蘇豪區", "pmq": "元創方 PMQ", "hkma": "香港藝術館", "mcot": "我杯茶", "oms": "愛文生", "adc": "澳洲牛奶公司", "yung": "榕哥陳皮燒鵝", "kam": "甘牌燒鵝", "ohw": "豪華小食", "north": "北方館（威尼斯人）", "apt": "香港國際機場", "sci": "香港科學館", "jenny": "珍妮曲奇", "god": "住好啲 G.O.D.", "donki": "驚安之殿堂（美麗華廣場）", "theone": "The ONE", "sneakers": "波鞋街", "langham": "朗豪坊", "timessq": "時代廣場", "hysan": "希慎廣場", "sogo": "崇光百貨", "fashionwalk": "名店坊", "ifc": "國際金融中心商場", "leetung": "利東街", "catst": "摩羅上街", "citygate": "東薈城名店倉", "bakehouse": "Bakehouse（漢口道44號）", "hashtagb": "Hashtag B（加拿芬道49號）", "cheunghing": "祥興記上海生煎包", "kaikai": "佳佳甜品", "feijie": "肥姐小食店", "kungwo": "公和荳品廠", "hopyik": "合益泰小食", "luklam": "綠林甜品", "leekeung": "利強記北角雞蛋仔", "makman": "麥文記麵家", "linheung": "蓮香樓（金巴利道25號）", "hingkee": "避風塘興記", "hohochak": "好好吃", "sisterwah": "華姐清湯腩", "ozone": "OZONE（麗思卡爾頓酒店）", "redsugar": "嘉里酒店 Red Sugar", "eyebar": "eyebar（iSQUARE 國際廣場30樓）"};
+const ZH = {"hkmft": "港澳碼頭（信德中心）", "onebus": "港澳一號（廣東道505號）", "timho": "添好運", "tsimchai": "沾仔記", "kaukee": "九記牛腩", "lanfong": "蘭芳園", "taicheong": "泰昌餅家", "singheung": "勝香園", "yatlok": "一樂燒鵝", "maxim": "美心皇宮（大會堂）", "hohung": "何洪記", "joyhing": "再興燒臘飯店", "mido": "美都餐室", "fourseasons": "四季煲仔飯", "onedim": "一點心", "kamwah": "金華冰廳", "wongchikei": "黃枝記", "margaret": "瑪嘉烈蛋撻", "lordstow": "安德魯餅店", "aos": "星光大道", "ferry": "天星碼頭", "st428": "凌霄閣摩天台", "temple": "廟街夜市", "manmo": "文武廟", "mplus": "M+博物館", "palace": "香港故宮文化博物館", "wts": "黃大仙祠", "repulse": "淺水灣", "buddha": "天壇大佛", "senado": "議事亭前地", "stpaul": "大三巴牌坊", "mtower": "澳門旅遊塔", "ama": "媽閣廟", "k11": "K11 MUSEA", "harbourcity": "海港城", "taikwun": "大館", "lkf": "蘭桂坊", "starst": "星街", "taiping": "太平山街", "ladies": "女人街", "stanley": "赤柱市集", "cunha": "官也街", "lugard": "盧吉道", "artpark": "西九藝術公園", "wheel": "香港摩天輪", "monster": "益昌大廈", "choihung": "彩虹邨", "bluehouse": "藍屋", "nanlian": "南蓮園池", "goldfish": "金魚街", "monte": "大炮台", "eiffel": "澳門巴黎人", "peak": "山頂纜車總站", "esc": "中環至半山自動扶梯", "soho": "蘇豪區", "pmq": "元創方 PMQ", "hkma": "香港藝術館", "mcot": "我杯茶", "oms": "愛文生", "adc": "澳洲牛奶公司", "yung": "榕哥陳皮燒鵝", "kam": "甘牌燒鵝", "ohw": "豪華小食", "north": "北方館（威尼斯人）", "apt": "香港國際機場", "sci": "香港科學館", "jenny": "珍妮曲奇", "god": "住好啲 G.O.D.", "donki": "驚安之殿堂（美麗華廣場）", "theone": "The ONE", "sneakers": "波鞋街", "langham": "朗豪坊", "timessq": "時代廣場", "hysan": "希慎廣場", "sogo": "崇光百貨", "fashionwalk": "名店坊", "ifc": "國際金融中心商場", "leetung": "利東街", "catst": "摩羅上街", "citygate": "東薈城名店倉", "bakehouse": "Bakehouse（漢口道44號）", "hashtagb": "Hashtag B（加拿芬道49號）", "cheunghing": "祥興記上海生煎包", "kaikai": "佳佳甜品", "feijie": "肥姐小食店", "kungwo": "公和荳品廠", "hopyik": "合益泰小食", "luklam": "綠林甜品", "leekeung": "利強記北角雞蛋仔", "makman": "麥文記麵家", "linheung": "蓮香樓（金巴利道25號）", "hingkee": "避風塘興記", "hohochak": "好好吃", "sisterwah": "華姐清湯腩", "ozone": "OZONE（麗思卡爾頓酒店）", "redsugar": "嘉里酒店 Red Sugar", "eyebar": "eyebar（iSQUARE 國際廣場30樓）"};
 const zhOf = s => s.lat === HOTEL.lat && s.lng === HOTEL.lng ? '唯港薈 Hotel ICON' : ZH[s.rec || s.id];
 const infoOf = s => INFO[s.rec || s.id];
 const qOf = s => Q[s.rec || s.id];
@@ -1481,7 +1485,7 @@ function drawSheet(){
     const add = h('button', null, has ? '추가됨' : '추가'); add.type = 'button'; add.disabled = has; add.addEventListener('click', () => addPlace(p));
     const e = h('div','e',(CATS[p.c] || ['📍'])[0]); if(PH[p.id]){ const im = h('img'); im.src = phUrl(p.id, 250); im.alt = ''; im.loading = 'lazy'; im.addEventListener('error', () => im.remove()); e.append(im); }
     li.append(e, b, add);
-    li.addEventListener('click', e => { if(e.target.closest('button')) return; if(mm && !wide() && shState === 'full') setSheet('half'); centerOn(p.lat, p.lng, 16); document.getElementById('mapwrap').scrollIntoView({block:'nearest', behavior:'smooth'}); });
+    li.addEventListener('click', e => { if(e.target.closest('button')) return; if(mm && !wide() && shState === 'full') setSheet('half'); centerOn(p.lat, p.lng, 16); { const mk = recLayer.getLayers().find(x => x.options.pid === p.id); if(mk) setTimeout(() => mk.openPopup(), 60); } document.getElementById('mapwrap').scrollIntoView({block:'nearest', behavior:'smooth'}); });
     ul.append(li); }
   if(!items.length) ul.append(h('li','m', q ? '검색 결과 없음' : '없음'));
 }

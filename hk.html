@@ -1313,7 +1313,10 @@ function drawMap(){
       title:s.name, zIndexOffset: grp.includes(sel)?1000:0}).addTo(layer);
     if(nm) mkList.push({m, pri:grp.includes(sel) ? 0 : alt ? 20 : 10, day:1, name:nm, ph:!!pid, r:14});
     m.bindTooltip(s.name, {direction:'top', offset:[0,-14]});
-    m.on('click', () => select(grp.includes(sel) ? grp[(grp.indexOf(sel)+1)%grp.length] : s, true));
+    m.on('click', () => { const p0 = map.latLngToContainerPoint([s.lat, s.lng]);
+      const near = day.stops.filter(o => o.lat && (o.lat !== s.lat || o.lng !== s.lng) && map.latLngToContainerPoint([o.lat, o.lng]).distanceTo(p0) < 24);
+      if(near.length && map.getZoom() < 16){ map.fitBounds([[s.lat, s.lng], ...near.map(o => [o.lat, o.lng])], fitOpt(50, {maxZoom:17})); return; }
+      select(grp.includes(sel) ? grp[(grp.indexOf(sel)+1)%grp.length] : s, true); });
   }
   // drawMap reruns when route geometry arrives; reopen the popup the user was looking at
   const keep = recOpen; recLayer.clearLayers(); recOpen = keep;
@@ -1735,7 +1738,8 @@ if(window.ResizeObserver) new ResizeObserver(() => { if(!mm) document.documentEl
 if('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 window.addEventListener('hashchange', () => { if(/^#plan=/.test(location.hash)) importPlan().then(() => setDay('day1', false)); else setDay(location.hash.slice(1), false); });
 const today = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10), todayId = (Object.entries(DATES).find(([, v]) => v === today) || [])[0]; // Hong Kong date
-setDay(location.hash.slice(1) || todayId || 'day1', false); zoomCls();
+let firstOpen = true; try{ firstOpen = !sessionStorage.getItem('hk-open'); sessionStorage.setItem('hk-open', '1'); }catch(e){}
+setDay((firstOpen && todayId && !/^#plan=/.test(location.hash) ? todayId : location.hash.slice(1)) || todayId || 'day1', false); zoomCls();
 try{ if(localStorage.getItem('hk-mm')) setMM(true); }catch(e){}
 importPlan().then(ch => { if(ch) setDay('day1', false); });
 loadWx();

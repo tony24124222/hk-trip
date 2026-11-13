@@ -221,6 +221,7 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .leg{cursor:pointer}
 .leg:hover{color:var(--ink)}
 .tpin{width:22px;height:22px;border-radius:7px;background:#3b82c4;border:2px solid #fff;display:grid;place-items:center;font-size:12px;box-shadow:0 1px 3px rgba(0,0,0,.35)}
+#zab[aria-pressed="true"]{background:#1a73e8;border-color:#1a73e8;color:#fff}
 #ztoilet[aria-pressed="true"]{background:#3b82c4;border-color:#3b82c4;color:#fff}
 .tpin.sm{background:#7d6b72}
 .tab .wx{margin-left:4px;font-size:12px}
@@ -483,6 +484,7 @@ html.mm .dayhead h2{display:none}
           <button type="button" id="zrec" aria-pressed="true" aria-expanded="false" aria-controls="catp"><b>⭐</b><span>추천</span></button>
           <button type="button" id="ztoilet" aria-pressed="false"><b>🚻</b><span>화장실</span></button>
           <button type="button" id="zrt"><b>🚏</b><span>실시간</span></button>
+          <button type="button" id="zab" aria-pressed="false"><b>🧭</b><span>길찾기</span></button>
         </div>
       </div>
       <div class="mapinfo">
@@ -1071,18 +1073,21 @@ async function pumpGeo(){
     await new Promise(r => setTimeout(r, 200)); }
   geoBusy = false;
 }
-function legShapes(leg, a, b){
+function legShapes(leg, a, b, first){
   const S = [], st = (x, y) => [[x.lat, x.lng], [y.lat, y.lng]];
-  if(leg.mode === 'walk' || (leg.mode === 'given' && leg.d < 1200)) S.push({pts:geo('foot', a, b) || st(a, b), st:'walk'});
+  // a street shape still on its way: S.wait tells the run to hold until it arrives
+  const gw = (p, x, y) => { const g = geo(p, x, y), k = gk(p, x, y); if(!g && !geoFail.has(k)){ S.wait = true;
+    const i = first ? geoQ.findIndex(q => q.k === k) : -1; if(i > 0) geoQ.unshift(geoQ.splice(i, 1)[0]); } return g; };
+  if(leg.mode === 'walk' || (leg.mode === 'given' && leg.d < 1200)) S.push({pts:gw('foot', a, b) || st(a, b), st:'walk'});
   else if(leg.mode === 'mtr'){ const m = leg.m, A = {lat:m.from.lat, lng:m.from.lng}, B = {lat:m.to.lat, lng:m.to.lng};
-    S.push({pts:geo('foot', a, A) || st(a, A), st:'walk'});
+    S.push({pts:gw('foot', a, A) || st(a, A), st:'walk'});
     for(const r of m.rides){ const pts = r.codes.map(c => [ST[c].lat, ST[c].lng]); S.push({pts, st:'mtr:' + r.line}); }
     S.push({pts:[[A.lat, A.lng], S[1].pts[0]], st:'link'}, {pts:[S[S.length-1].pts[S[S.length-1].pts.length-1], [B.lat, B.lng]], st:'link'});
-    S.push({pts:geo('foot', B, b) || st(B, b), st:'walk'}); }
-  else if(leg.bus){ const q = leg.bus.pts, f = {lat:q[0][0], lng:q[0][1]}, t = {lat:q[q.length - 1][0], lng:q[q.length - 1][1]}; S.push({pts:geo('foot', a, f) || st(a, f), st:'walk'}, {pts:q, st:'bus'}, {pts:geo('foot', t, b) || st(t, b), st:'walk'}); }
-  else if(leg.mode === 'sf'){ const [p1, p2] = leg.fromK ? SFP : [SFP[1], SFP[0]]; S.push({pts:geo('foot', a, p1) || st(a, p1), st:'walk'}, {pts:st(p1, p2), st:'link'}, {pts:geo('foot', p2, b) || st(p2, b), st:'walk'}); }
+    S.push({pts:gw('foot', B, b) || st(B, b), st:'walk'}); }
+  else if(leg.bus){ const q = leg.bus.pts, f = {lat:q[0][0], lng:q[0][1]}, t = {lat:q[q.length - 1][0], lng:q[q.length - 1][1]}; S.push({pts:gw('foot', a, f) || st(a, f), st:'walk'}, {pts:q, st:'bus'}, {pts:gw('foot', t, b) || st(t, b), st:'walk'}); }
+  else if(leg.mode === 'sf'){ const [p1, p2] = leg.fromK ? SFP : [SFP[1], SFP[0]]; S.push({pts:gw('foot', a, p1) || st(a, p1), st:'walk'}, {pts:st(p1, p2), st:'link'}, {pts:gw('foot', p2, b) || st(p2, b), st:'walk'}); }
   else if(leg.mode === 'boat') S.push({pts:st(a, b), st:'link'});
-  else if(leg.mode !== 'same') S.push({pts:geo('car', a, b) || st(a, b), st:'car'});
+  else if(leg.mode !== 'same') S.push({pts:gw('car', a, b) || st(a, b), st:'car'});
   return S;
 }
 function drawShape(sh, grp, op, big){
@@ -1168,9 +1173,10 @@ function redrawRoute(fitIt){
   routeLayer.clearLayers(); const box = document.getElementById('routebox');
   map.getContainer().classList.toggle('routing', !!routeCur);
   if(!routeCur){ box.hidden = true; return; }
-  const {s, from, lbl, alts} = routeCur, opts = legOpts(from, s, true), leg = opts.find(o => o.mode === routeCur.mode) || opts.find(o => o.mode === legOf(from, s).mode) || opts[0], shapes = legShapes(leg, from, s);
+  const {s, from, lbl, alts} = routeCur, opts = legOpts(from, s, true), leg = opts.find(o => o.mode === routeCur.mode) || opts.find(o => o.mode === legOf(from, s).mode) || opts[0], shapes = legShapes(leg, from, s, true);
   for(const sh of shapes) drawShape(sh, routeLayer, 1, true);
-  if(routeCur.run){ routeCur.run = false; runRoute(shapes, leg); }
+  if(routeCur.run && (!shapes.wait || Date.now() - routeCur.run > 8000)){ routeCur.run = false; runRoute(shapes, leg); }
+  else if(routeCur.run){ clearTimeout(routeCur.rt); routeCur.rt = setTimeout(() => redrawRoute(false), 8200); }
   L.circleMarker([from.lat, from.lng], {radius:7, color:'#fff', weight:3, fillColor:'#1a73e8', fillOpacity:1, interactive:false, pane:'route'}).addTo(routeLayer);
   if(routeCur.preview){ box.hidden = true; return; } // line only; the steps open from the popup button
   if(s.id === 'wc') L.marker([s.lat, s.lng], {icon:L.divIcon({className:'', html:'<div class="tpin">🚻</div>', iconSize:[22,22], iconAnchor:[11,11]}), interactive:false, zIndexOffset:1500}).addTo(routeLayer);
@@ -1183,7 +1189,7 @@ function redrawRoute(fitIt){
     opts.forEach((o, n) => { const b = h('button', 'cmpr'); b.type = 'button'; b.setAttribute('aria-pressed', o.mode === leg.mode);
       b.append(h('span', 'k', (legIcon[o.mode] || '') + ' ' + (MODE[o.mode] || '') + (o.mode === 'bus' ? ' ' + o.bus.no : '')), h('span', 't', o.min + '분'), h('span', 'c', o.mode === 'walk' ? '무료' : (o.wk ? `도보 ${o.wk}분 포함 · ` : '') + (costTxt(o, true) || '–')));
       if(!n && opts.length > 1) b.append(h('span', 'tag next', '추천'));
-      b.addEventListener('click', () => { routeCur.mode = o.mode; routeCur.run = true; redrawRoute(true); }); li.append(b); });
+      b.addEventListener('click', () => { routeCur.mode = o.mode; routeCur.run = Date.now(); redrawRoute(true); }); li.append(b); });
     ol.append(li); }
   for(const st of legSteps(leg, from, s)){ const li = h('li', null, st.t); ol.append(li);
     if(st.ph){ const box = h('div', 'sph'); li.append(box); exitPhotos(st.ph).then(list => { if(!list.length){ box.remove(); return; }
@@ -1237,13 +1243,18 @@ document.getElementById('rswap').addEventListener('click', () => { if(!routeCur)
   routeCur.from = {lat:s.lat, lng:s.lng}; routeCur.lbl = s.name; routeCur.s = {id:'pt', name:lbl, lat:from.lat, lng:from.lng};
   routeCur.mode = null; routeCur.alts = null; routeCur.nt = {}; stopRun(); redrawRoute(true); });
 let abFrom = null;
-function abSet(p){ abFrom = p ? {lat:p.lat, lng:p.lng, name:p.name || p.n || '지정 위치'} : null; const b = document.getElementById('abbar'); b.hidden = !abFrom;
-  if(abFrom){ document.getElementById('abtxt').textContent = `📍 ${shortName(abFrom.name)} 출발 → 도착지 누르기`; map.closePopup(); } }
-function abTo(d){ const f = abFrom; if(!f) return false; abSet(null); if(dist(f.lat, f.lng, d.lat, d.lng) < 15) return true;
-  showRoute(d, [f, f.name]); routeCur.run = true; redrawRoute(true); return true; }
+let abPick = false;
+function abSet(p, pick){ abFrom = p ? {lat:p.lat, lng:p.lng, name:p.name || p.n || '지정 위치'} : null; abPick = !!(p ? abPick : pick);
+  const b = document.getElementById('abbar'); b.hidden = !abFrom && !abPick; document.getElementById('zab').setAttribute('aria-pressed', !b.hidden);
+  document.getElementById('abtxt').textContent = abFrom ? `📍 ${shortName(abFrom.name)} → 도착지?` : '🧭 출발지 누르기';
+  if(abFrom) map.closePopup(); }
+function abTo(d){ if(abPick && !abFrom){ abSet(d); return true; } const f = abFrom; if(!f) return false; abSet(null); if(dist(f.lat, f.lng, d.lat, d.lng) < 15) return true;
+  showRoute(d, [f, f.name]); routeCur.run = Date.now(); redrawRoute(true); return true; }
 document.getElementById('abx').addEventListener('click', () => abSet(null));
+document.getElementById('zab').addEventListener('click', () => { if(abPick || abFrom) return abSet(null); stopRun(); abSet(null, true); });
+map.on('click', e => { if(abPick || abFrom) abTo({id:'pt', name:'지정 위치', lat:e.latlng.lat, lng:e.latlng.lng}); });
 // a popup opening while a start is set means "this is where I'm going"
-map.on('popupopen', e => { if(!abFrom) return; const src = e.popup._source, ll = e.popup.getLatLng(), nm = src && src.options.title || '지정 위치';
+map.on('popupopen', e => { if(!abFrom && !abPick) return; const src = e.popup._source, ll = e.popup.getLatLng(), nm = src && src.options.title || '지정 위치';
   setTimeout(() => { map.closePopup(); abTo({id:'pt', name:nm, lat:ll.lat, lng:ll.lng}); }, 0); });
 async function nextTrain(st, k, rc){
   try{ const r = await getJ(`https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=${st.line}&sta=${st.sta}`);
@@ -2316,7 +2327,7 @@ document.getElementById('q').addEventListener('input', () => {
 });
 window.addEventListener('resize', () => { if(mm) setSheet(shState); map.invalidateSize(); });
 if(window.ResizeObserver) new ResizeObserver(() => { if(!mm) document.documentElement.style.setProperty('--mbh', document.querySelector('.mapbox').offsetHeight + 'px'); }).observe(document.querySelector('.mapbox'));
-if('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+if('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js', {updateViaCache:'none'}).catch(() => {});
 window.addEventListener('hashchange', () => { if(/^#plan=/.test(location.hash)) importPlan().then(() => setDay('day1', false)); else setDay(location.hash.slice(1), false); });
 const today = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10), todayId = (Object.entries(DATES).find(([, v]) => v === today) || [])[0]; // Hong Kong date
 let firstOpen = true; try{ firstOpen = !sessionStorage.getItem('hk-open'); sessionStorage.setItem('hk-open', '1'); }catch(e){}

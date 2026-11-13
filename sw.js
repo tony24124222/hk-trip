@@ -1,5 +1,5 @@
 // offline help for the trip page: the page itself network-first, libraries/tiles/photos cache-first
-const V = 'hk-shell-v3', T = 'hk-tiles-v1', MAX = 1800;
+const V = 'hk-shell-v4', T = 'hk-tiles-v1', MAX = 1800;
 // the libraries are requested before this worker controls the first visit, so fetch them here as well
 const SHELL = ['./', './hk.html', './toilets.json', './icon-192.png', './banner.jpg', './walk.png',
   './ride-mtr.png', './ride-taxi.png', './ride-bus.png', './ride-tram.png', './ride-ferry.png',
@@ -23,7 +23,8 @@ async function cacheFirst(req, name, key){ const c = await caches.open(name), hi
   return res; }
 // network first; a slow (4 s) or failing network is answered from the cache, and a late fresh copy is still stored
 async function netFirst(e, req, name, key){ const c = await caches.open(name);
-  const net = fetch(req).then(res => { if(res && res.ok) return c.put(key, res.clone()).catch(() => {}).then(() => res); return res; });
+  // the page always checks for a newer copy instead of using the browser's 10-minute copy
+  const net = fetch(name === V ? req.url : req, name === V ? {cache:'no-cache', credentials:'same-origin'} : undefined).then(res => { if(res && res.ok) return c.put(key, res.clone()).catch(() => {}).then(() => res); return res; });
   e.waitUntil(net.then(() => {}, () => {}));
   const cached = () => c.match(key, {ignoreSearch:true, ignoreVary:true});
   try{ const res = await Promise.race([net, new Promise((_, no) => setTimeout(() => no(new Error('slow')), 4000))]);

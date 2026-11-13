@@ -277,6 +277,20 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .mres .s{margin-left:auto;flex:0 0 auto;font-size:12px;color:var(--muted)}
 .mres .s.bad{color:var(--accent)}
 .mact{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.mctx{display:flex;align-items:center;gap:8px;margin:0 0 8px}
+.mctx[hidden],#mgo[hidden]{display:none}
+.mctx b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:400 15px var(--display)}
+.mctx .gx{width:30px;height:30px;font-size:12px}
+#mq{margin:0 0 8px}
+#memo.onp #mtext{min-height:52px;height:52px}
+.msrc{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:8px;font-size:12px}
+.msrc a{color:var(--muted)}
+.pop .prow{flex-wrap:wrap}
+.pop .prow button{white-space:nowrap;padding:6px 8px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;margin:4px 0 2px;padding-top:7px;border-top:1px dashed var(--line);font-size:12.5px;line-height:1.45}
+.kv dt{color:var(--muted);white-space:nowrap}
+.kv dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.rec .m.go{color:var(--ink)}
 .mans{white-space:pre-wrap;font-size:14.5px;line-height:1.65;margin:10px 0 0}
 .fx input{font-size:16px}
 .fx input[type=text]{flex:1;min-width:90px}
@@ -394,6 +408,7 @@ html.mm .dayhead h2{display:none}
           <button type="button" id="zrec" aria-pressed="true" aria-expanded="false" aria-controls="catp"><b>⭐</b><span>추천</span></button>
           <button type="button" id="ztoilet" aria-pressed="false"><b>🚻</b><span>화장실</span></button>
           <button type="button" id="zrt"><b>🚏</b><span>실시간</span></button>
+          <button type="button" id="zask" aria-controls="memo"><b>💬</b><span>질문</span></button>
         </div>
       </div>
       <div class="mapinfo">
@@ -461,7 +476,9 @@ html.mm .dayhead h2{display:none}
   <div class="gih"><b class="mt">📝 메모 · 질문</b><button type="button" id="memox" class="gx" aria-label="닫기">✕</button></div>
   <div class="gib">
     <input type="password" id="mpass" aria-label="접속 암호" placeholder="접속 암호" autocomplete="off" hidden>
+    <div class="mctx" id="mctx" hidden><b id="mctxn"></b><button type="button" id="mctxx" class="gx" aria-label="장소 지우기">✕</button></div>
     <textarea id="mtext" aria-label="메모" rows="6" placeholder="17일 점심 침차이키 → 피크트램 → 저녁 7시 애문생"></textarea>
+    <div class="cats" id="mq"></div>
     <div class="mrow"><button type="button" class="chip" id="mgo">일정으로 정리</button><button type="button" class="chip" id="mask">물어보기</button><span id="mmsg"></span></div>
     <div id="mres"></div>
   </div>
@@ -822,7 +839,11 @@ function legOpts(a, b){ const best = legOf(a, b); if(best.mode === 'same' || bes
   if(m) out.push({mode:'mtr', min:Math.round(m.min), d, m});
   if(d > 700 && d < 60000) out.push({mode:'taxi', min:taxiMin(d), d});
   return out.length ? out : [best]; }
-const optText = (o, a, b) => `${legIcon[o.mode] || ''} ${o.min}분` + (o.mode === 'taxi' ? ` · 약 HK$${taxiFare(o.d, onIsland(a) !== onIsland(b))}${onIsland(a) !== onIsland(b) ? ' + 터널 25~50' : ''}` : '');
+const fxRate = () => { try{ const v = JSON.parse(localStorage.getItem('hk-fx')); if(v && v.r > 50) return v.r; }catch(e){} return 170.06; };
+const krw = v => { const w = v * fxRate(); return w >= 10000 ? (w / 10000).toFixed(w >= 100000 ? 0 : 1).replace(/\.0$/, '') + '만원' : (Math.round(w / 100) * 100).toLocaleString('ko-KR') + '원'; };
+const won = t => String(t).replace(/HK\$\s?(\d+(?:,\d{3})*(?:\.\d+)?)(?!\d)(?:\s?[~–]\s?(?:HK\$\s?)?(\d+(?:,\d{3})*(?:\.\d+)?)(?!\d))?(?!\s*\((?:약\s*)?[\d.,~]+\s*만?\s*원)/g, (m, a, b) => { const x = krw(+a.replace(/,/g, '')), y = b && krw(+b.replace(/,/g, ''));
+  return `${m} (${y && y !== x ? x.replace(/원$/, '') + '~' + y : x})`; });
+const optText = (o, a, b) => `${legIcon[o.mode] || ''} ${o.min}분` + (o.mode === 'taxi' ? ` · 약 ${won('HK$' + taxiFare(o.d, onIsland(a) !== onIsland(b)))}${onIsland(a) !== onIsland(b) ? ' + 터널 25~50' : ''}` : '');
 function legText(leg){
   if(leg.mode === 'walk') return `🚶 도보 약 ${leg.min}분 · ${fmt(leg.d)}`;
   if(leg.mode === 'taxi') return `🚕 택시 약 ${leg.min}분 · ${fmt(leg.d)}`;
@@ -1403,12 +1424,13 @@ function drawMap(){
     const m = L.marker([p.lat,p.lng], {icon, title:p.n, pid:p.id, zIndexOffset:LM[p.id] ? -400 : -500}).addTo(recLayer);
     m.on('popupopen', () => { recOpen = p.id; previewRoute(p); }).on('popupclose', () => { if(recOpen === p.id) recOpen = null; if(routeCur && routeCur.preview) clearRoute(); if(geoDirty && !recOpen){ geoDirty = false; setTimeout(drawMap, 0); } });
     mkList.push({m, pri:LM[p.id] ? 30 : p.c === 'food' ? 40 : 50, name:nm, ph:!!pid, r:LM[p.id] ? 20 : 13});
-    m.bindPopup(() => { const box = h('div','pop'); if(pid) box.append(phBox(pid, p.n)); box.append(h('b',null,p.n)); const o = fromHere(p); { const lg = legOf(o[0], p), others = legOpts(o[0], p).filter(x => x.mode !== lg.mode).map(x => optText(x, o[0], p)); box.append(h('div','rt1', legShort(lg) + ' · ' + shortName(o[1]) + '에서')); if(others.length) box.append(h('div','m', others.join(' · '))); } const inf = INFO[p.id]; if(inf && inf.d) box.append(h('div','d',inf.d)); box.append(h('div','m',recMeta(p))); if(inf && inf.t) box.append(h('div','d','💡 ' + inf.t));
+    m.bindPopup(() => { const box = h('div','pop'); if(pid) box.append(phBox(pid, p.n)); box.append(h('b',null,p.n)); const o = fromHere(p); { const lg = legOf(o[0], p), others = legOpts(o[0], p).filter(x => x.mode !== lg.mode).map(x => optText(x, o[0], p)); box.append(h('div','rt1', legShort(lg) + ' · ' + shortName(o[1]) + '에서')); if(others.length) box.append(h('div','m', others.join(' · '))); } const inf = INFO[p.id]; if(inf && inf.d) box.append(h('div','d',inf.d)); { const t = kv(placeRows(p, p.id)); if(t) box.append(t); }
       const ol = orLink(p.id); if(ol) box.append(ol);
       if(ZH[p.id]){ const zb = h('button', 'zhb', '🀄 ' + ZH[p.id]); zb.type = 'button'; zb.addEventListener('click', () => showZh({rec:p.id, name:p.n})); box.append(zb); }
-      const row = h('div','prow'), go = h('button','ghost','🧭 길찾기'), b = h('button',null,'＋ '+day.tab.replace(/^\S+\s/,'')+'에 추가'); go.type = b.type = 'button';
+      const row = h('div','prow'), go = h('button','ghost','🧭 길찾기'), b = h('button',null,'＋ '+day.tab.replace(/^\S+\s/,'')); go.type = b.type = 'button';
       go.addEventListener('click', () => { showRoute({id:'rec-' + p.id, name:p.n, lat:p.lat, lng:p.lng}, fromHere(p)); map.closePopup(); });
-      b.addEventListener('click', () => { map.closePopup(); addPlace(p); }); row.append(go, b); box.append(row); return box; }, popOpt());
+      b.addEventListener('click', () => { map.closePopup(); addPlace(p); }); const qb = h('button', null, '💬 질문'); qb.type = 'button'; qb.addEventListener('click', () => { map.closePopup(); askAbout(p); });
+      row.append(go, b, qb); box.append(row); return box; }, popOpt());
   }
   declutter();
   if(recOpen){ const k = recLayer.getLayers().find(m => m.options.pid === recOpen); if(k) k.openPopup(); else recOpen = null; }
@@ -1456,7 +1478,11 @@ function openNow(s, w){ const cl = s.closed || ((/([일월화수목금토])\s*�
   const hr = hoursOf(s, hkMin()); if(!hr) return ''; let m = hkMin(); if(m < hr[0] && m + 1440 <= hr[1]) m += 1440; // after midnight, still yesterday's opening
   return m < hr[0] ? `⚪ ${hm(hr[0])} 오픈` : m >= hr[1] ? '🔴 영업 종료' : hr[1] - m <= 60 ? `🟠 곧 마감 ${hm(hr[1])}` : '🟢 영업 중'; }
 const toMin = t => { const [a,b] = String(t).split(':').map(Number); return a*60 + (b||0); };
-const recMeta = p => { const q = Q[p.id], pk = qPeak(q), inf = INFO[p.id]; return [p.when, p.sub, p.hours && '영업 '+p.hours, inf && inf.p && '💰 '+inf.p, p.best && `추천 ${hm(p.best[0])}–${hm(p.best[1])}`, (q || p.wait) && '⏳ ' + (pk ? `붐빌 때 약 ${pk}분 · ` : '') + (q ? q.t : p.wait), p.closed && p.closed+' 휴무', p.tip].filter(Boolean).join(' · '); };
+function kv(rows){ const dl = h('dl','kv'); for(const [k, v] of rows) if(v) dl.append(h('dt', null, k), h('dd', null, v)); return dl.children.length ? dl : null; }
+const placeRows = (p, id) => { const q = Q[id], pk = qPeak(q), inf = INFO[id] || {}, wt = q ? q.t : typeof p.wait === 'string' ? p.wait : p.waitTip;
+  return [['📍 위치', p.sub], ['🗓️ 일정', p.when], ['🕒 영업', [p.hours, p.closed && p.closed + ' 휴무'].filter(Boolean).join(' · ')], ['💰 가격', inf.p && won(inf.p)],
+    ['⏳ 웨이팅', [pk && `붐빌 때 약 ${pk}분`, wt].filter(Boolean).join(' · ')], ['⭐ 추천', p.best && `${hm(p.best[0])}–${hm(p.best[1])}`], ['💡 팁', [inf.t, p.tip].filter(Boolean).join(' · ')]]; };
+const recMeta = p => { const q = Q[p.id], pk = qPeak(q), inf = INFO[p.id]; return [p.when, p.sub, p.hours && '영업 '+p.hours, inf && inf.p && '💰 '+won(inf.p), p.best && `추천 ${hm(p.best[0])}–${hm(p.best[1])}`, (q || p.wait) && '⏳ ' + (pk ? `붐빌 때 약 ${pk}분 · ` : '') + (q ? q.t : p.wait), p.closed && p.closed+' 휴무', p.tip].filter(Boolean).join(' · '); };
 function hoursOf(s, t){ const all = [], re = /(저녁\s*)?(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})/g; let m;
   while((m = re.exec(s.hours || ''))){ if(all.length && !m[1]) continue; const o = +m[2]*60 + +m[3]; let c = +m[4]*60 + +m[5]; if(c <= o) c += 1440; all.push([o, c]); }
   if(!all.length) return null; if(t == null || all.length === 1) return all[0];
@@ -1566,7 +1592,7 @@ function drawSheet(){
   document.getElementById('sref').textContent = '거리·시간 기준: ' + (ref === me ? '내 위치' : ref === sel ? shortName(sel.name) : ref === home() ? ref.name : shortName(ref.name || '이 날 첫 장소'));
   const ul = document.getElementById('recs'); ul.textContent = '';
   for(const [d, p] of items){ const li = h('li','rec'), b = h('div'), has = inDay.has(p.id);
-    b.append(h('div','n',p.n)); if(INFO[p.id] && INFO[p.id].d) b.append(h('div','d1',INFO[p.id].d)); b.append(h('div','m',legShort(legOf(ref, p))+' · '+recMeta(p)));
+    b.append(h('div','n',p.n)); if(INFO[p.id] && INFO[p.id].d) b.append(h('div','d1',INFO[p.id].d)); b.append(h('div','m go',legShort(legOf(ref, p))), h('div','m',recMeta(p)));
     const add = h('button', null, has ? '추가됨' : '추가'); add.type = 'button'; add.disabled = has; add.addEventListener('click', () => addPlace(p));
     const e = h('div','e',(CATS[p.c] || ['📍'])[0]); if(PH[p.id]){ const im = h('img'); im.src = phUrl(p.id, 250); im.alt = ''; im.loading = 'lazy'; im.addEventListener('error', () => im.remove()); e.append(im); }
     li.append(e, b, add);
@@ -1633,7 +1659,7 @@ function drawList(){
     const inf = infoOf(s); if(inf && inf.d) body.append(h('div','desc',inf.d));
     if(s.note) body.append(h('div','note',s.note));
     if(s.hours){ const on = DATES[day.id] === hkIso() ? openNow(s, DOW[hkNow().getUTCDay()]) : ''; body.append(h('div','hours','영업 '+s.hours + (on ? ' · ' + on : ''))); }
-    if(inf && inf.p) body.append(h('div','hours','💰 '+inf.p));
+    if(inf && inf.p) body.append(h('div','hours','💰 '+won(inf.p)));
     if(inf && inf.t) body.append(h('div','tip','💡 '+inf.t));
     if(info) for(const w of info.warn) body.append(h('div','warn',w));
     if(s.best && !(info && info.warn.some(w => w.includes('추천')))) body.append(h('div','tip',`추천 ${hm(s.best[0])}–${hm(s.best[1])}`));
@@ -1652,6 +1678,7 @@ function drawList(){
       if(BUS[s.id]){ const bb = h('button', null, '🚌 ' + BUS[s.id][1] + ' ' + BUS[s.id][3]); bb.type = 'button'; bb.setAttribute('aria-pressed', busOpen.has(s.id));
         bb.addEventListener('click', () => { if(busOpen.has(s.id)) busOpen.delete(s.id); else busOpen.add(s.id); render(); }); acts.append(bb); }
       if(zhOf(s)){ const zb = h('button', null, '🀄 한자'); zb.type = 'button'; zb.title = zhOf(s); zb.addEventListener('click', () => showZh(s)); acts.append(zb); }
+      if(s.lat){ const qb = h('button', null, '💬 질문'); qb.type = 'button'; qb.addEventListener('click', () => askAbout(s)); acts.append(qb); }
       if(s.kind!=='alt'){ const ck = h('button',null, done[s.id] ? '완료됨' : '완료 체크'); ck.type='button'; ck.id='done-'+s.id; ck.setAttribute('aria-pressed', !!done[s.id]);
         ck.addEventListener('click', () => { done[s.id] = !done[s.id]; save(); render(); }); acts.append(ck); }
       body.append(acts); }
@@ -1686,9 +1713,10 @@ function render(){ const nm = !!day.nomap; document.querySelector('.stay').textC
 function stopPop(s){ const box = h('div','pop'), info = schedule(day).out.get(s), pid = phId(s); if(pid) box.append(phBox(pid, s.name));
   box.append(h('b', null, s.name));
   if(info) box.append(h('div','rt1', hm(info.arr) + (info.dep > info.arr ? '–' + hm(info.dep) : '') + (info.leg && info.leg.mode !== 'same' ? ' · ' + (info.leg.mode === 'given' ? s.leg : legShort(info.leg)) : '')));
-  const inf = infoOf(s); if(inf && inf.d) box.append(h('div','d',inf.d)); if(s.note) box.append(h('div','m',s.note));
+  const inf = infoOf(s); if(inf && inf.d) box.append(h('div','d',inf.d)); if(s.note) box.append(h('div','m',s.note)); { const t = kv(placeRows(s, s.rec || s.id)); if(t) box.append(t); }
   const row = h('div','prow'), go = h('button','ghost','🧭 길찾기'); go.type = 'button'; go.addEventListener('click', () => { map.closePopup(); routeTo(s); }); row.append(go);
   if(zhOf(s)){ const z = h('button', null, '🀄 한자'); z.type = 'button'; z.addEventListener('click', () => showZh(s)); row.append(z); }
+  { const q = h('button', null, '💬 질문'); q.type = 'button'; q.addEventListener('click', () => { map.closePopup(); askAbout(s); }); row.append(q); }
   box.append(row); return box; }
 function select(s, scroll){ sel = s; if(mm && !wide() && shState === 'full') setSheet('half'); if(!(scroll && !mm)) focus(s); render();
   if(scroll && !mm && s.lat) L.popup(Object.assign(popOpt(), {offset:[0, -12]})).setLatLng([s.lat, s.lng]).setContent(stopPop(s)).openOn(map);
@@ -1730,7 +1758,7 @@ document.getElementById('pdone').addEventListener('click', () => { if(!sel) retu
 let ovSkip = 0, closeGi = () => {};
 function ovPush(){ try{ history.pushState({ov:((history.state && history.state.ov) || 0) + 1}, ''); }catch(e){} }
 function ovPop(){ try{ if(history.state && history.state.ov){ ovSkip++; history.back(); } }catch(e){} }
-let closeMemo = () => {};
+let closeMemo = () => {}, askAbout = () => {};
 addEventListener('popstate', () => { if(ovSkip){ ovSkip--; return; } const zc = document.getElementById('zc'); if(!zc.hidden) zc.hidden = true; else if(lbId) closeLb(true); else if(!document.getElementById('memo').hidden) closeMemo(true); else closeGi(true); });
 // big Chinese name card to show a driver or passer-by
 function showZh(s){ const z = zhOf(s); if(!z) return; document.getElementById('zcs').textContent = '請載我去 · Please take me to'; document.getElementById('zct').textContent = z;
@@ -1758,7 +1786,7 @@ const GUIDE = [["📅 여행 4일 휴관·행사", [["11/16 월", "M+ 휴관"], 
 { const g = GUIDE.find(x => x[0].includes('마카오 가는 법')); if(g) g[1].push(['워터젯 셩완 → 타이파', boats(true, false).map(hm).join(' ') + ' · 토요일 증편'], ['워터젯 타이파 → 셩완', boats(false, false).map(hm).join(' ')]); }
 { const g = document.getElementById('guide');
   for(const [t, rows] of GUIDE){ const d = h('div','gd'), dl = h('dl'); d.dataset.t = t;
-    for(const [k, v] of rows) dl.append(h('dt', null, k), h('dd', null, v)); d.append(dl); g.append(d); }
+    for(const [k, v] of rows) dl.append(h('dt', null, k), h('dd', null, won(v))); d.append(dl); g.append(d); }
   // phrases: tap one to show it large to staff
   { const d = h('div','gd'), ul = h('div','phr'); d.dataset.t = '🗣️ 보여주는 한마디';
     for(const [ko, zh, say] of [["감사합니다 · 저기요", "唔該", "음꺼이"], ["고맙습니다 (호의·선물)", "多謝", "또제"], ["계산서 주세요", "唔該，埋單", "음꺼이, 마이딴"], ["얼마예요?", "幾多錢？", "께이또친"], ["이거 주세요", "我要呢個", ""], ["두 명이요", "兩位", "렁와이"], ["포장이요", "外賣", "오이마이"], ["먹고 갈게요", "堂食", ""], ["안 맵게 해주세요", "唔要辣", ""], ["고수 빼주세요", "走芫荽", ""], ["얼음 빼주세요", "走冰", "자우빙"], ["영어 메뉴 있나요?", "有冇英文餐牌？", ""], ["카드 돼요?", "可唔可以碌卡？", ""], ["옥토퍼스 돼요?", "可唔可以用八達通？", ""], ["화장실 어디예요?", "洗手間喺邊度？", ""], ["사진 찍어도 돼요?", "可唔可以影相？", ""], ["여기서 내려주세요", "唔該，呢度落車", ""]]){ const b = h('button'); b.type = 'button'; b.append(h('span', null, ko), h('b', null, zh)); if(say) b.append(h('small', null, say));
@@ -1788,7 +1816,7 @@ const GUIDE = [["📅 여행 4일 휴관·행사", [["11/16 월", "M+ 휴관"], 
   { const d = h('div','gd'), box = h('div','fx'), amt = h('input'), what = h('input'), add = h('button','chip','추가'), ul = h('ul','spend'), sum = h('b','spsum'); d.dataset.t = '💸 지출';
     let rows = []; try{ const v = JSON.parse(localStorage.getItem('hk-spend')); if(Array.isArray(v)) rows = v.filter(x => x && typeof x.a === 'number' && typeof x.t === 'string' && typeof x.d === 'string'); }catch(e){}
     amt.type = 'number'; amt.inputMode = 'decimal'; amt.min = 0; amt.placeholder = 'HK$'; amt.setAttribute('aria-label', '금액 홍콩달러'); what.type = 'text'; what.placeholder = '내용'; what.maxLength = 30; what.setAttribute('aria-label', '내용'); add.type = 'button';
-    const rate = () => { try{ const v = JSON.parse(localStorage.getItem('hk-fx')); if(v && v.r > 50) return v.r; }catch(e){} return 170.06; };
+    const rate = fxRate;
     const keep = () => { try{ localStorage.setItem('hk-spend', JSON.stringify(rows)); }catch(e){} };
     const draw = () => { ul.textContent = ''; let tot = 0; rows.forEach((x, i) => { tot += x.a; const li = h('li'), del = h('button', null, '✕'); del.type = 'button'; del.setAttribute('aria-label', x.t + ' 삭제');
         del.addEventListener('click', () => { rows.splice(i, 1); keep(); draw(); }); li.append(h('span','t', x.d), h('span', null, x.t), h('b', null, 'HK$' + x.a.toLocaleString('ko-KR')), del); ul.append(li); });
@@ -1808,11 +1836,24 @@ const GUIDE = [["📅 여행 4일 휴관·행사", [["11/16 월", "M+ 휴관"], 
 { const MEMO_URL = 'https://hk-trip-memo.4032979.workers.dev', box = document.getElementById('memo'), bt = document.getElementById('bmemo'),
     pass = document.getElementById('mpass'), txt = document.getElementById('mtext'), go = document.getElementById('mgo'), msg = document.getElementById('mmsg'), res = document.getElementById('mres');
   let saved = ''; try{ saved = localStorage.getItem('hk-pass') || ''; }catch(e){}
-  let plan = null; try{ txt.value = localStorage.getItem('hk-memo') || ''; }catch(e){}
-  txt.addEventListener('input', () => { try{ localStorage.setItem('hk-memo', txt.value.slice(0, 4000)); }catch(e){} });
-  const open = () => { pass.hidden = !!saved; box.hidden = false; bt.setAttribute('aria-expanded', true); ovPush(); (pass.hidden ? txt : pass).focus(); };
+  let plan = null, ctx = null; const stored = () => { try{ return localStorage.getItem('hk-memo') || ''; }catch(e){ return ''; } }; txt.value = stored();
+  txt.addEventListener('input', () => { if(!ctx) try{ localStorage.setItem('hk-memo', txt.value.slice(0, 4000)); }catch(e){} });
+  const cx = document.getElementById('mctx'), mq = document.getElementById('mq');
+  const QS = {eat:['오늘 열어?', '지금 웨이팅', '추천 메뉴', '가는 길 막혀?'], see:['오늘 열어?', '지금 붐벼?', '볼거리·꿀팁', '가는 길 막혀?'], any:['지금 근처 맛집', '비 오면 어디?', '오늘 일정 무리 없어?', '지금 차 막혀?']};
+  function setCtx(c){ ctx = c || null; cx.hidden = !ctx; document.getElementById('mctxn').textContent = ctx ? '📍 ' + ctx.name : ''; go.hidden = !!ctx; box.classList.toggle('onp', !!ctx); mq.textContent = '';
+    for(const q of ctx ? (/food|sweet|bar/.test(ctx.c) ? QS.eat : QS.see) : QS.any){ const b = h('button', 'chip', q); b.type = 'button'; b.addEventListener('click', () => { txt.value = q; ask.click(); }); mq.append(b); } }
+  // what the page knows about one place, sent along with a question about it
+  const placeCtx = s => { const id = s.rec || s.id, r = REC.find(x => x.id === id) || {}, inf = INFO[id] || {}, nm = s.name || s.n, hrs = s.hours || r.hours, cl = s.closed || r.closed,
+      info = routeStops(day).includes(s) ? schedule(day).out.get(s) : null, o = fromHere(s), lg = legOf(o[0], s), iso = DATES[day.id],
+      wq = estWait(s.name ? s : {rec:id}, info ? info.arr : hkMin(), iso ? DOW[new Date(iso + 'T12:00:00+08:00').getUTCDay()] : '');
+    return {name:shortName(nm), c:r.c || s.c || (/차찬탱|딤섬|국수|완탕|카페|요리|맛집|식당|타르트|거위|해산물|디저트|빵|저녁|점심/.test([nm, s.sub, s.note].join(' ')) ? 'food' : ''), text:[nm, s.sub || r.sub, hrs && '영업 ' + hrs, cl && cl + ' 휴무', inf.d, inf.t, inf.p && '가격 ' + inf.p, s.note && '메모: ' + s.note,
+      info && `일정: ${day.id} ${hm(info.arr)} 도착`, wq > 0 && `앱 예상 웨이팅 약 ${wq}분 (방문 후기 기준)`, lg.mode !== 'same' && `${shortName(o[1])}에서 ${legShort(lg)}`, `좌표 ${s.lat.toFixed(5)},${s.lng.toFixed(5)}`].filter(Boolean).join(' · ').slice(0, 900)}; };
+  const open = c => { if((c ? c.text : '') !== (ctx ? ctx.text : '')){ plan = null; res.textContent = ''; msg.textContent = ''; txt.value = c ? '' : stored(); } setCtx(c); pass.hidden = !!saved;
+    if(box.hidden){ box.hidden = false; bt.setAttribute('aria-expanded', true); ovPush(); } if(!pass.hidden) pass.focus(); else if(!c) txt.focus(); };
+  askAbout = s => open(placeCtx(s));
   closeMemo = fromBack => { if(box.hidden) return; box.hidden = true; bt.setAttribute('aria-expanded', false); if(fromBack !== true) ovPop(); };
-  bt.addEventListener('click', () => box.hidden ? open() : closeMemo());
+  for(const b of [bt, document.getElementById('zask')]) b.addEventListener('click', () => box.hidden || ctx ? open() : closeMemo());
+  document.getElementById('mctxx').addEventListener('click', () => open());
   document.getElementById('memox').addEventListener('click', () => closeMemo());
   const dayOf = id => DAYS.find(d => d.id === id), homeOf = d => d.id === 'macau' ? MHOTEL : HOTEL;
   const hotelStop = (o, d) => { const s = {id:'h-' + Date.now().toString(36) + (stopSeq++), name:o.name, sub:o.sub, lat:o.lat, lng:o.lng, stay:0}; if(o === MHOTEL) s.rec = 'wynnpalace'; return s; };
@@ -1871,9 +1912,11 @@ const GUIDE = [["📅 여행 4일 휴관·행사", [["11/16 월", "M+ 휴관"], 
   const planText = () => { const near = me && nearHK(me) ? REC.map(p => [dist(me.lat, me.lng, p.lat, p.lng), p]).sort((x, y) => x[0] - y[0])[0] : null;
     return (DAYS.map(d => { const rs = routeStops(d), sch = schedule(d, rs); return `${d.id} ${DATES[d.id] || ''}: ` + rs.map(x => hm(sch.out.get(x).arr) + ' ' + x.name).join(' → '); }).join('\n')
       + `\n보고 있는 날: ${day.id}` + (near ? `\n지금 위치: ${near[1].n} 근처 (${fmt(near[0])})` : '')).slice(0, 4000); };
-  ask.addEventListener('click', async () => { const busy = '생각 중…';
-    try{ const j = await call({mode:'ask', plan:planText(), facts:GUIDE.map(g => g[0] + ': ' + g[1].map(r => r.join(' = ')).join(' / ')).join(String.fromCharCode(10)).slice(0, 6000), places:REC.map(p => [p.id, p.n, [p.sub, p.hours && '영업 ' + p.hours, p.closed && p.closed + ' 휴무'].filter(Boolean).join(' · ')].map(v => String(v).slice(0, 120)))}, busy); if(!j) return;
-      res.append(h('p', 'mans', String(j.answer || '답 없음').slice(0, 1500)));
+  ask.addEventListener('click', async () => { const busy = '찾아보는 중…';
+    try{ const j = await call({mode:'ask', place:ctx ? ctx.text : '', plan:planText(), facts:GUIDE.map(g => g[0] + ': ' + g[1].map(r => r.join(' = ')).join(' / ')).join(String.fromCharCode(10)).slice(0, 6000), places:REC.map(p => [p.id, p.n, [p.sub, p.hours && '영업 ' + p.hours, p.closed && p.closed + ' 휴무'].filter(Boolean).join(' · ')].map(v => String(v).slice(0, 120)))}, busy); if(!j) return;
+      res.append(h('p', 'mans', won(String(j.answer || '답 없음').slice(0, 1500))));
+      const src = (Array.isArray(j.src) ? j.src : []).filter(x => x && /^https:\/\//.test(x.u)).slice(0, 3);
+      if(src.length){ const sr = h('div', 'msrc'); for(const x of src){ const a = h('a', null, '🔗 ' + (String(x.t || '').slice(0, 28) || '출처')); a.href = x.u; a.target = '_blank'; a.rel = 'noopener'; sr.append(a); } res.append(sr); }
       const recs = (Array.isArray(j.recs) ? j.recs : []).map(id => REC.find(p => p.id === id)).filter(Boolean).slice(0, 4);
       if(recs.length){ const row = h('div', 'mact'); for(const p of recs){ const b = h('button', 'chip', '＋ ' + shortName(p.n)); b.type = 'button'; b.disabled = day.stops.some(x => x.rec === p.id);
           b.addEventListener('click', () => { closeMemo(); addPlace(p); }); row.append(b); } res.append(row); }

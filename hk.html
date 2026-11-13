@@ -185,11 +185,17 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .steps li:last-child{border-bottom:0}
 .steps .nt{color:var(--accent);font-weight:700}
 .steps .alts{display:flex;flex-wrap:wrap;gap:6px;border:0;padding-top:6px}
+.steps .cmp{display:grid}
+.cmpr{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:2px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:7px 10px;font:inherit;font-size:13.5px;text-decoration:none}
+.cmpr[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--surface))}
+.cmpr .k{flex:0 0 88px;font-weight:700;white-space:nowrap}
+.cmpr .t{flex:0 0 42px;font-variant-numeric:tabular-nums}
+.cmpr .c{flex:1;min-width:0;color:var(--muted);font-size:12.5px}
+.cmpr .tag{margin-left:auto;flex:0 0 auto}
 .leg{cursor:pointer}
 .leg:hover{color:var(--ink)}
 .tpin{width:22px;height:22px;border-radius:7px;background:#3b82c4;border:2px solid #fff;display:grid;place-items:center;font-size:12px;box-shadow:0 1px 3px rgba(0,0,0,.35)}
 #ztoilet[aria-pressed="true"]{background:#3b82c4;border-color:#3b82c4;color:#fff}
-#zsmoke[aria-pressed="true"]{background:#7d6b72;border-color:#7d6b72;color:#fff}
 .tpin.sm{background:#7d6b72}
 .tab .wx{margin-left:4px;font-size:12px}
 .dwx{font-size:12.5px;color:var(--muted)}
@@ -199,8 +205,10 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .pin.sel{outline:3px solid var(--ink)}
 .pin.next{box-shadow:0 0 0 6px rgba(255,111,145,.35),0 1px 4px rgba(0,0,0,.4)}
 .pin.multi{font-size:10px}
-.me{position:relative;width:18px;height:18px;border-radius:50%;background:#1a73e8;border:3px solid #fff;box-shadow:0 0 0 2px rgba(26,115,232,.4)}
-.me i{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;z-index:-1;background:conic-gradient(from -32deg,rgba(26,115,232,.5) 0 64deg,transparent 64deg);-webkit-mask:radial-gradient(circle,transparent 9px,#000 10px,transparent 28px);mask:radial-gradient(circle,transparent 9px,#000 10px,transparent 28px)}
+.me{position:relative;width:48px;height:52px}
+.me svg{position:absolute;left:0;top:0;filter:drop-shadow(0 0 1.2px #fff) drop-shadow(0 0 1.2px #fff) drop-shadow(0 2px 2px rgba(0,0,0,.3))}
+.me::after{content:"";position:absolute;left:50%;top:46px;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:#1a73e8;border:2px solid #fff;box-shadow:0 0 0 2px rgba(26,115,232,.35)}
+.me i{position:absolute;left:50%;top:46px;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;z-index:-1;background:conic-gradient(from -32deg,rgba(26,115,232,.5) 0 64deg,transparent 64deg);-webkit-mask:radial-gradient(circle,transparent 9px,#000 10px,transparent 28px);mask:radial-gradient(circle,transparent 9px,#000 10px,transparent 28px)}
 .me i[hidden]{display:none}
 .leaflet-container{font-family:var(--body)}
 .rt{margin-top:8px;border:2px dashed var(--alt);border-radius:16px;padding:8px 10px;background:var(--bg);cursor:default}
@@ -428,7 +436,6 @@ html.mm .dayhead h2{display:none}
         <div class="lay">
           <button type="button" id="zrec" aria-pressed="true" aria-expanded="false" aria-controls="catp"><b>⭐</b><span>추천</span></button>
           <button type="button" id="ztoilet" aria-pressed="false"><b>🚻</b><span>화장실</span></button>
-          <button type="button" id="zsmoke" aria-pressed="false"><b>🚬</b><span>흡연</span></button>
           <button type="button" id="zrt"><b>🚏</b><span>실시간</span></button>
         </div>
       </div>
@@ -842,40 +849,48 @@ const inMacau = p => p.lat < 22.24 && p.lng < 113.62, PIER = {lat:22.288671, lng
 const FERRY = {hk:'07:30 08:30 09:00* 09:30 10:00 10:30 11:30 12:00* 12:30 13:30 14:00 15:00 15:30* 16:00 16:30 17:30 18:30 19:30 20:30 21:30 22:30',
   mo:'09:00 10:00 10:30* 11:00 11:30 12:30 13:30 14:00* 14:30 15:00 16:00 16:30 17:00* 17:30 18:00 19:00 20:00 21:00 22:00 23:00 23:59'};
 const boats = (fromHk, sat) => FERRY[fromHk ? 'hk' : 'mo'].split(' ').filter(x => sat || !x.endsWith('*')).map(x => toMin(x.replace('*', '')));
-function legOf(a, b){
-  if(b.legMin && b.legMin[0] === a.id) return {mode:'given', min:b.legMin[1], d:dist(a.lat,a.lng,b.lat,b.lng)};
-  const k = a.lat+','+a.lng+'>'+b.lat+','+b.lng; if(legCache.has(k)) return legCache.get(k);
-  const d = dist(a.lat,a.lng,b.lat,b.lng); let r;
-  if(d < 30) r = {mode:'same', min:0, d};
-  // shortcut: one fixed crossing (Sheung Wan pier, ~60 min boat + Taipa shuttle); other piers and the bridge bus are not modelled
-  else if(inMacau(a) !== inMacau(b)){ const hk = inMacau(a) ? b : a, pd = dist(hk.lat, hk.lng, PIER.lat, PIER.lng); r = {mode:'boat', min:75 + (pd > 800 ? taxiMin(pd) + 30 : 0), d, pier:pd > 800, fromHk:!inMacau(a)}; }
-  else {
-    const m = d > 600 ? mtrRoute(a, b) : null, opts = [];
-    // walking gets a small bonus, taxi a penalty: prefer walk > MTR > taxi unless clearly faster
-    if(d < 3500){ const w = Math.max(1, Math.round(WALKM(d))); opts.push([w - 4, {mode:'walk', min:w, d}]); }
-    if(m) opts.push([m.min, {mode:'mtr', min:Math.round(m.min), d, m}]);
-    // taxi: ~21km/h in town for the first 5km, ~60km/h on highways after that
-    if(d > 1500){ const t = Math.round(5 + Math.min(d, 5000) * 1.3 / 350 + Math.max(0, d - 5000) * 1.3 / 1000); opts.push([t + 12, {mode:'taxi', min:t, d}]); }
-    r = opts.sort((x, y) => x[0] - y[0])[0][1];
-  }
-  legCache.set(k, r); return r;
-}
+// MTR adult Octopus fares (opendata.mtr.com.hk, read 2026-11-14): upper triangle, two base-36 digits = HK$ x 10
+const FCODE = "TSYKOWHOKSUNDISLOWSHSFANTWOTAPUNIFOTSHTTAWKOTMKKHUHEXCADMLMCCHWHFCSKWSWHTAKQUBNOPFOHTIHCABWACCENSHWSYPHKUKETTIKYATLATKWTNTKKOBCHHDIHWTSLOFSKMPREMOKYMTHOMWHAWKSMOSHEOTSHSHMCIOSTWCKTHIKKATSUWTKWETSAUSNACMEFTWWKSRYULLOPTISSIHTUMTUCLAKOLYPOAHAHTKOLHPTSWTWHKWHKWFLCKCSWSSPJORTSTOCPWCHLETSOH", FTRI = "324e3o4fde4u4u46463p3i3f3f2k2s2s4e4ede4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e3232323232323232322k2k2k2k3232324f4f4f4f3f3f3f3f3f3232323232221n1n575r5r5r5r5r4f1d2k3o3o3o3o1d1d1d1d1n222232324e4e4e4e2y4f66cy46463q3q3g39323222251x2y2ycy4e4e4e4e4e3o3o3o3o3o2y2y2y3o3o3o322k2k2k2k2k2k2k2k221n1n1d1d1q1q3u3u3u3u33333333321q1q1q1d1d1n2k2w5u6565656565572k1d323232323232323222221n1d1d3o3o3o4e667rei66665j5j544w4r4r3o3l3i1d1dei2k2k2k2k2222221n1n1n1d001d1d1n1n4e4e4e4e4e4e4e4e4e4e3o3o3o3o3o3o5s5s5s5s4s4s4s4s4r3o3o3o2y2y3o4e4y7s85858585856r4e3o4e4e4e4e4e4e4e4e4e3o3o2y2y1n22222222f572726o6o69625s5s4f52526666f56r6r6r6r6r6r6r6r666666666666666r666657575757574f4f4f4f4f4f4f4f4f6n6n6n6n5y5y5y5y5s4f4f4f4f4f3o3o4k7i7s7s7s7s7s323o4f666666663o3o3o3o3o3o3o4f4f6r6r6r6rgw8s8s8e8e827w7s7s6675757r7rgw7r7r7r7r7r7r7r7r7r7r7r7r7r7r7r7r7r7r6r6r6r6r6r6666666666666666668p8p8p8p858585857s666666666657576k949e9e9e9e9e4f57667r7r7r7r5757575757575766667r7r7r7r7d7d80808e8f9696bjbkbkeiei7df4f4f4f4f4f4f4f4f4eieieieieif4f4dededecycycycmcmcccccccccmcmcycy969696969696969696cmcycycbczcccydjg0ggggggggggfzcycmdxdxdxdxdedededecmcmcccycbf4f4f4f4141a1a1t25252533343466667d6t6t6t6t6t6t6t6t6t66666666666t6t4u4u4u4646463s3s3i3i3i3i3s3s45452525252525252525253s454545483j46486o6y6y6y6y6y7v463s5d5d5d5d4u4u4u4u3s3s3i45456t6t6t6t1a1a1t25252533343466667d6t6t6t6t6t6t6t6t6t66666666666t6t4u4u4u4646463s3s3i3i3i3i3s3s45452525252525252525253s454545483j46486o6y6y6y6y6y7v463s5d5d5d5d4u4u4u4u3s3s3i45456t6t6t6t141a1t1t1t2r2s2s5j5j806e6e6e6e6e6e6e6e6e5j5j5j5j5j6e6e4646463q3q3q3k3k393939393k3k3q3q2525252525252525253k3q3q3q3r3a3q3r6a6l6l6l6l6l7k3q3k4w4w4w4w464646463k3k393q3q6e6e6e6e1a1t1t1t2r2s2s5j5j806e6e6e6e6e6e6e6e6e5j5j5j5j5j6e6e4646463q3q3q3k3k393939393k3k3q3q2525252525252525253k3q3q3q3r3a3q3r6a6l6l6l6l6l7k3q3k4w4w4w4w464646463k3k393q3q6e6e6e6e141a1a282a2a54548e5t5t5t5t5t5t5t5t5t54545454545t5t3p3p3p3g3g3g30302q2q2q2q30303232252525251n1n1n1n1n303232323h2s3g3h5y6969696969723g30484848483p3p3p3p30302q32325t5t5t5t141422222a4w4w8f5j5j5j5j5j5j5j5j5j4w4w4w4w4w5j5j3i3i3i3939392t2t2k2k2k2k2t2t3232252525251n1n1n1n1n2t3232323b2m393b5s64646464646w392t3z3z3z3z3i3i3i3i2t2t2k32325j5j5j5j141v1v1v4r4r965f5f5f5f5f5f5f5f5f4r4r4r4r4r5f5f3f3f3f3232322o2o2e2e2e2e2o2o2t2t252525251n1n1n1n1n2o2t2t2t322h32375s64646464646r322o3u3u3u3u3f3f3f3f2o2o2e2t2t5f5f5f5f1v1v1v4r4r965f5f5f5f5f5f5f5f5f4r4r4r4r4r5f5f3f3f3f3232322o2o2e2e2e2e2o2o2t2t252525251n1n1n14142o2t2t2t322h32375s64646464646r322o3u3u3u3u3f3f3f3f2o2o2e2t2t5f5f5f5f14143o3obj4e4e4e4e4e4e4e4e4e3o3o3o3o3o4e4e2k2k2k2222221n1n1d1d1d1d1n1n22222z2z2z2z292929292e1n1n1n22221d222k595s5s5s5s5s57221n323232322k2k2k2k1n1n1d22224e4e4e4e143l3lbk4q4q4q4q4q4h4h4e4e3o3l3l3l3o4e4e2s2s2s2d2d2d1z1z1n1n1n1d1d1n1n1n373737372e2e2e2e2e1n1n1n1n261p2i2l5a5t5t5t5t5t652d1z3d3d3d3d2s2s2s2s1z1z1n1n1n4e4h4h4q2y3ibk4q4q4q4q4q444444443o3i3i3i3o44442s2s2s2d2d2d22221n1n1n1n1n1n1d1d373737372e2e2e2e2t1n1n1d1b1q1q2i315u6565656565652d1z3d3d3d3d2s2s2s2s1z1z1n1d1b4444444q1dei2k2k2k2k22221n1n1d1d1d1d1n1n1n224e3o3o3o3o4e4e4e4e4e3o3o3o3o3o3o5s5s5s5s4s4s4s4s4r3o3o3o2y2y3o4e4y7s85858585856r4e3o4e4e4e4e4e4e4e4e4e3o3o2y2y1n222222ei2k2k2k2k2222221n1n1d1d1d1d1n1n1n4e4e4e4e4e4e4e4e4e4e3o3o3o3o3o3o5s5s5s5s4s4s4s4s4r3o3o3o2y2y3o4e4y7s85858585856r4e3o4e4e4e4e4e4e4e4e4e3o3o2y2y1n222222f4f4f4f4f4f4f4f4f4eieieieieif4f4dededecycycycmcmcccccccccmcmcycy969696969696969696cmcycycbczcccydjg0ggggggggggfzcycmdxdxdxdxdedededecmcmcccycbf4f4f4f41d1d1d1n2222222k2k2k2k2k3232324e3o3o3o3o4e4e4e4e4e4e4e4e4e4e4e6d6d6d6d5o5o5o5o5f4e4e4e4e4e4e4e57858e8e8e8e8e7r4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e323232321d1d1n1n22222k2k2k2k2k2k32323o3o3o3o3o3o4e4e4e4e4e4e4e4e4e4e6d6d6d6d5o5o5o5o5f4e4e4e4e4e4e4e57858e8e8e8e8e7r4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e2k3232321d1d1n1n22222k2k2k2k2k2k323o3o3o3o3o3o3o4e4e4e4e4e4e4e4e4e6d6d6d6d5o5o5o5o5f4e4e4e4e4e4e4e57858e8e8e8e8e7r4e4e4e4e3o4e4e4e4e4e4e4e4e4e4e2k2k32321d1d1n1n22222k2k2k2k2k2k3o2y2y2y2y3o3o3o4e4e4e4e4e4e4e4e6d6d6d6d5o5o5o5o5f4e4e4e4e4e4e4e57858e8e8e8e8e7r4e4e4e3o3o4e4e4e4e4e4e4e4e4e4e2k2k2k321d1d1n1n2222222k2k2k2k3o2y2y2y2y3o3o3o3o4e4e4e4e4e4e4e6d6d6d6d5o5o5o5o5f3o4e4e4e4e4e4e57858e8e8e8e8e7r4e4e3o3o3o3o4e4e4e4e4e4e4e4e4e2k2k2k2k1d1d1n1n2222222k2k2k3o2y2y2y2y3o3o3o3o4e4e4e4e3o4e4e6d6d6d6d5o5o5o5o5f3o3o4e3o3o4e4e57858e8e8e8e8e7r4e4e3o3o3o3o4e4e4e4e4e4e4e3o3o2k2k2k2k1d1d1n1n2222222k2k3o2y2y2y2y3o3o3o3o4e4e4e3o3o3o4e6d6d6d6d5o5o5o5o5f3o3o3o3o3o4e4e57858e8e8e8e8e7r4e3o3o3o3o3o4e4e4e4e4e4e4e3o3o222k2k2k1d1d1n1n2222222k3o2y2y2y2y3o3o3o4e4e4e3o3o3o3o3o6d6d6d6d5o5o5o5o5f3o3o3o3o3o4e4e57858e8e8e8e8e7r4e3o4e3o3o4e4e4e4e4e4e4e4e3o3o22222k2k1d1d1n1n2222223o3o3o3o3o3o3o4e4e4e3o3o3o3o3o3o6d6d6d6d5o5o5o5o5f3o3o3o3o3o3o4e4y7s85858585856r4e3o4e4e3o4e4e4e4e4e4e4e3o3o3o2222222k1d1n1n1n22223o3o3o3o3o3o4e4e4e4e3o3o3o3o3o3o5s5s5s5s4s4s4s4s4r3o3o3o3o3o3o4e4y7s85858585856r4e3o4e4e4e4e4e4e4e4e4e3o3o3o3o1n2222221d1n1n1n224e3o3o3o3o4e4e4e4e4e3o3o3o3o3o3o5s5s5s5s4s4s4s4s4r3o3o3o2y2y3o4e4y7s85858585856r4e3o4e4e4e4e4e4e4e4e4e3o3o2y2y1n2222221d1d1n1n4e4e4e4e4e4e4e4e4e4e3o3o3o3o3o3o5s5s5s5s4s4s4s4s4r3o3o3o2y2y3o4e4y7s85858585856r4e3o4e4e4e4e4e4e4e4e4e3o3o2y2y1n2222221d1d1n4e4e4e4e4e4e4e4e4e4e3o3o3o3o3o3o5s5s5s5s4s4s4s4s4r3o3o3o2y2y3o4e4y7s85858585856r4e3o4e4e4e4e4e4e4e4e4e3o3o2y2y2222222k1d1d4e4e4e4e4e4e4e4e4e4e3o3o3o3o3o3o5s5s5s5s4s4s4s4s4r3o3o3o3o3o3o4e4y7s85858585856r4e3o4e4e4e4e4e4e4e4e4e3o3o3o3o22222k2k1d4e4e4e4e4e4e4e4e4e4e3o3o3o3o3o3o6d6d6d6d5o5o5o5o5f4e3o3o3o3o3o4e4y7s85858585856r4e3o4e4e4e4e4e4e4e4e4e4e3o3o3o222k2k2k4e4e4e4e4e4e4e4e4e4e4e3o3o3o3o3o6d6d6d6d5o5o5o5o5f4e4e3o3o3o4e4e57858e8e8e8e8e7r4e3o4e4e4e4e4e4e4e4e4e4e4e3o3o2k2k2k2k1d1d1n1n22222k2k2k3232323232324f4f4f4f3f3f3f3f3f2k2k2k323232323m6n73737373736r32321n1d1d1n3o3o323232323232324e4e4e4e1d1d1n1n22222k2k2k2k2k2k2k2k4f4f4f4f3f3f3f3f3f2k2k2k2k2k32323m6n73737373736r322k1n1n1d1n3o3232323232322k2k4e4e4e4e1d1d1d1n2222222k2k2k2k2k2k4f4f4f4f3f3f3f3f3f22222k2k2k2k323k6i6x6x6x6x6x66322k221n1n22323232322k2k2k2k2k4e4e4e4e1d1d1d1n22222k2k2k2k2k2k3p3p3p3p33333333322222222k2k2k323k6i6x6x6x6x6x66322k22221n22323232322k2k2k2k2k4e4e4e4e1d1d1n1n222k2k2k2k2k2k3p3p3p3p33333333321n22222k2k2k323k6i6x6x6x6x6x66322k2k22222k323232322k2k2k2k2k4e4e4e4e1d1d1n1n222k2k2k2k2k3p3p3p3p33333333321n1n222k2k2k323k6i6x6x6x6x6x66322k2k2k222k323232322k2k2k2k2k4e4e4e4e1d1d1n22222k2k2k2k3c3c3c3c2q2q2q2q2o1d1n1n2k2k252k315w676767676766322k2k2k2k2k323232322k2k222k2k4e4e4e4e1d1d1n22222k2k2k3c3c3c3c2q2q2q2q2e1d1d1n2k2k252k315w6767676767572k252k2k2k2k323232322k22222k2k4e4e4e4e1d1n1n22222k2k2z2z2z2z2f2f2f2f2e1d1n1n2k2k1n2k2u5r6161616161572k22322k2k323232322k22221n2k2k4e4e4e4e1d1n1n22222k2z2z2z2z2f2f2f2f2e1n1n222k221n222s5r6161616161572k1n32322k3232322k2k221n1n222k4e4e4e4e1d1d1n1n222z2z2z2z2f2f2f2f2e1n1n1n221n1d1n2f575r5r5r5r5r57221d323232322k2k2k221n1d1d1n224e4e4e4e1d1d1n1n2z2z2z2z2f2f2f2f2e1n1n1n1n1n1d1n2f575r5r5r5r5r57221d323232322k2k2k221n1d1d1n1n3o4e4e4e1d1d1n3c3c3c3c2q2q2q2q2o221n1n1n1d1d222k595s5s5s5s5s57221d323232322k2k2k2k1n1n1d1d1n3o3o4e4e1d1d3c3c3c3c2q2q2q2q2o1n1n1d1d1d1n222w5u6565656565572k1d323232323232322k221n1n1d1d3o3o3o4e1d3p3p3p3p333333332t1n1d1d1n1q1q2i315u6565656565572k1q323232323232323222221n1d1n3o3o4e4e3y3y3y3y333333332t1n1n1d1n1q1q2i315u656565656557321q32323232323232322i22221n1n3o4e4e4e141a1a1n1n1n1n253c3p3p3y3u343u3z6l6v6v6v6v6v7q3u3c4v4v4v4v4f4f4f4f3c3c2z3p3y6d6d6d6d141a1n1n1n1n253c3p3p3y3u343u3z6l6v6v6v6v6v7q3u3c4v4v4v4v4f4f4f4f3c3c2z3p3y6d6d6d6d141n1n1n1n253c3p3p3y3u343u3z6l6v6v6v6v6v7q3u3c4v4v4v4v4f4f4f4f3c3c2z3p3y6d6d6d6d141n1n1n253c3p3p3y3u343u3z6l6v6v6v6v6v7q3u3c4v4v4v4v4f4f4f4f3c3c2z3p3y6d6d6d6d141a1a1n2q333333332i333b5y69696969696y332q3v3v3v3v3f3f3f3f2q2q2f33335o5o5o5o141a1n2q333333332i333b5y69696969696y332q3v3v3v3v3f3f3f3f2q2q2f33335o5o5o5o141n2q333333332i333b5y69696969696y332q3v3v3v3v3f3f3f3f2q2q2f33335o5o5o5o1n2q333333332i333b5y69696969696y332q3v3v3v3v3f3f3f3f2q2q2f33335o5o5o5o2o2t2t2t323232375s64646464646r32323u3u3u3u3f3f3f3f2o2o2e2t2t5f5f5f5f1d1d2222222i315w6767676767572k1q322k2k32323232322i222222224e4e4e4e1d1n1q1q2i315w6767676767572k1q32322k32323232322i22221n1n3o4e4e4e1n1q1q2i315w6767676767572k1q32323232323232322i22221n1n3o3o4e4e1d1q2i315u656565656557321n32323232323232322i22221d003o3o3o4e1n2i2w5u6565656565572k1d323232323232323222221n1d1d3o3o3o4e1n2h4o4y4y4y4y4y4f1n1d323232322k2k22221d1d1d1n1q4e4e4e4e204e4o4o4o4o4o4f1d2232323232221n1n1d1d1d1n2i2i4e4e4e4e3s45454545455o1n2k3m3m3m3m1d1d1n1n23232f3131575757571h1s1t202b8d4v596n6n6n6n5s57574v4v4v575u5u858585851h1i1m1z8m595s73737373625r5r5959595r65658e8e8e8e1h1m1s8m595s73737373625r5r5959595r65658e8e8e8e1i1m8m595s73737373625r5r5959595r65658e8e8e8e1h8m595s73737373625r5r5959595r65658e8e8e8e8m595s73737373625r5r5959595r65658e8e8e8e4f576r6r6r6r4f4f4f4f4f4f4f57577r7r7r7r223o32323o1n1n1d1d1d1n1n2k324e4e4e4e323232322k2k2k2k1n1n1d1d1n3o3o4e4e1d1d1d3o3o3o3o32323232324e4e4e4e1d1d3o3o3o3o32323232324e4e4e4e1d3o3o3o3232323232324e4e4e4e3o3o3o3o32323232324e4e4e4e1d1d1n222k2k32324e4e4e4e1d1d22222k32324e4e4e4e1d1n222232324e4e4e4e1n1n2232324e4e4e4e1d1d222i4e4e4e4e1d22224e4e4e4e1n224e4e4e4e1d3o3o3o4e3o3o3o4e1d1d1n1d1d1d", AEFARE = {"HOKAIR":120.0,"HOKAWE":120.0,"KOWAIR":105.0,"KOWAWE":105.0,"TSYAIR":73.0,"TSYAWE":73.0,"AIRHOK":120.0,"AIRKOW":105.0,"AIRTSY":73.0,"AIRAWE":6.5,"AWEHOK":120.0,"AWEKOW":105.0,"AWETSY":73.0,"AWEAIR":6.5};
+const FIDX = new Map(FCODE.match(/.{3}/g).map((c, i) => [c, i]));
+const SFP = [{lat:22.293541, lng:114.167987}, {lat:22.287041, lng:114.16119}]; // Star Ferry piers: Tsim Sha Tsui, Central
+// adult Octopus fare of an MTR route (Airport Express priced apart); null when a station is not in the table
+function fareOf(m){ const f = (a, b) => { if(a === b) return 0; let i = FIDX.get(a), j = FIDX.get(b); if(i == null || j == null) return null; if(i > j) [i, j] = [j, i];
+    const n = FIDX.size, k = i * n - i * (i + 1) / 2 + (j - i - 1); return parseInt(FTRI.substr(2 * k, 2), 36) / 10; };
+  const A = m.rides[0].codes[0], lastR = m.rides[m.rides.length - 1], B = lastR.codes[lastR.codes.length - 1], ae = m.rides.find(r => r.line === 'AEL');
+  if(!ae) return f(A, B);
+  const p = ae.codes[0], q = ae.codes[ae.codes.length - 1], x = AEFARE[p + q], pre = f(A, p), post = f(q, B); return x == null ? f(A, B) : pre == null || post == null ? null : x + pre + post; }
+// all options for one leg, best first. cost = HK$ for the two of them (fares x 2, one taxi); score = minutes + HK$3 a minute, long walks and hailing a taxi weigh a little extra
+function legOpts(a, b){ const d = dist(a.lat,a.lng,b.lat,b.lng);
+  if(b.legMin && b.legMin[0] === a.id) return [{mode:'given', min:b.legMin[1], d, cost:/A21/.test(b.leg || '') ? 69.2 : 0}];
+  if(d < 30) return [{mode:'same', min:0, d, cost:0}];
+  // shortcut: one fixed crossing (Sheung Wan pier, ~60 min boat + Taipa shuttle, weekday day fare HK$192 each); other piers and the bridge bus are not modelled
+  if(inMacau(a) !== inMacau(b)){ const hk = inMacau(a) ? b : a, pd = dist(hk.lat, hk.lng, PIER.lat, PIER.lng), far = pd > 800, x = !onIsland(hk);
+    return [{mode:'boat', min:75 + (far ? taxiMin(pd) + 30 : 0), d, pier:far, fromHk:!inMacau(a), cost:384 + (far ? taxiFare(pd, x) + (x ? 35 : 0) : 0)}]; }
+  const out = [], cross = !inMacau(a) && onIsland(a) !== onIsland(b), m = d > 600 ? mtrRoute(a, b) : null;
+  if(d < 5000) out.push({mode:'walk', min:Math.max(1, Math.round(WALKM(d))), d, cost:0});
+  if(m){ const f = fareOf(m); out.push({mode:'mtr', min:Math.round(m.min), d, m, cost:f == null ? null : Math.round(f * 20) / 10}); }
+  if(d > 700 || !out.length) out.push({mode:'taxi', min:taxiMin(d), d, cross, cost:taxiFare(d, cross) + (cross ? 35 : 0)});
+  if(cross){ const k = onIsland(a) ? b : a, i = onIsland(a) ? a : b, dk = dist(k.lat, k.lng, SFP[0].lat, SFP[0].lng), di = dist(i.lat, i.lng, SFP[1].lat, SFP[1].lng);
+    if(dk < 1500 && di < 1500) out.push({mode:'sf', min:Math.round(WALKM(dk) + WALKM(di)) + 16, d, cost:10, fromK:k === a, wa:Math.round(WALKM(k === a ? dk : di)), wb:Math.round(WALKM(k === a ? di : dk))}); }
+  for(const o of out) o.score = o.min + (o.cost || 0) / 3 + (o.mode === 'walk' ? Math.max(0, o.min - 10) * .5 : o.mode === 'taxi' ? 4 : 0);
+  return out.sort((x, y) => x.score - y.score); }
+function legOf(a, b){ if(b.legMin && b.legMin[0] === a.id) return legOpts(a, b)[0];
+  const k = a.lat+','+a.lng+'>'+b.lat+','+b.lng; if(!legCache.has(k)) legCache.set(k, legOpts(a, b)[0]); return legCache.get(k); }
 const taxiMin = d => Math.round(5 + Math.min(d, 5000) * 1.3 / 350 + Math.max(0, d - 5000) * 1.3 / 1000);
 // red taxi: HK$29 for the first 2 km, then HK$2.1 per 200 m (road distance about 1.3 x straight line); harbour tunnels cost extra
 const taxiFare = (d, cross) => Math.round(29 + Math.max(0, d * (cross ? 1.6 : 1.3) - 2000) / 200 * 2.1); // the way round to a tunnel is longer
 const onIsland = p => p.lat < 22.2925 && p.lng > 114.1 && p.lng < 114.26;
-function legOpts(a, b){ const best = legOf(a, b); if(best.mode === 'same' || best.mode === 'given' || best.mode === 'boat') return [best];
-  const d = best.d, out = [], m = best.mode === 'mtr' ? best.m : d > 600 ? mtrRoute(a, b) : null;
-  if(d < 5000) out.push({mode:'walk', min:Math.max(1, Math.round(WALKM(d))), d});
-  if(m) out.push({mode:'mtr', min:Math.round(m.min), d, m});
-  if(d > 700 && d < 60000) out.push({mode:'taxi', min:taxiMin(d), d});
-  return out.length ? out : [best]; }
 const fxRate = () => { try{ const v = JSON.parse(localStorage.getItem('hk-fx')); if(v && v.r > 50) return v.r; }catch(e){} return 170.06; };
 const krw = v => { const w = v * fxRate(); return w >= 10000 ? (w / 10000).toFixed(w >= 100000 ? 0 : 1).replace(/\.0$/, '') + '만원' : (Math.round(w / 100) * 100).toLocaleString('ko-KR') + '원'; };
 const won = t => String(t).replace(/HK\$\s?(\d+(?:,\d{3})*(?:\.\d+)?)(?!\d)(?:\s?[~–]\s?(?:HK\$\s?)?(\d+(?:,\d{3})*(?:\.\d+)?)(?!\d))?(?!\s*\((?:약\s*)?[\d.,~]+\s*만?\s*원)/g, (m, a, b) => { const x = krw(+a.replace(/,/g, '')), y = b && krw(+b.replace(/,/g, ''));
   return `${m} (${y && y !== x ? x.replace(/원$/, '') + '~' + y : x})`; });
-const optText = (o, a, b) => `${legIcon[o.mode] || ''} ${o.min}분` + (o.mode === 'taxi' ? ` · 약 ${won('HK$' + taxiFare(o.d, onIsland(a) !== onIsland(b)))}${onIsland(a) !== onIsland(b) ? ' + 터널 25~50' : ''}` : '');
-function legText(leg){
+const hkd = c => 'HK$' + (Number.isInteger(c) ? c : c.toFixed(1));
+// cost of one option in words; w = also in won
+const costTxt = (o, w) => { if(!o.cost) return ''; const t = (o.mode === 'taxi' ? '약 ' : '2명 ') + hkd(o.cost) + (o.mode === 'taxi' && o.cross ? ' 터널 포함' : ''); return w ? won(t) : t; };
+const optText = o => `${legIcon[o.mode] || ''} ${o.min}분` + (costTxt(o) ? ' · ' + costTxt(o) : '');
+function legText(leg){ const c = costTxt(leg); return legText0(leg) + (c ? ' · ' + c : ''); }
+function legText0(leg){
+  if(leg.mode === 'sf') return `⛴️ 스타페리 약 ${leg.min}분 · ${leg.fromK ? '침사추이 → 센트럴' : '센트럴 → 침사추이'}`;
   if(leg.mode === 'walk') return `🚶 도보 약 ${leg.min}분 · ${fmt(leg.d)}`;
   if(leg.mode === 'taxi') return `🚕 택시 약 ${leg.min}분 · ${fmt(leg.d)}`;
   if(leg.mode === 'boat') return `⛴️ 배 약 ${leg.min}분 · ${leg.pier ? '셩완 터미널까지 택시 + ' : ''}${leg.fromHk ? '셩완 → 타이파' : '타이파 → 셩완'} 코타이 워터젯`;
@@ -893,6 +908,7 @@ function legSteps(leg){
     S.push({t:`🚶 ${m.to.exit ? m.to.exit+' 출구로 나가서 ' : ''}도보 ${Math.max(1, Math.round(WALKM(m.to.d)))}분 · ${fmt(m.to.d)}`});
     return S; }
   if(leg.mode === 'taxi') return [{t:`🚕 택시 약 ${leg.min}분 · ${fmt(leg.d)}`}];
+  if(leg.mode === 'sf') return [{t:`🚶 ${leg.fromK ? '침사추이' : '센트럴 7번'} 부두까지 도보 ${leg.wa}분`}, {t:'⛴️ 스타페리 약 10분 · 6~12분 간격 · 옥토퍼스'}, {t:`🚶 ${leg.fromK ? '센트럴 7번' : '침사추이'} 부두에서 도보 ${leg.wb}분`}];
   if(leg.mode === 'boat') return [leg.fromHk ? leg.pier && {t:'🚕 셩완 홍콩마카오 페리터미널까지 택시'} : {t:'🚌 타이파 페리터미널까지 셔틀·택시 약 15분'}, {t:`⛴️ 코타이 워터젯 ${leg.fromHk ? '셩완 → 타이파' : '타이파 → 셩완'} 약 60분 · 30분 전 도착 · 여권`}, {t:'🕒 ' + boats(leg.fromHk, false).map(hm).join(' ')}, leg.fromHk ? {t:'🚌 타이파 터미널 → 숙소 무료 셔틀·택시 약 15분'} : leg.pier && {t:'🚕 셩완 터미널 → 다음 장소 택시'}].filter(Boolean);
   if(leg.mode === 'walk') return [{t:`🚶 도보 약 ${leg.min}분 · ${fmt(leg.d)}`}];
   if(leg.mode === 'same') return [{t:'📍 같은 곳'}];
@@ -976,6 +992,7 @@ function legShapes(leg, a, b){
     for(const r of m.rides){ const pts = r.codes.map(c => [ST[c].lat, ST[c].lng]); S.push({pts, st:'mtr:' + r.line}); }
     S.push({pts:[[A.lat, A.lng], S[1].pts[0]], st:'link'}, {pts:[S[S.length-1].pts[S[S.length-1].pts.length-1], [B.lat, B.lng]], st:'link'});
     S.push({pts:geo('foot', B, b) || st(B, b), st:'walk'}); }
+  else if(leg.mode === 'sf'){ const [p1, p2] = leg.fromK ? SFP : [SFP[1], SFP[0]]; S.push({pts:geo('foot', a, p1) || st(a, p1), st:'walk'}, {pts:st(p1, p2), st:'link'}, {pts:geo('foot', p2, b) || st(p2, b), st:'walk'}); }
   else if(leg.mode === 'boat') S.push({pts:st(a, b), st:'link'});
   else if(leg.mode !== 'same') S.push({pts:geo('car', a, b) || st(a, b), st:'car'});
   return S;
@@ -994,7 +1011,7 @@ function drawShape(sh, grp, op, big){
 // ---- in-page directions ----
 let routeCur = null;
 function clearRoute(){ routeCur = null; pendingRoute = null; redrawRoute(false); }
-const legIcon = {walk:'🚶', mtr:'🚇', taxi:'🚕', given:'🚌', boat:'⛴️'};
+const legIcon = {walk:'🚶', mtr:'🚇', taxi:'🚕', given:'🚌', boat:'⛴️', sf:'⛴️'}, MODE = {walk:'도보', mtr:'지하철', taxi:'택시', given:'버스', boat:'배', sf:'스타페리'};
 const legShort = lg => lg.mode === 'same' ? '바로 옆' : `${legIcon[lg.mode] || ''} 약 ${lg.min}분 · ${fmt(lg.d)}`;
 // tapping a place answers "how far from here": my position, else the selected stop, else the hotel
 function fromHere(p){ return me && nearHK(me) && dist(me.lat, me.lng, p.lat, p.lng) < 60000 ? [me, '내 위치'] : sel && sel.lat && dist(sel.lat, sel.lng, p.lat, p.lng) > 30 ? [sel, sel.name] : [home(), home().name]; }
@@ -1024,9 +1041,13 @@ function redrawRoute(fitIt){
   document.getElementById('routetxt').textContent = `🧭 ${s.name}까지 약 ${leg.min}분`;
   document.getElementById('routefrom').textContent = '출발: ' + lbl;
   const ol = document.getElementById('routesteps'); ol.textContent = '';
-  if(opts.length > 1){ const li = h('li', 'alts');
-    for(const o of opts){ const b = h('button', 'chip', optText(o, from, s)); b.type = 'button'; b.setAttribute('aria-pressed', o.mode === leg.mode);
-      b.addEventListener('click', () => { routeCur.mode = o.mode; redrawRoute(true); }); li.append(b); }
+  if(opts.length > 1 || leg.cost){ const li = h('li', 'alts cmp');
+    opts.forEach((o, n) => { const b = h('button', 'cmpr'); b.type = 'button'; b.setAttribute('aria-pressed', o.mode === leg.mode);
+      b.append(h('span', 'k', (legIcon[o.mode] || '') + ' ' + (MODE[o.mode] || '')), h('span', 't', o.min + '분'), h('span', 'c', o.mode === 'walk' ? '무료' : costTxt(o, true) || '–'));
+      if(!n && opts.length > 1) b.append(h('span', 'tag next', '추천'));
+      b.addEventListener('click', () => { routeCur.mode = o.mode; redrawRoute(true); }); li.append(b); });
+    if(!inMacau(s) && opts[0].mode !== 'boat' && opts[0].d > 600){ const a = h('a', 'cmpr'); a.href = `https://www.google.com/maps/dir/?api=1&origin=${from.lat},${from.lng}&destination=${s.lat},${s.lng}&travelmode=transit`; a.target = '_blank'; a.rel = 'noopener';
+      a.append(h('span', 'k', '🚌 버스·트램'), h('span', 'c', 'Google 지도')); li.append(a); }
     ol.append(li); }
   for(const st of legSteps(leg)){ const li = h('li', null, st.t); ol.append(li); if(!st.line) continue;
     const k = st.line + st.sta + st.up, nt = routeCur.nt[k];
@@ -1062,13 +1083,8 @@ function drawToilets(){
 }
 // smoking rooms: few are mapped, street smoking outside no-smoking areas is legal in both cities
 const SMOKE = [[22.31773,113.93009,"공항 흡연실"],[22.3372,114.17543,"흡연 구역"],[22.31307,113.91665,"공항 흡연실"],[22.31002,113.91714,"공항 흡연실"],[22.3095,113.91735,"공항 흡연실"],[22.30722,113.91884,"공항 흡연실"],[22.33734,114.17532,"흡연 구역"],[22.31389,114.04047,"흡연 구역"],[22.39036,114.20954,"흡연 구역"],[22.14696,113.56542,"런더너 카지노 안 흡연실"],[22.14494,113.5654,"런더너 그랜드 카지노 안 흡연실"],[22.14442,113.57439,"그랜드 리스보아 팰리스 카지노 안 흡연실"],[22.1463,113.56795,"MGM 코타이 카지노 안 흡연실"],[22.14568,113.55184,"브로드웨이 카지노 안 흡연실"],[22.1413,113.56167,"스튜디오 시티 카지노 안 흡연실"],[22.14789,113.57209,"윈 팰리스 카지노 안 흡연실"],[22.14853,113.56049,"베네시안 카지노 안 흡연실"],[22.14838,113.55432,"갤럭시 카지노 안 흡연실"],[22.14543,113.56267,"플라자 마카오 카지노 안 흡연실"],[22.31512,113.93303,"공항 흡연실"],[22.30536,114.16438,"흡연 구역"]], smokeLayer = L.layerGroup().addTo(map);
-function toggleSmoke(){ const btn = document.getElementById('zsmoke'), on = btn.getAttribute('aria-pressed') !== 'true'; btn.setAttribute('aria-pressed', on); smokeLayer.clearLayers();
-  if(!on){ if(routeCur && routeCur.s.id === 'smoke') clearRoute(); return; }
-  const obj = t => ({id:'smoke', name:t[2], lat:t[0], lng:t[1]});
-  for(const t of SMOKE) L.marker([t[0], t[1]], {icon:L.divIcon({className:'', html:'<div class="tpin sm">🚬</div>', iconSize:[22,22], iconAnchor:[11,11]}), zIndexOffset:-300, title:t[2]})
-    .bindPopup(() => { const box = h('div','pop'), bt = h('button', null, '🧭 길찾기'); bt.type = 'button'; bt.addEventListener('click', () => { map.closePopup(); showRoute(obj(t), originNear()); }); box.append(h('b', null, t[2]), bt); return box; }).addTo(smokeLayer);
-  const [o, lbl] = originNear(), near = SMOKE.map(t => [dist(o.lat, o.lng, t[0], t[1]), t]).sort((a, b) => a[0] - b[0])[0];
-  if(near[0] < 250) showRoute(obj(near[1]), [o, lbl]); else toast(inMacau(o) ? '길거리 가능 · 정류장 10m 안은 금지' : '길거리 가능 · 금연 표지·타는 줄은 금지'); }
+for(const t of SMOKE) L.marker([t[0], t[1]], {icon:L.divIcon({className:'', html:'<div class="tpin sm">🚬</div>', iconSize:[22,22], iconAnchor:[11,11]}), zIndexOffset:-200, title:t[2]})
+  .bindPopup(() => { const box = h('div','pop'), bt = h('button', null, '🧭 길찾기'); bt.type = 'button'; bt.addEventListener('click', () => { map.closePopup(); showRoute({id:'smoke', name:t[2], lat:t[0], lng:t[1]}, originNear()); }); box.append(h('b', null, t[2]), bt); return box; }).addTo(smokeLayer);
 async function toggleToilet(){
   const btn = document.getElementById('ztoilet'); showToilet = !showToilet; btn.setAttribute('aria-pressed', showToilet);
   if(!showToilet){ toiletLayer.clearLayers(); if(routeCur && routeCur.s.id === 'wc') clearRoute(); return; }
@@ -1464,7 +1480,7 @@ function drawMap(){
     const m = L.marker([p.lat,p.lng], {icon, title:p.n, pid:p.id, zIndexOffset:LM[p.id] ? -400 : -500}).addTo(recLayer);
     m.on('popupopen', () => { recOpen = p.id; previewRoute(p); }).on('popupclose', () => { if(recOpen === p.id) recOpen = null; if(routeCur && routeCur.preview) clearRoute(); if(geoDirty && !recOpen){ geoDirty = false; setTimeout(drawMap, 0); } });
     mkList.push({m, pri:LM[p.id] ? 30 : p.c === 'food' ? 40 : 50, name:nm, ph:!!pid, r:LM[p.id] ? 20 : 13});
-    m.bindPopup(() => { const box = h('div','pop'); if(pid) box.append(phBox(pid, p.n)); box.append(h('b',null,p.n)); const o = fromHere(p); { const lg = legOf(o[0], p), others = legOpts(o[0], p).filter(x => x.mode !== lg.mode).map(x => optText(x, o[0], p)); box.append(h('div','rt1', legShort(lg) + ' · ' + shortName(o[1]) + '에서')); if(others.length) box.append(h('div','m', others.join(' · '))); } const inf = INFO[p.id]; if(inf && inf.d) box.append(h('div','d',inf.d)); { const t = kv(placeRows(p, p.id)); if(t) box.append(t); }
+    m.bindPopup(() => { const box = h('div','pop'); if(pid) box.append(phBox(pid, p.n)); box.append(h('b',null,p.n)); const o = fromHere(p); { const lg = legOf(o[0], p), others = legOpts(o[0], p).filter(x => x.mode !== lg.mode).map(x => optText(x)); box.append(h('div','rt1', legShort(lg) + ' · ' + shortName(o[1]) + '에서')); if(others.length) box.append(h('div','m', others.join(' · '))); } const inf = INFO[p.id]; if(inf && inf.d) box.append(h('div','d',inf.d)); { const t = kv(placeRows(p, p.id)); if(t) box.append(t); }
       const ol = orLink(p.id); if(ol) box.append(ol);
       if(ZH[p.id]){ const zb = h('button', 'zhb', '🀄 ' + ZH[p.id]); zb.type = 'button'; zb.addEventListener('click', () => showZh({rec:p.id, name:p.n})); box.append(zb); }
       const row = h('div','prow'), go = h('button','ghost','🧭 길찾기'), b = h('button',null,'＋ '+day.tab.replace(/^\S+\s/,'')); go.type = b.type = 'button';
@@ -1477,7 +1493,7 @@ function drawMap(){
 }
 function drawMe(){ meLayer.clearLayers(); if(!me) return;
   L.circle([me.lat,me.lng], {radius:me.acc, color:'#1a73e8', weight:1, fillOpacity:.12, interactive:false}).addTo(meLayer);
-  L.marker([me.lat,me.lng], {icon: L.divIcon({className:'', html:`<div class="me"><i ${meHead == null ? 'hidden' : `style="transform:rotate(${meHead}deg)"`}></i></div>`, iconSize:[18,18], iconAnchor:[9,9]}), zIndexOffset:2000, interactive:false}).addTo(meLayer); }
+  L.marker([me.lat,me.lng], {icon: L.divIcon({className:'', html:`<div class="me"><i ${meHead == null ? 'hidden' : `style="transform:rotate(${meHead}deg)"`}></i><svg viewBox="0 0 48 44" width="48" height="44" aria-hidden="true"><path d="M6.5 15.500a9 9 0 0 1 18 0v9.500a2.500 2.500 0 0 1-2.500 2.500h-13a2.500 2.500 0 0 1-2.500-2.500z" fill="#7a4a35"/><path d="M9 32.500c0-4 2.900-6.500 6.500-6.500s6.500 2.500 6.500 6.500l1.600 9.500h-16.200z" fill="#ff6f91"/><circle cx="15.500" cy="16.500" r="7.600" fill="#ffe3d1"/><path d="M7.700 15.800c.500-5.600 4.200-8.600 7.800-8.600s7.300 3 7.800 8.600c-3.200-.300-5.900-1.900-7.300-4.400-1.700 2.600-4.700 4.100-8.300 4.400z" fill="#7a4a35"/><circle cx="12.700" cy="17.600" r="1.100" fill="#3b2a2a"/><circle cx="18.300" cy="17.600" r="1.100" fill="#3b2a2a"/><ellipse cx="10.800" cy="20" rx="1.700" ry="1" fill="#ff8fab" opacity=".75"/><ellipse cx="20.200" cy="20" rx="1.700" ry="1" fill="#ff8fab" opacity=".75"/><path d="M14.100 20.600q1.400 1.300 2.800 0" stroke="#3b2a2a" stroke-width=".9" fill="none" stroke-linecap="round"/><path d="M26 32.500c0-4 2.900-6.500 6.500-6.500s6.500 2.500 6.500 6.500l.900 9.500h-14.800z" fill="#24a99a"/><circle cx="32.500" cy="16.500" r="7.600" fill="#ffe3d1"/><path d="M24.600 16c-.400-5.800 3.400-9.200 7.900-9.200s8.300 3.400 7.900 9.200c-1.900-.400-3.400-1.500-4.300-3.100-2.800 1.800-6.800 2.800-11.500 3.100z" fill="#3b3340"/><circle cx="29.700" cy="17.600" r="1.100" fill="#3b2a2a"/><circle cx="35.300" cy="17.600" r="1.100" fill="#3b2a2a"/><ellipse cx="27.800" cy="20" rx="1.700" ry="1" fill="#ffb199" opacity=".7"/><ellipse cx="37.200" cy="20" rx="1.700" ry="1" fill="#ffb199" opacity=".7"/><path d="M31.100 20.600q1.400 1.300 2.800 0" stroke="#3b2a2a" stroke-width=".9" fill="none" stroke-linecap="round"/><path d="M24 5.600c-1.500-2.600-5-.900-3.700 1.800.700 1.400 2.300 2.600 3.700 3.800 1.400-1.200 3-2.400 3.700-3.800 1.300-2.700-2.200-4.400-3.700-1.800z" fill="#ff6f91"/></svg></div>`, iconSize:[48,52], iconAnchor:[24,46]}), zIndexOffset:2000, interactive:false}).addTo(meLayer); }
 // compass: iOS gives webkitCompassHeading (after a permission tap), Android an absolute alpha
 let meHead = null, compassOn = false;
 const arrived = new Set();
@@ -1667,7 +1683,8 @@ function drawList(){
     if(mm && shState === 'peek') root.style.setProperty('--sh', shH('peek') + 'px'); }
   document.getElementById('dstart').value = day.start;
   { const wk = [...sch.out.values()].reduce((a, i) => a + (i.leg && i.leg.mode === 'walk' ? i.leg.d * 1.25 : 0), 0);
-    document.getElementById('dsum').textContent = rs.length > 1 ? `이동 약 ${sch.travel}분` + (wk > 300 ? ` · 🚶 ${(wk / 1000).toFixed(1)}km` : '') + ` · ${hm(sch.end)} 끝` : ''; }
+    const fare = [...sch.out.values()].reduce((a, i) => a + ((i.leg && i.leg.cost) || 0), 0);
+    document.getElementById('dsum').textContent = rs.length > 1 ? `이동 약 ${sch.travel}분` + (wk > 300 ? ` · 🚶 ${(wk / 1000).toFixed(1)}km` : '') + (fare > 0 ? ` · 교통비 2명 약 ${won('HK$' + Math.round(fare))}` : '') + ` · ${hm(sch.end)} 끝` : ''; }
   document.getElementById('dwx').textContent = wxText(day);
   const nw = document.getElementById('newer'); nw.hidden = !day.newer;
   if(day.newer){ nw.textContent = ''; const a = h('button','chip','새 일정으로'), b = h('button','chip','내 편집 유지'); a.type = b.type = 'button';
@@ -1834,7 +1851,7 @@ document.addEventListener('keydown', e => { if(e.key === 'Escape' && !document.g
 ZH.lordstowt = ZH.lordstow; if(PH.lordstow) PH.lordstowt = PH.lordstow.map(x => [x[0], x[1], x[2], 2]);
 const GUIDE = [["📅 여행 4일 휴관·행사", [["11/16 월", "M+ 휴관"], ["11/17 화", "고궁박물관 휴관"], ["11/18 수", "심포니 오브 라이트 마지막 공연 20:00 + 불꽃 · 윈터페스트 개막 · 미도카페 휴무"], ["11/19 목", "홍콩미술관 휴관 · 오스트레일리아 데일리컴퍼니 휴무 · 심포니 오브 라이트 없음 · 마카오 그랑프리 연습일"], ["날씨 평년", "최고 24.5° · 최저 20.3° · 얇은 겉옷"]]], ["🚇 교통·결제", [["옥토퍼스(관광객용)", "HK$39 · 보증금 없음 · 잔액만 환불"], ["아이폰", "'Octopus for Tourists' 앱 · 해외 Visa·Mastercard 충전 (한국 카드 미확인)"], ["A21 버스", "공항→침사추이 이스트 · HK$34.6 · 10~20분 간격 · 60~75분"], ["공항철도", "구룡역 HK$105 · 홍콩역 HK$120 · 약 24분"], ["MTR", "하늘색 개찰구에서 Visa·Mastercard 컨택리스"], ["택시(빨간색)", "기본 2km HK$29 · 이후 200m당 HK$2.1 · 해저터널 HK$25~50 · 짐 1개 HK$6"], ["스타페리", "위층 평일 HK$5 · 주말 HK$6.5"], ["피크트램", "편도 HK$82 · 왕복 HK$116 (자료 엇갈림)"]]], ["⚠️ 현지 규칙", [["MTR 안 음식·음료", "물 포함 금지 · 최고 HK$2,000"], ["쓰레기·침", "HK$3,000"], ["흡연", "금연구역·대중교통 줄에서 HK$3,000"], ["전자담배", "반입 금지 · 공공장소에서 갖고만 있어도 HK$3,000"], ["담배·술 면세", "궐련 19개비 · 술 1L"], ["무단횡단", "최고 HK$2,000"], ["비둘기·원숭이 먹이", "HK$5,000"], ["호텔", "일회용 세면도구·생수 무료 제공 안 함"], ["식당", "봉사료 10% (차찬탱은 없음) · 딤섬집 찻값 1인 HK$3~20 · 합석 기본"], ["택시 결제", "QR·옥토퍼스·카드 중 차마다 다름 · 현금 가능"], ["MTR 막차", "침사추이 → 센트럴 00:54쯤"], ["전압", "220V · G형 3핀"], ["입국", "입국카드 없음 · 무비자 90일 · 자동출입국은 도착 후 현장 등록"], ["마카오", "여권 필수 · 무비자 90일 · 홍콩달러 1:1 통용(거스름돈은 파타카) · 옥토퍼스는 버스에서 안 됨"]]], ["🛍️ 쇼핑 메모", [["세금", "부가세·환급 없음 · 식당은 봉사료 10% 많음"], ["쇼핑몰", "10~11시 개점 · 22시 폐점"], ["결제", "몰·체인 카드 OK · 노포·간식집은 현금·옥토퍼스"], ["비닐봉투", "장당 HK$1 이상"], ["드럭스토어", "백화유 · 타이거밤 · 달리 치약 · 닌지옴 캔디 (매닝스·왓슨스)"], ["과자 선물", "제니 베이커리 쿠키 · 기화병가 펑리수·에그롤 · 이금기 소스"], ["11/18부터", "윈터페스트 할인(알리페이 QR)"]]], ["⛴️ 마카오 가는 법", [["침사추이 페리터미널", "마카오행 없음 (주하이행만)"], ["터보젯", "셩완 → 마카오 외항 · 07:30~22:30 · 약 60분 · 평일 HK$194 · 주말 HK$212 · 야간 HK$242"], ["코타이 워터젯", "셩완 → 타이파 · 07:30~22:30 · 평일 HK$192 · 베네시안 무료 셔틀"], ["원버스", "조던 캔톤로드 505 → 샌즈·런더너·베네시안 · 평일 낮 HK$160 · 저녁·주말 HK$180"], ["대교 셔틀버스", "HK$65 · 24시간 · 홍콩 쪽 터미널까지 1시간 이상"], ["11/19~22", "그랑프리로 외항 터미널 주변 통제 → 타이파행 배·원버스"]]]];
 { const g = GUIDE.find(x => x[0].includes('현지 규칙')), k = g ? g[1].findIndex(r => r[0] === '흡연') : -1;
-  if(k >= 0) g[1].splice(k + 1, 0, ['흡연 가능', '금연구역 밖 길거리 (전면 금지 아님) · 🚬 버튼 = 흡연실'], ['흡연 금지', '실내 공공장소 · 해변·수영장 · 대중교통과 타는 줄 · 학교·병원 출입구 3m · 공항은 흡연실만'], ['마카오 흡연', '실내 금지 · 버스·택시 정류장 10m 안 금지 · 카지노는 흡연실만 · 벌금 MOP 1,500']); }
+  if(k >= 0) g[1].splice(k + 1, 0, ['흡연 가능', '금연구역 밖 길거리 (전면 금지 아님) · 🚬 핀 = 흡연실'], ['흡연 금지', '실내 공공장소 · 해변·수영장 · 대중교통과 타는 줄 · 학교·병원 출입구 3m · 공항은 흡연실만'], ['마카오 흡연', '실내 금지 · 버스·택시 정류장 10m 안 금지 · 카지노는 흡연실만 · 벌금 MOP 1,500']); }
 { const g = GUIDE.find(x => x[0].includes('마카오 가는 법')); if(g) g[1].push(['워터젯 셩완 → 타이파', boats(true, false).map(hm).join(' ') + ' · 토요일 증편'], ['워터젯 타이파 → 셩완', boats(false, false).map(hm).join(' ')]); }
 { const g = document.getElementById('guide');
   for(const [t, rows] of GUIDE){ const d = h('div','gd'), dl = h('dl'); d.dataset.t = t;
@@ -1997,7 +2014,6 @@ const GUIDE = [["📅 여행 4일 휴관·행사", [["11/16 월", "M+ 휴관"], 
 document.getElementById('gps').addEventListener('click', toggleGps);
 document.getElementById('routeclr').addEventListener('click', clearRoute);
 document.getElementById('ztoilet').addEventListener('click', toggleToilet);
-document.getElementById('zsmoke').addEventListener('click', toggleSmoke);
 document.getElementById('bshare').addEventListener('click', sharePlan);
 map.on('moveend', () => { if(showToilet && !document.getElementById('mapwrap').classList.contains('popon')) drawToilets(); });
 map.on('click', () => { if(mm && sel && shState === 'peek'){ sel = null; render(); } });
@@ -2012,7 +2028,7 @@ document.getElementById('breset').addEventListener('click', () => { if(!confirm(
   day.stops = JSON.parse(ORIG[day.id]); day.edited = false; day.newer = false; delete day.base; sel = null; savePlan(); render(); });
 let pinPop = null;
 map.on('contextmenu', e => { const p = {id:'pin', n:'지정 위치', sub:'지도에서 고른 곳', c:'search', lat:+e.latlng.lat.toFixed(6), lng:+e.latlng.lng.toFixed(6), stay:30};
-  const box = h('div','pop'), o = fromHere(p), lg = legOf(o[0], p), others = legOpts(o[0], p).filter(x => x.mode !== lg.mode).map(x => optText(x, o[0], p));
+  const box = h('div','pop'), o = fromHere(p), lg = legOf(o[0], p), others = legOpts(o[0], p).filter(x => x.mode !== lg.mode).map(x => optText(x));
   box.append(h('b', null, '📍 지정 위치'), h('div','rt1', legShort(lg) + ' · ' + shortName(o[1]) + '에서')); if(others.length) box.append(h('div','m', others.join(' · ')));
   const row = h('div','prow'), go = h('button','ghost','🧭 길찾기'), b = h('button', null, '＋ ' + day.tab.replace(/^\S+\s/, '') + '에 추가'); go.type = b.type = 'button';
   go.addEventListener('click', () => { showRoute({id:'pin', name:'지정 위치', lat:p.lat, lng:p.lng}, fromHere(p)); map.closePopup(); });

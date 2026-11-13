@@ -123,9 +123,18 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 #map.z-big .ph{width:96px;height:72px;border-radius:14px}
 #map.z-dot .nm.d,#map.z-name .nm,#map.z-photo .ph{display:block}
 .leaflet-marker-icon.nolab .nm,.leaflet-marker-icon.nolab .ph{display:none!important}
-.pph{margin:0 0 4px;display:flex;flex-direction:column;gap:2px}
-.pph img{width:100%;height:140px;object-fit:cover;border-radius:12px;background:var(--line)}
-.pph a{font-size:10.5px;color:var(--muted);text-decoration:none}
+.pph{display:flex;gap:6px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 0 4px;scrollbar-width:none}
+.pph::-webkit-scrollbar,.cph::-webkit-scrollbar{display:none}
+.pph figure{flex:0 0 100%;margin:0;position:relative;scroll-snap-align:start;display:flex;flex-direction:column;gap:2px}
+.pph img{width:100%;height:150px;object-fit:cover;border-radius:12px;background:var(--line);cursor:pointer}
+.pph a{font-size:10.5px;color:var(--muted);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pph i{position:absolute;right:6px;top:6px;font:700 11px sans-serif;background:rgba(0,0,0,.55);color:#fff;border-radius:999px;padding:1px 7px}
+.stop>div{min-width:0}
+.cph{display:flex;gap:6px;overflow-x:auto;margin:6px 0 4px;scrollbar-width:none}
+.cph a{flex:0 0 auto}
+.cph img{display:block;width:112px;height:78px;object-fit:cover;border-radius:12px;background:var(--line)}
+.newer{display:flex;flex-wrap:wrap;align-items:center;gap:6px;width:100%;padding:8px 10px;border:2px solid #f5c04a;border-radius:14px;background:var(--surface);font-size:13.5px}
+.newer[hidden]{display:none}
 .routebox .rh{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .routebox .rh b{font:400 15.5px var(--display);color:#1a73e8}
 .routebox .rh button{flex:0 0 auto;border:2px solid var(--line);background:var(--bg);border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700}
@@ -241,6 +250,7 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
         <button type="button" class="chip" id="badd" aria-pressed="false">➕ 장소 추가</button>
         <button type="button" class="chip" id="breset" hidden>↺ 원래 일정</button>
         <span class="dsum" id="dsum"></span>
+        <div class="newer" id="newer" hidden></div>
         <span class="dwx" id="dwx"></span>
       </div>
       <div id="evts"></div>
@@ -383,15 +393,16 @@ const EVENTS = [
 const POOL = REC.concat(EVENTS.filter(e => e.lat));
 const poolFor = d => POOL.filter(p => p.c !== 'event' || (DATES[d.id] && p.from <= DATES[d.id] && DATES[d.id] <= p.to));
 const DOW = '일월화수목금토', PKEY = 'hk-plan-v1', ORIG = {};
+const hsh = t => { let x = 5381; for(let i = 0; i < t.length; i++) x = (Math.imul(x, 33) ^ t.charCodeAt(i)) >>> 0; return x.toString(36); };
 let plan = {}; try{ plan = JSON.parse(localStorage.getItem(PKEY)||'{}') || {}; }catch(e){ plan = {}; }
 for(const d of DAYS){
   let prev = null;
   for(const s of d.stops){ if(STAY[s.id]!=null) s.stay = STAY[s.id]; if(BEST[s.id]) s.best = BEST[s.id]; if(LEGMIN[s.id]) s.legMin = LEGMIN[s.id];
     if(s.leg && prev) s.legPrev = prev.id; if(s.kind!=='alt' && s.kind!=='plain') prev = s; }
   ORIG[d.id] = JSON.stringify(d.stops);
-  const p = plan[d.id] || {}; d.start = p.start || '10:00'; if(Array.isArray(p.stops)){ d.stops = p.stops; d.edited = true; }
+  const p = plan[d.id] || {}; d.start = p.start || '10:00'; if(Array.isArray(p.stops)){ d.stops = p.stops; d.edited = true; d.base = p.base || hsh(ORIG[d.id]); d.newer = d.base !== hsh(ORIG[d.id]); }
 }
-function savePlan(){ const o = {}; for(const d of DAYS){ o[d.id] = {start:d.start}; if(d.edited) o[d.id].stops = d.stops; }
+function savePlan(){ const o = {}; for(const d of DAYS){ o[d.id] = {start:d.start}; if(d.edited){ o[d.id].stops = d.stops; o[d.id].base = d.base || (d.base = hsh(ORIG[d.id])); } }
   try{ localStorage.setItem(PKEY, JSON.stringify(o)); }catch(e){} }
 
 let day = DAYS[0], sel = null, done = {}, me = null, watchId = null;
@@ -798,54 +809,72 @@ function estWait(s, t, w){ const q = qOf(s); if(!q || !q.w) return 0;
   return r; }
 const qPeak = q => q && q.w ? Math.max(...q.w.map(x => x[3])) : 0;
 function orLink(id){ if(!OR[id]) return null; const a = h('a', null, 'OpenRice'); a.href = 'https://www.openrice.com/en/hongkong/' + OR[id]; a.target = '_blank'; a.rel = 'noopener'; return a; }
-const PH = {peak:['2/27/CWA_6th_Generation_Peak_Tram.jpg','Samson Ng . D201@EAL','CC BY-SA 4.0'],
-  esc:['f/f8/Central-Mid-Levels_Escalator_and_Walkway_System_2017.jpg','Wpcpey','CC BY-SA 4.0'],
-  pmq:['f/f8/PMQ_Overview_201510.jpg','Wpcpey','CC BY 4.0'],
-  adc:['3/39/Australia_Dairy_Company_outlook.JPG','圍棋一級','CC BY-SA 3.0'],
-  timho:['2/2a/Tim_Ho_Wan_restaurant_at_Sham_Shui_Po_%2820190126130901%29.jpg','N509FZ','CC BY-SA 4.0'],
-  kaukee:['d/d1/Kau_Kee_Restaurant.JPG','','Public domain'],
-  maxim:['b/bc/Hong_Kong_City_Hall_2017.jpg','Wpcpey','CC BY-SA 4.0'],
-  joyhing:['a/a8/HK_Wan_Chai_Stewart_Road_%E5%86%8D%E8%88%88%E7%87%92%E8%87%98%E9%A3%AF%E5%BA%97_BBQ_meat_shop_a.jpg','AlbertBospn','CC BY-SA 3.0'],
-  mido:['2/2e/Mido_Cafe_202011.jpg','Wpcpey','CC BY 4.0'],
-  aos:['0/06/Avenue_of_Stars_201901.jpg','Wpcpey','CC BY-SA 4.0'],
-  ferry:['5/59/Tsim_Sha_Tsui_Ferry_Pier.jpg','Baycrest','CC BY-SA 2.5'],
-  st428:['0/0b/The_Peak_Tower_201108.jpg','WiNG','CC BY 3.0'],
-  temple:['a/a6/GateOfTempleInHongKong.jpg','hkgalbert','CC0'],
-  manmo:['e/ee/Man_Mo_Temple%2C_1847-62%2C_Sheung_Wan%2C_Hong_Kong_%2817%29_%2832748033042%29.jpg','Richard Mortel','CC BY 2.0'],
-  palace:['3/31/Hong_Kong_Palace_Museum_2022.jpg','xiquinhosilva','CC BY 2.0'],
-  wts:['2/2e/HK_WongTaiSinTemple.JPG','Chong Fat','Public domain'],
-  repulse:['d/d4/View_of_Repulse_Bay_from_Sir_Cecil%27s_Ride.jpg','Shanghai88','CC BY-SA 4.0'],
-  buddha:['2/2c/Tian_Tan_Buddha_2023081302.jpg','Huangdan2060','CC BY 4.0'],
-  senado:['f/f7/Centre_of_Makau.jpg','Andrey Surikov','CC BY 2.5'],
-  stpaul:['f/fc/%E5%A4%A7%E4%B8%89%E5%B7%B4%E7%89%8C%E5%9D%8A.jpg','GG001213','CC0'],
-  mtower:['9/9e/Macau_Tower_CE_Centre.jpg','Whhalbert','CC BY-SA 3.0'],
-  ama:['3/39/A_Ma_Temple_200907.jpg','WiNG','CC BY 3.0'],
-  harbourcity:['9/9f/Harbour_City_Overview_2011.jpg','WiNG','CC BY-SA 3.0'],
-  lkf:['4/4b/LKF_Street_View01.jpg','Wiki.lkfa','CC BY-SA 3.0'],
-  taiping:['e/e3/HK_Sheung_Wan_Tai_Ping_Shan_Street_Kwong_Fook_I_Tsz_2.JPG','YauKee1QRW','CC BY-SA 3.0'],
-  ladies:['b/b2/Tung_Choi_Street_201705.JPG','Wpcpey','CC BY-SA 4.0'],
-  stanley:['1/11/Stanley_Market_View1_201007.jpg','WiNG','CC BY-SA 3.0'],
-  cunha:['4/40/Rua_do_Cunha.jpg','Iidxplus','CC BY-SA 3.0'],
-  lugard:['6/65/Lugard_road.jpg','Ngchikit','Public domain'],
-  wheel:['3/3b/Hong_Kong_Observation_Wheel_Sept_2018.jpg','Erc Chw','CC BY-SA 4.0'],
-  monster:['c/c7/Looking_upward_at_the_Yick_Cheong_Building%2C_13_June_2019.jpg','Benh LIEU SONG','CC BY-SA 4.0'],
-  choihung:['4/43/Choi_Hung_Estate_2018.jpg','Wpcpey','CC BY-SA 4.0'],
-  bluehouse:['a/a6/Blue_House%2C_Hong_Kong.jpg','Prosperity Horizons','CC BY-SA 4.0'],
-  nanlian:['2/24/Nan_Lian_Garden_Overview_201807.jpg','Wpcpey','CC BY-SA 4.0'],
-  goldfish:['4/40/Mk_goldfishstreet.jpg','Chong Fat','Public domain'],
-  monte:['a/af/FortalegoDoMonte.jpg','Holly Cheng','CC BY-SA 3.0'],
-  eiffel:['8/8f/The_Parisian_Macao_tower_and_hotel.jpg','Shantham11','CC BY-SA 4.0'],
-  k11:['c/c7/Victoria_Dockside_202007.jpg','Wpcpey','CC BY 4.0']};
+const PH = {peak:[["2/27/CWA_6th_Generation_Peak_Tram.jpg", "Samson Ng . D201@EAL", "CC BY-SA 4.0"], ["4/4f/The_Peak_Tram%2C_Hong_Kong_%28Ank_Kumar%29_03.jpg", "Ank Kumar", "CC BY-SA 4.0"], ["5/55/Peak_Tram_at_night.jpg", "Ubahnverleih", "CC0"]],
+  esc:[["f/f8/Central-Mid-Levels_Escalator_and_Walkway_System_2017.jpg", "Wpcpey", "CC BY-SA 4.0"], ["2/2e/Mid-Levels_Escalator%2C_Hong_Kong_%282042642893%29.jpg", "Rob Young", "CC BY 2.0"], ["5/51/HK_Central_Cochrane_Street_Central-Mid-Levels_escalators_Upsidedown.JPG", "WingLuk", "CC BY-SA 3.0"]],
+  pmq:[["f/f8/PMQ_Overview_201510.jpg", "Wpcpey", "CC BY 4.0"], ["3/35/HK_Sheung_Wan_PMQ_facade_exterior_night_courtyard_Dec-2015_DSC_001.JPG", "Lizatanmenhua", "CC BY-SA 4.0"], ["7/7d/HK_Sheung_Wan_PMQ_Aberdeen_Street_tree_night_Dec-2015_DSC.JPG", "Lizatanmenhua", "CC BY-SA 4.0"]],
+  adc:[["3/39/Australia_Dairy_Company_outlook.JPG", "圍棋一級", "CC BY-SA 3.0"], ["1/1f/Australia_Dairy_Company_-_Ham_and_Egg_Sandwich.jpg", "City Foodsters", "CC BY 2.0"], ["0/0f/HK_Jordan_Parkes_Street_%E6%BE%B3%E6%B4%B2%E7%89%9B%E5%A5%B6%E5%85%AC%E5%8F%B8_Australia_Dairy_Company_restaurant_interior_33_evening_Jan-2013.JPG", "Tobeianamsel", "CC BY-SA 3.0"]],
+  timho:[["2/2a/Tim_Ho_Wan_restaurant_at_Sham_Shui_Po_%2820190126130901%29.jpg", "N509FZ", "CC BY-SA 4.0"], ["2/22/Tim_Ho_Wan%2C_the_Dim-Sum_Specialists%2C_Sham_Shui_Po_shop_%28Hong_Kong%29.jpg", "Mk2010", "CC BY-SA 3.0"]],
+  kaukee:[["d/d1/Kau_Kee_Restaurant.JPG", "", "Public domain"], ["8/8f/Cantonese_style_Beef_Brisket.jpeg", "Zheng Zhou", "CC BY-SA 4.0", 1]],
+  maxim:[["b/bc/Hong_Kong_City_Hall_2017.jpg", "Wpcpey", "CC BY-SA 4.0"], ["f/f1/Yumcha_Dining.jpg", "Infomofo", "CC BY-SA 2.0", 1]],
+  joyhing:[["a/a8/HK_Wan_Chai_Stewart_Road_%E5%86%8D%E8%88%88%E7%87%92%E8%87%98%E9%A3%AF%E5%BA%97_BBQ_meat_shop_a.jpg", "AlbertBospn", "CC BY-SA 3.0"], ["2/22/HK_WC_%E7%81%A3%E4%BB%94_Wan_Chai_%E5%8F%B2%E9%87%97%E5%9F%9F%E9%81%93_Stewart_Road_shop_%E5%86%8D%E8%88%88%E7%87%92%E8%87%98%E9%A3%AF%E5%BA%97_Joy_Hing%27s_Roasted_Meat_Restaurant_November_2022_Px3.jpg", "Wusi Shauwzeiqob 708", "CC BY-SA 4.0"]],
+  mido:[["2/2e/Mido_Cafe_202011.jpg", "Wpcpey", "CC BY 4.0"], ["4/4f/%E7%BE%8E%E9%83%BD%E9%A4%90%E5%AE%A4%E5%A4%9C%E6%99%AF_%E5%BB%9F%E8%A1%97_%E7%9C%BE%E5%9D%8A%E8%A1%97_Mido_Cafe_at_Night%2C_Temple_Street%2C_Public_Square_Street%2C_2018.jpg", "Lord Jaraxxus", "CC BY-SA 4.0"], ["b/b8/MidoCafe_Upper1.jpg", "Chong Fat", "Public domain"]],
+  aos:[["b/b4/Avenue_of_Stars_in_Hong_Kong%282%29.jpg", "Alancrh", "Public domain"], ["e/e9/Avenue_of_Stars%2C_Hong_Kong_%282052818278%29.jpg", "yeowatzup", "CC BY 2.0"], ["0/06/Avenue_of_Stars_201901.jpg", "Wpcpey", "CC BY-SA 4.0"], ["f/ff/%E5%B0%96%E6%9D%B1%E6%B5%B7%E6%97%81.jpg", "文子言木", "Public domain"]],
+  ferry:[["e/e1/HK_TST_Star_Ferry_Piers_night_Victoria_Harbour_view_IFC_Nov-2013.JPG", "Shinghkagmwangois", "CC BY-SA 3.0"], ["5/5e/Star_Ferry_Hong_Kong_%28080821%29.jpg", "Tore Sætre", "CC BY-SA 4.0"], ["5/59/Tsim_Sha_Tsui_Ferry_Pier.jpg", "Baycrest", "CC BY-SA 2.5"]],
+  st428:[["a/a4/Hong_Kong_Harbour_Night_2019-06-11.jpg", "Benh LIEU SONG", "CC BY-SA 4.0"], ["2/23/Hong_Kong_Skyline_Restitch_-_Dec_2007.jpg", "Diliff", "CC BY 3.0"], ["0/0b/The_Peak_Tower_201108.jpg", "WiNG", "CC BY 3.0"], ["4/4e/Hong_Kong_Views_from_Victoria_Peak_IMG_5345.JPG", "Deror_avi", "CC BY-SA 3.0"]],
+  temple:[["7/73/Mercado_en_Temple_St.%2C_Hong_Kong%2C_2013-08-11%2C_DD_01.JPG", "Diego Delso", "CC BY-SA 3.0"], ["a/a7/Temple_Street_Night_Market_%284127420323%29.jpg", "Greg Willis", "CC BY-SA 2.0"], ["a/a6/GateOfTempleInHongKong.jpg", "hkgalbert", "CC0"]],
+  manmo:[["e/ee/Man_Mo_Temple%2C_1847-62%2C_Sheung_Wan%2C_Hong_Kong_%2817%29_%2832748033042%29.jpg", "Richard Mortel", "CC BY 2.0"], ["d/d1/Interior_of_Man_Mo_Temple%2C_Hollywood_Road%2C_2006_%2806%29.jpg", "Bahnfrend", "CC BY-SA 4.0"], ["d/d1/Man_Mo_Temple_Hollywood_Road_Interior_201704.jpg", "Andrew Moore", "CC BY-SA 2.0"]],
+  palace:[["3/31/Hong_Kong_Palace_Museum_2022.jpg", "xiquinhosilva", "CC BY 2.0"]],
+  wts:[["2/2e/HK_WongTaiSinTemple.JPG", "Chong Fat", "Public domain"], ["5/50/Wong_Tai_Sin_Temple_Canton_3.jpg", "Gzdavidwong", "CC BY-SA 4.0"], ["9/99/Confucian_Hall_%28Wong_Tai_Sin_Temple%2C_Hong_Kong%29_04.jpg", "Underwaterbuffalo", "CC BY-SA 4.0"]],
+  repulse:[["0/0b/Repulse_Bay_201501.jpg", "Wing1990hk", "CC BY 3.0"], ["d/d4/View_of_Repulse_Bay_from_Sir_Cecil%27s_Ride.jpg", "Shanghai88", "CC BY-SA 4.0"]],
+  buddha:[["2/2c/Tian_Tan_Buddha_2023081302.jpg", "Huangdan2060", "CC BY 4.0"], ["7/72/Tian_Tan_Buddha_22.jpg", "Wilfredor", "CC0"]],
+  senado:[["9/95/Macau_Senate_Square_at_Night.jpg", "The Red Hat of Pat Ferrick", "Public domain"], ["f/f7/Centre_of_Makau.jpg", "Andrey Surikov", "CC BY 2.5"], ["1/15/Macau_-_Senado_Square.jpg", "kewl", "CC BY 2.0"]],
+  stpaul:[["f/fc/%E5%A4%A7%E4%B8%89%E5%B7%B4%E7%89%8C%E5%9D%8A.jpg", "GG001213", "CC0"], ["4/40/Ruins_of_St._Pauls%2C_Macau_%285234431699%29.jpg", "Rob Young", "CC BY 2.0"], ["f/fc/Ruins_of_St._Paul%2C_Macau%2C_during_a_festival.jpg", "Inaki.alegria", "CC BY-SA 4.0"]],
+  mtower:[["6/66/Macau_tower_by_night.jpg", "AngMoKio", "CC BY-SA 3.0"], ["0/01/Macau_Tower_and_Sai_Van_Bridge_during_Blue_Hour.jpg", "Jayden Chao", "CC BY-SA 4.0"], ["9/9e/Macau_Tower_CE_Centre.jpg", "Whhalbert", "CC BY-SA 3.0"]],
+  ama:[["3/39/A_Ma_Temple_200907.jpg", "WiNG", "CC BY 3.0"]],
+  harbourcity:[["9/9f/Harbour_City_Overview_2011.jpg", "WiNG", "CC BY-SA 3.0"], ["6/6c/Harbour_City%2C_Ocean_Terminal_Forecourt_%28Hong_Kong%29.jpg", "Mk2010", "CC BY-SA 3.0"], ["2/2e/I.C.C._484m_118F_from_Ocean_Terminal_Harbour_City_Kowloon_Hong_Kong_-_panoramio.jpg", "Hiroki Ogawa", "CC BY 3.0"]],
+  lkf:[["3/35/HK_Central_LKF_night_Carlifornia_Tower_Lan_Kwai_Fong_Street_32_D%27Aguilar_Street_June_2015_PM.JPG", "KSLEeyulum", "CC BY-SA 4.0"], ["2/23/HK_Central_Night_Lan_Kwai_Fong_2008_D%27Aguilar_Street_1.JPG", "GoT2008", "CC BY-SA 3.0"], ["4/4b/LKF_Street_View01.jpg", "Wiki.lkfa", "CC BY-SA 3.0"]],
+  taiping:[["e/e3/HK_Sheung_Wan_Tai_Ping_Shan_Street_Kwong_Fook_I_Tsz_2.JPG", "YauKee1QRW", "CC BY-SA 3.0"]],
+  ladies:[["6/61/Tung_Choi_Street_market_of_summer_night.JPG", "Sakaori", "CC BY 3.0"], ["d/d0/HK_Mongkok_Tung_Choi_Street_night_stall_Watches_Oct-2012.JPG", "Honelongra", "CC BY-SA 3.0"], ["b/b2/Tung_Choi_Street_201705.JPG", "Wpcpey", "CC BY-SA 4.0"]],
+  stanley:[["1/11/Stanley_Market_View1_201007.jpg", "WiNG", "CC BY-SA 3.0"]],
+  cunha:[["4/40/Rua_do_Cunha.jpg", "Iidxplus", "CC BY-SA 3.0"]],
+  lugard:[["6/65/Lugard_road.jpg", "Ngchikit", "Public domain"]],
+  wheel:[["b/b2/Hong_Kong_Observation_Wheel_Night_View.jpg", "Hycaefsiam", "CC BY-SA 4.0"], ["e/ec/The_Hong_Kong_Observation_Wheel_Night_view_201512.jpg", "Wpcpey", "CC BY 3.0"], ["3/3b/Hong_Kong_Observation_Wheel_Sept_2018.jpg", "Erc Chw", "CC BY-SA 4.0"]],
+  monster:[["c/c7/Looking_upward_at_the_Yick_Cheong_Building%2C_13_June_2019.jpg", "Benh LIEU SONG", "CC BY-SA 4.0"], ["d/d2/Yick_Cheong_Building_and_Yick_Fat_Building._Aug._2015.A.JPG", "Sakaori", "CC BY 3.0"], ["2/24/Yick_Cheong_and_Yick_Fat_Building_2022_07_part2.jpg", "Qwer132477", "CC BY-SA 4.0"]],
+  choihung:[["4/43/Choi_Hung_Estate_2018.jpg", "Wpcpey", "CC BY-SA 4.0"], ["1/1d/Choi_Hung_Estate_Badminton_and_Basketball_Court_08-01-2024%2817%29.jpg", "LN9267", "CC BY-SA 4.0"], ["a/ac/Choi_Hung_Estate_Badminton_and_Basketball_Court_23-09-2026%286%29.jpg", "LN9267", "CC BY-SA 4.0"]],
+  bluehouse:[["a/a6/Blue_House%2C_Hong_Kong.jpg", "Prosperity Horizons", "CC BY-SA 4.0"]],
+  nanlian:[["2/24/Nan_Lian_Garden_Overview_201807.jpg", "Wpcpey", "CC BY-SA 4.0"]],
+  goldfish:[["4/40/Mk_goldfishstreet.jpg", "Chong Fat", "Public domain"]],
+  monte:[["a/af/FortalegoDoMonte.jpg", "Holly Cheng", "CC BY-SA 3.0"]],
+  eiffel:[["c/ca/The_Parisian_Macao_at_night.jpg", "Shantham11", "CC BY-SA 4.0"], ["c/c1/MC_%E6%BE%B3%E9%96%80_Macau_%E8%B7%AF%E6%B0%B9%E5%9F%8E_Cotai_%E6%BE%B3%E9%96%80%E5%B7%B4%E9%BB%8E%E4%BA%BA_The_Parisian_Macao_%E6%BE%B3%E9%96%80%E5%B7%B4%E9%BB%8E%E5%9F%83%E8%8F%B2%E7%88%BE%E9%90%B5%E5%A1%94_Eiffel_Tower_Nov_2016_SSG_03.jpg", "Boulicsohong", "CC BY-SA 4.0"], ["8/8f/The_Parisian_Macao_tower_and_hotel.jpg", "Shantham11", "CC BY-SA 4.0"]],
+  k11:[["1/1c/K11_Mall_Exterior.jpg", "Aabyedav", "CC0"], ["c/c7/Victoria_Dockside_202007.jpg", "Wpcpey", "CC BY 4.0"]],
+  soho:[["1/16/Elgin_Street%2C_viewed_from_Staunton_Street_%28Hong_Kong%29.jpg", "Mk2010", "CC BY-SA 4.0"], ["a/af/Elgin_Street%2C_Hong_Kong_2.jpg", "Mx. Granger", "CC0"]],
+  hkma:[["6/67/HK_%E5%B0%96%E6%B2%99%E5%92%80_TST_%E9%A6%99%E6%B8%AF%E6%98%9F%E5%85%89%E5%A4%A7%E9%81%93_Avenue_of_Stars_HKMA_Hong_Kong_Museum_of_Art_November_2019_SS2_01.jpg", "SANA Haoma 211", "CC BY-SA 4.0"]],
+  mcot:[["5/56/HK_WC_%E7%81%A3%E4%BB%94_Wan_Chai_%E6%98%A5%E5%9C%92%E8%A1%97_Spring_Garden_Lane_%E6%88%91%E6%9D%AF%E8%8C%B6_My_Cup_of_Tea_Cafe_September_2022_Px3_01.jpg", "TSCHEAN SUWHM MEIU", "CC BY-SA 4.0"]],
+  tsimchai:[["f/ff/HK_%E4%B8%8A%E7%92%B0_Sheung_Wan_%E6%B2%BE%E4%BB%94%E8%A8%98_Tsim_Chai_Kee_Noodle_%E7%9A%87%E5%90%8E%E5%A4%A7%E9%81%93%E4%B8%AD153%E8%99%9F_Queen%27s_Road_Central_%E5%85%86%E8%8B%B1%E5%95%86%E6%A5%AD%E5%A4%A7%E5%BB%88_Siu_Ying_Commercial_Building_%E5%9C%B0%E5%BA%AB_basement_shop_March_2019_SSG_10.jpg", "YangAu Saum Hauo", "CC BY-SA 4.0"], ["d/d0/HK_%E4%B8%8A%E7%92%B0_Sheung_Wan_%E6%B2%BE%E4%BB%94%E8%A8%98_Tsim_Chai_Kee_Noodle_%E7%9A%87%E5%90%8E%E5%A4%A7%E9%81%93%E4%B8%AD153%E8%99%9F_Queen%27s_Road_Central_%E5%85%86%E8%8B%B1%E5%95%86%E6%A5%AD%E5%A4%A7%E5%BB%88_Siu_Ying_Commercial_Building_%E5%9C%B0%E5%BA%AB_basement_shop_March_2019_SSG_11.jpg", "YangAu Saum Hauo", "CC BY-SA 4.0"]],
+  lanfong:[["3/34/Lan_Fong_Yuen_at_Gage_St_%2820190308150832%29.jpg", "N509FZ", "CC BY-SA 4.0"], ["2/23/Mixed_instant_noodles_with_chicken_chops_at_Lan_Fong_Yuen_%2820181022125324%29.jpg", "N509FZ", "CC BY-SA 4.0"], ["5/50/HK_Lan_Fong_Yuen_Interior.jpg", "WiNG", "CC BY 3.0"]],
+  yatlok:[["3/35/HK_%E4%B8%AD%E7%92%B0_Central_%E5%A3%AB%E4%B8%B9%E5%88%A9%E8%A1%97_Stanley_Street_shop_Sam_%26_Company_n_Yat_Lok_Roast_Goose_Restaurant_March_2026_N13P.jpg", "Homm BoUretak BAORP", "CC0"], ["8/88/Roast_goose_in_yat_lok_restaurant.JPG", "Sakaori", "CC BY 3.0"]],
+  fourseasons:[["a/a9/Spare_Rib_%26_Chicken_Feet_Claypot_Rice.jpg", "Ceeseven", "CC BY-SA 4.0", 1], ["b/b1/Beef_and_pork_ribs_claypot_rice.JPG", "Abasaa", "Public domain", 1]],
+  kamwah:[["f/fe/Pineapple_bun_and_milk_tea.jpg", "Evancyk", "CC BY-SA 4.0", 1], ["8/8a/Pineapple_bun_in_breakfast.jpg", "Geoffreyrabbit", "CC BY-SA 4.0", 1]]};
 const phId = s => PH[s.rec || s.id] ? (s.rec || s.id) : null;
-const phUrl = (id, w) => `https://upload.wikimedia.org/wikipedia/commons/thumb/${PH[id][0]}/${w}px-${PH[id][0].split('/')[2]}`;
+const phUrl = (id, w, i = 0) => { const f = PH[id][i][0]; return `https://upload.wikimedia.org/wikipedia/commons/thumb/${f}/${w}px-${f.split('/')[2]}`; };
+const phPage = p => 'https://commons.wikimedia.org/wiki/File:' + p[0].split('/')[2];
+const phCred = p => (p[3] ? '비슷한 음식 · ' : '') + [p[1], p[2]].filter(Boolean).join(' · ');
 const phImg = id => id ? `<img class="ph" src="${phUrl(id, 250)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : '';
-function phBox(id){ const f = h('figure','pph'), im = h('img'); im.src = phUrl(id, 500); im.alt = ''; im.loading = 'lazy'; im.addEventListener('error', () => f.remove());
-  const a = h('a', null, '📷 ' + [PH[id][1], PH[id][2]].filter(Boolean).join(' · ')); a.href = 'https://commons.wikimedia.org/wiki/File:' + PH[id][0].split('/')[2]; a.target = '_blank'; a.rel = 'noopener';
-  f.append(im, a); return f; }
+// popup: swipe (or tap) through all photos; card: small thumbnails linking to the file page
+function phBox(id){ const f = h('div','pph'), n = PH[id].length;
+  PH[id].forEach((p, i) => { const it = h('figure'), im = h('img'), a = h('a', null, '📷 ' + phCred(p));
+    im.src = phUrl(id, 500, i); im.alt = ''; im.loading = 'lazy'; im.addEventListener('error', () => it.remove());
+    if(n > 1) im.addEventListener('click', () => f.scrollTo({left: f.scrollLeft + f.clientWidth >= f.scrollWidth - 4 ? 0 : f.scrollLeft + f.clientWidth, behavior:'smooth'}));
+    a.href = phPage(p); a.target = '_blank'; a.rel = 'noopener'; it.append(im, a); if(n > 1) it.append(h('i', null, (i + 1) + '/' + n)); f.append(it); });
+  return f; }
+function phStrip(id){ const f = h('div','cph');
+  PH[id].forEach((p, i) => { const a = h('a'), im = h('img'); a.href = phPage(p); a.target = '_blank'; a.rel = 'noopener'; a.title = phCred(p);
+    im.src = phUrl(id, 250, i); im.alt = ''; im.loading = 'lazy'; im.addEventListener('error', () => a.remove()); a.append(im); f.append(a); });
+  return f; }
 const shortName = n => { n = n.split(' · ')[0].replace(/\s*\(.*?\)\s*/g, '').trim(); return n.length > 14 ? n.slice(0, 13) + '…' : n; };
 const nmTag = (n, d) => `<span class="nm${d ? ' d' : ''}">${n.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c])}</span>`;
 // labels/photos of lower-priority markers hide where they would cover a higher one
-let mkList = [];
+let mkList = [], recOpen = null;
 const tw = n => [...n].reduce((a, c) => a + (/[ㄱ-힝一-鿿]/.test(c) ? 12 : 6.6), 8);
 function declutter(){ if(!map._loaded) return;
   const z = map.getZoom(), boxes = [], hit = b => boxes.some(o => b[0] < o[2] && b[2] > o[0] && b[1] < o[3] && b[3] > o[1]);
@@ -875,13 +904,15 @@ function drawMap(){
     m.bindTooltip(s.name, {direction:'top', offset:[0,-14]});
     m.on('click', () => select(grp.includes(sel) ? grp[(grp.indexOf(sel)+1)%grp.length] : s, true));
   }
-  recLayer.clearLayers();
+  // drawMap reruns when route geometry arrives; reopen the popup the user was looking at
+  const keep = recOpen; recLayer.clearLayers(); recOpen = keep;
   const inDay = new Set(day.stops.map(s => s.rec)); let li = 0;
   for(const p of poolFor(day)){ if(inDay.has(p.id) || (!showRec && !LM[p.id])) continue;
     const nm = shortName(p.n), pid = PH[p.id] ? p.id : null;
     const icon = LM[p.id] ? L.divIcon({className:'lmk' + (li++ % 2 ? ' r' : ''), html:`<b>${LM[p.id]}</b>${nmTag(nm)}${phImg(pid)}`, iconSize:[40,40], iconAnchor:[20,20]})
       : L.divIcon({className:'', html:`<div class="rpin mk">${CATS[p.c][0]}${nmTag(nm)}${phImg(pid)}</div>`, iconSize:[26,26], iconAnchor:[13,13]});
-    const m = L.marker([p.lat,p.lng], {icon, title:p.n, zIndexOffset:LM[p.id] ? -400 : -500}).addTo(recLayer);
+    const m = L.marker([p.lat,p.lng], {icon, title:p.n, pid:p.id, zIndexOffset:LM[p.id] ? -400 : -500}).addTo(recLayer);
+    m.on('popupopen', () => { recOpen = p.id; }).on('popupclose', () => { if(recOpen === p.id) recOpen = null; });
     mkList.push({m, pri:LM[p.id] ? 30 : p.c === 'food' ? 40 : 50, name:nm, ph:!!pid, r:LM[p.id] ? 20 : 13});
     m.bindPopup(() => { const box = h('div','pop'); if(pid) box.append(phBox(pid)); box.append(h('b',null,p.n), h('div','m',recMeta(p)));
       const ol = orLink(p.id); if(ol) box.append(ol);
@@ -889,6 +920,7 @@ function drawMap(){
       b.addEventListener('click', () => { map.closePopup(); addPlace(p); }); box.append(b); return box; }, {minWidth:200, maxWidth:260});
   }
   declutter();
+  if(recOpen){ const k = recLayer.getLayers().find(m => m.options.pid === recOpen); if(k) k.openPopup(); else recOpen = null; }
 }
 function drawMe(){ meLayer.clearLayers(); if(!me) return;
   L.circle([me.lat,me.lng], {radius:me.acc, color:'#1a73e8', weight:1, fillOpacity:.12}).addTo(meLayer);
@@ -1021,6 +1053,12 @@ function drawList(){
   document.getElementById('dstart').value = day.start;
   document.getElementById('dsum').textContent = rs.length > 1 ? `이동 약 ${sch.travel}분 · ${hm(sch.end)} 끝` : '';
   document.getElementById('dwx').textContent = wxText(day);
+  const nw = document.getElementById('newer'); nw.hidden = !day.newer;
+  if(day.newer){ nw.textContent = ''; const a = h('button','chip','새 일정으로'), b = h('button','chip','내 편집 유지'); a.type = b.type = 'button';
+    a.addEventListener('click', () => { const prev = day.stops; day.stops = JSON.parse(ORIG[day.id]); day.edited = false; day.newer = false; delete day.base; sel = null; savePlan(); render();
+      toast('새 일정으로 바뀜', () => { day.stops = prev; day.edited = true; day.newer = true; day.base = 'old'; savePlan(); render(); }); });
+    b.addEventListener('click', () => { day.base = hsh(ORIG[day.id]); day.newer = false; savePlan(); render(); });
+    nw.append(h('b', null, '📥 일정 업데이트 있음'), a, b); }
   for(const s of day.stops){
     const info = sch.out.get(s), ri = rs.indexOf(s);
     if(s===firstAlt && grp) list.append(h('li','grouphead',grp));
@@ -1041,6 +1079,7 @@ function drawList(){
     if(s.fixed != null) nm.append(h('span','tag','⏰ '+hm(s.fixed)));
     body.append(nm);
     if(s.sub) body.append(h('div','hours',s.sub));
+    { const pid = phId(s); if(pid && !editMode) body.append(phStrip(pid)); }
     if(s.note) body.append(h('div','note',s.note));
     if(s.hours) body.append(h('div','hours','영업 '+s.hours));
     if(info) for(const w of info.warn) body.append(h('div','warn',w));
@@ -1105,7 +1144,7 @@ document.getElementById('bedit').addEventListener('click', () => { editMode = !e
 document.getElementById('bopt').addEventListener('click', optimizeDay);
 document.getElementById('badd').addEventListener('click', () => { sheetOpen = !sheetOpen; render(); });
 document.getElementById('breset').addEventListener('click', () => { if(!confirm('이 날 일정을 처음 상태로 되돌릴까요?')) return;
-  day.stops = JSON.parse(ORIG[day.id]); day.edited = false; sel = null; savePlan(); render(); });
+  day.stops = JSON.parse(ORIG[day.id]); day.edited = false; day.newer = false; delete day.base; sel = null; savePlan(); render(); });
 document.getElementById('zrec').addEventListener('click', e => { showRec = !showRec; e.currentTarget.setAttribute('aria-pressed', showRec); drawMap(); });
 document.getElementById('q').addEventListener('input', () => {
   clearTimeout(qTimer); const q = document.getElementById('q').value.trim(); searchRes = []; drawSheet(); if(q.length < 2) return;

@@ -99,7 +99,10 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
   @keyframes pulse{from{opacity:.7;transform:scale(1)}to{opacity:0;transform:scale(2.2)}}
 }
 #map{width:100%;height:100%;background:var(--land)}
-.zoom{z-index:500}
+.zoom{z-index:500;transition:opacity .15s}
+.map.popon .zoom,.map.popon .leaflet-control-zoom{opacity:0;pointer-events:none}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--surface);color:var(--ink)}
+.leaflet-container a.leaflet-popup-close-button{color:var(--muted)}
 .zoom button.fit{width:auto;min-width:44px;padding:0 8px;font-size:12px}
 #gps[aria-pressed="true"]{background:#1a73e8;color:#fff;border-color:#1a73e8}
 .gpsmsg{font-size:12.5px;color:var(--muted);padding:6px 2px 0}
@@ -127,6 +130,7 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .pph::-webkit-scrollbar,.cph::-webkit-scrollbar{display:none}
 .pph figure{flex:0 0 100%;margin:0;position:relative;scroll-snap-align:start;display:flex;flex-direction:column;gap:2px}
 .pph img{width:100%;height:150px;object-fit:cover;border-radius:12px;background:var(--line);cursor:pointer}
+@media (max-width:819px){.pph img{height:110px}}
 .pph a{font-size:10.5px;color:var(--muted);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pph i{position:absolute;right:6px;top:6px;font:700 11px sans-serif;background:rgba(0,0,0,.55);color:#fff;border-radius:999px;padding:1px 7px}
 .stop>div{min-width:0}
@@ -875,6 +879,9 @@ const shortName = n => { n = n.split(' · ')[0].replace(/\s*\(.*?\)\s*/g, '').tr
 const nmTag = (n, d) => `<span class="nm${d ? ' d' : ''}">${n.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c])}</span>`;
 // labels/photos of lower-priority markers hide where they would cover a higher one
 let mkList = [], recOpen = null;
+// popups must fit the 300px phone map: scroll inside, and the side buttons step aside while one is open
+const popOpt = () => ({minWidth:200, maxWidth:260, maxHeight:Math.max(160, map.getSize().y - 46), autoPanPadding:[8, 8]});
+map.on('popupopen', () => document.getElementById('mapwrap').classList.add('popon')).on('popupclose', () => document.getElementById('mapwrap').classList.remove('popon'));
 const tw = n => [...n].reduce((a, c) => a + (/[ㄱ-힝一-鿿]/.test(c) ? 12 : 6.6), 8);
 function declutter(){ if(!map._loaded) return;
   const z = map.getZoom(), boxes = [], hit = b => boxes.some(o => b[0] < o[2] && b[2] > o[0] && b[1] < o[3] && b[3] > o[1]);
@@ -917,7 +924,7 @@ function drawMap(){
     m.bindPopup(() => { const box = h('div','pop'); if(pid) box.append(phBox(pid)); box.append(h('b',null,p.n), h('div','m',recMeta(p)));
       const ol = orLink(p.id); if(ol) box.append(ol);
       const b = h('button',null,'＋ '+day.tab.replace(/^\S+\s/,'')+'에 추가'); b.type = 'button';
-      b.addEventListener('click', () => { map.closePopup(); addPlace(p); }); box.append(b); return box; }, {minWidth:200, maxWidth:260});
+      b.addEventListener('click', () => { map.closePopup(); addPlace(p); }); box.append(b); return box; }, popOpt());
   }
   declutter();
   if(recOpen){ const k = recLayer.getLayers().find(m => m.options.pid === recOpen); if(k) k.openPopup(); else recOpen = null; }

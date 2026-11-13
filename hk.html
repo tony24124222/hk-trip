@@ -260,10 +260,23 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .gih{display:flex;align-items:center;gap:8px;padding:10px 10px 8px 12px;flex:0 0 auto}
 .gih .cats{flex:1;min-width:0;display:flex;gap:6px;overflow-x:auto;padding:2px 0 4px;scrollbar-width:none}
 .gih .cats::-webkit-scrollbar{display:none}
-#gix{flex:0 0 auto;width:36px;height:36px;border-radius:50%;border:2px solid var(--line);background:var(--surface);color:var(--ink);font-size:14px}
+.gx{flex:0 0 auto;width:36px;height:36px;border-radius:50%;border:2px solid var(--line);background:var(--surface);color:var(--ink);font-size:14px}
 .gib{overflow:auto;padding:4px 16px 14px;overscroll-behavior:contain}
 .gib .gd{border:0;background:none;border-radius:0;padding:0}
 .gib .foot{margin:0}
+.mt{flex:1;font:400 16px var(--display)}
+#mpass,#mtext{display:block;width:100%;box-sizing:border-box;font:inherit;font-size:16px;border:2px solid var(--line);border-radius:12px;padding:10px;background:var(--surface);color:inherit;margin:0 0 8px}
+#mpass[hidden]{display:none}
+#mtext{min-height:120px;resize:vertical;line-height:1.5}
+.mrow{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+#mmsg{font-size:13px;color:var(--muted)}
+.mday{margin:12px 0 4px;font:400 15px var(--display)}
+.mres{list-style:none;margin:0;padding:0}
+.mres li{display:flex;align-items:baseline;gap:8px;font-size:13.5px;padding:4px 0;border-bottom:1px dashed var(--line)}
+.mres .t{min-width:40px;color:var(--accent);font-variant-numeric:tabular-nums}
+.mres .s{margin-left:auto;flex:0 0 auto;font-size:12px;color:var(--muted)}
+.mres .s.bad{color:var(--accent)}
+.mact{display:flex;gap:8px;margin-top:12px}
 @media (min-width:820px){ .gi{left:auto;right:16px;bottom:16px;width:440px;max-height:70vh;border-radius:22px} .gih{align-items:flex-start} .gih .cats{flex-wrap:wrap;overflow:visible} }
 .gd{border:2px solid var(--line);background:var(--surface);border-radius:16px;padding:0 12px}
 .gd dl{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;margin:0 0 12px;font-size:13px;line-height:1.45}
@@ -400,6 +413,7 @@ html.mm .dayhead h2{display:none}
         <button type="button" class="chip" id="bedit" aria-pressed="false">✏️ 편집</button>
         <button type="button" class="chip" id="bopt">🔀 순서 추천</button>
         <button type="button" class="chip" id="badd" aria-pressed="false">➕ 장소 추가</button>
+        <button type="button" class="chip" id="bmemo" aria-expanded="false" aria-controls="memo">📝 메모</button>
         <button type="button" class="chip" id="breset" hidden>↺ 원래 일정</button>
         <span class="dsum" id="dsum"></span>
         <div class="newer" id="newer" hidden></div>
@@ -433,8 +447,17 @@ html.mm .dayhead h2{display:none}
   </div>
 </div>
 
+<div class="gi" id="memo" role="dialog" aria-label="메모로 일정 넣기" hidden>
+  <div class="gih"><b class="mt">📝 메모로 일정 넣기</b><button type="button" id="memox" class="gx" aria-label="닫기">✕</button></div>
+  <div class="gib">
+    <input type="password" id="mpass" aria-label="접속 암호" placeholder="접속 암호" autocomplete="off" hidden>
+    <textarea id="mtext" aria-label="메모" rows="6" placeholder="17일 점심 침차이키 → 피크트램 → 저녁 7시 애문생"></textarea>
+    <div class="mrow"><button type="button" class="chip" id="mgo">정리하기</button><span id="mmsg"></span></div>
+    <div id="mres"></div>
+  </div>
+</div>
 <div class="gi" id="gi" role="dialog" aria-label="여행 정보" hidden>
-  <div class="gih"><div class="cats" id="gitabs"></div><button type="button" id="gix" aria-label="닫기">✕</button></div>
+  <div class="gih"><div class="cats" id="gitabs"></div><button type="button" id="gix" class="gx" aria-label="닫기">✕</button></div>
   <div class="gib" id="gib"></div>
 </div>
 <div class="zc" id="zc" role="dialog" aria-modal="true" aria-label="한자 이름" hidden>
@@ -1682,7 +1705,8 @@ document.getElementById('pdone').addEventListener('click', () => { if(!sel) retu
 let ovSkip = 0, closeGi = () => {};
 function ovPush(){ try{ history.pushState({ov:((history.state && history.state.ov) || 0) + 1}, ''); }catch(e){} }
 function ovPop(){ try{ if(history.state && history.state.ov){ ovSkip++; history.back(); } }catch(e){} }
-addEventListener('popstate', () => { if(ovSkip){ ovSkip--; return; } const zc = document.getElementById('zc'); if(!zc.hidden) zc.hidden = true; else if(lbId) closeLb(true); else closeGi(true); });
+let closeMemo = () => {};
+addEventListener('popstate', () => { if(ovSkip){ ovSkip--; return; } const zc = document.getElementById('zc'); if(!zc.hidden) zc.hidden = true; else if(lbId) closeLb(true); else if(!document.getElementById('memo').hidden) closeMemo(true); else closeGi(true); });
 // big Chinese name card to show a driver or passer-by
 function showZh(s){ const z = zhOf(s); if(!z) return; document.getElementById('zcs').textContent = '請載我去 · Please take me to'; document.getElementById('zct').textContent = z;
   document.getElementById('zca').textContent = (s.taxi || '').replace(/^目的地：[^，]*，/, ''); document.getElementById('zck').textContent = s.name || s.n || '';
@@ -1702,7 +1726,7 @@ function closeLb(fromBack){ document.getElementById('lb').hidden = true; lbId = 
 lbs.addEventListener('scroll', lbCap, {passive:true});
 lbs.addEventListener('click', e => { if(e.target.tagName === 'IMG'){ const n = PH[lbId].length, w = lbs.clientWidth, i = Math.round(lbs.scrollLeft / w); lbs.scrollTo({left:(e.clientX > innerWidth / 2 ? Math.min(n - 1, i + 1) : Math.max(0, i - 1)) * w, behavior:'smooth'}); } else closeLb(); });
 document.getElementById('lbx').addEventListener('click', () => closeLb());
-document.addEventListener('keydown', e => { if(e.key === 'Escape' && !document.getElementById('zc').hidden){ document.getElementById('zc').hidden = true; ovPop(); } else if(e.key === 'Escape' && !lbId) closeGi(); if(!lbId) return; if(e.key === 'Escape') closeLb();
+document.addEventListener('keydown', e => { if(e.key === 'Escape' && !document.getElementById('zc').hidden){ document.getElementById('zc').hidden = true; ovPop(); } else if(e.key === 'Escape' && !lbId){ if(!document.getElementById('memo').hidden) closeMemo(); else closeGi(); } if(!lbId) return; if(e.key === 'Escape') closeLb();
   else if(e.key === 'ArrowRight' || e.key === 'ArrowLeft') lbs.scrollBy({left:(e.key === 'ArrowRight' ? 1 : -1) * lbs.clientWidth, behavior:'smooth'}); });
 const GUIDE = [["📅 여행 4일 휴관·행사", [["11/16 월", "M+ 휴관"], ["11/17 화", "고궁박물관 휴관"], ["11/18 수", "심포니 오브 라이트 마지막 공연 20:00 + 불꽃 · 윈터페스트 개막 · 미도카페 휴무"], ["11/19 목", "홍콩미술관 휴관 · 오스트레일리아 데일리컴퍼니 휴무 · 심포니 오브 라이트 없음 · 마카오 그랑프리 연습일"], ["날씨 평년", "최고 24.5° · 최저 20.3° · 얇은 겉옷"]]], ["🚇 교통·결제", [["옥토퍼스(관광객용)", "HK$39 · 보증금 없음 · 잔액만 환불"], ["아이폰", "'Octopus for Tourists' 앱 · 해외 Visa·Mastercard 충전 (한국 카드 미확인)"], ["A21 버스", "공항→침사추이 이스트 · HK$34.6 · 10~20분 간격 · 60~75분"], ["공항철도", "구룡역 HK$105 · 홍콩역 HK$120 · 약 24분"], ["MTR", "하늘색 개찰구에서 Visa·Mastercard 컨택리스"], ["택시(빨간색)", "기본 2km HK$29 · 이후 200m당 HK$2.1 · 해저터널 HK$25~50 · 짐 1개 HK$6"], ["스타페리", "위층 평일 HK$5 · 주말 HK$6.5"], ["피크트램", "편도 HK$82 · 왕복 HK$116 (자료 엇갈림)"]]], ["⚠️ 현지 규칙", [["MTR 안 음식·음료", "물 포함 금지 · 최고 HK$2,000"], ["쓰레기·침", "HK$3,000"], ["흡연", "금연구역·대중교통 줄에서 HK$3,000"], ["전자담배", "반입 금지 · 공공장소에서 갖고만 있어도 HK$3,000"], ["담배·술 면세", "궐련 19개비 · 술 1L"], ["무단횡단", "최고 HK$2,000"], ["비둘기·원숭이 먹이", "HK$5,000"], ["호텔", "일회용 세면도구·생수 무료 제공 안 함"], ["식당", "봉사료 10% (차찬탱은 없음) · 딤섬집 찻값 1인 HK$3~20 · 합석 기본"], ["택시 결제", "QR·옥토퍼스·카드 중 차마다 다름 · 현금 가능"], ["MTR 막차", "침사추이 → 센트럴 00:54쯤"], ["전압", "220V · G형 3핀"], ["입국", "입국카드 없음 · 무비자 90일 · 자동출입국은 도착 후 현장 등록"], ["마카오", "여권 필수 · 무비자 90일 · 홍콩달러 1:1 통용(거스름돈은 파타카) · 옥토퍼스는 버스에서 안 됨"]]], ["🛍️ 쇼핑 메모", [["세금", "부가세·환급 없음 · 식당은 봉사료 10% 많음"], ["쇼핑몰", "10~11시 개점 · 22시 폐점"], ["결제", "몰·체인 카드 OK · 노포·간식집은 현금·옥토퍼스"], ["비닐봉투", "장당 HK$1 이상"], ["드럭스토어", "백화유 · 타이거밤 · 달리 치약 · 닌지옴 캔디 (매닝스·왓슨스)"], ["과자 선물", "제니 베이커리 쿠키 · 기화병가 펑리수·에그롤 · 이금기 소스"], ["11/18부터", "윈터페스트 할인(알리페이 QR)"]]], ["⛴️ 마카오 가는 법", [["침사추이 페리터미널", "마카오행 없음 (주하이행만)"], ["터보젯", "셩완 → 마카오 외항 · 07:30~22:30 · 약 60분 · 평일 HK$194 · 주말 HK$212 · 야간 HK$242"], ["코타이 워터젯", "셩완 → 타이파 · 07:30~22:30 · 평일 HK$192 · 베네시안 무료 셔틀"], ["원버스", "조던 캔톤로드 505 → 샌즈·런더너·베네시안 · 평일 낮 HK$160 · 저녁·주말 HK$180"], ["대교 셔틀버스", "HK$65 · 24시간 · 홍콩 쪽 터미널까지 1시간 이상"], ["11/19~22", "그랑프리로 외항 터미널 주변 통제 → 타이파행 배·원버스"]]]];
 { const g = document.getElementById('guide');
@@ -1742,6 +1766,59 @@ const GUIDE = [["📅 여행 4일 휴관·행사", [["11/16 월", "M+ 휴관"], 
   closeGi = fromBack => { if(gi.hidden) return; gi.hidden = true; zi.setAttribute('aria-expanded', false); if(fromBack !== true) ovPop(); };
   document.getElementById('gix').addEventListener('click', () => closeGi());
   zi.addEventListener('click', () => { if(gi.hidden) show(cur); else closeGi(); }); }
+{ const MEMO_URL = 'https://hk-trip-memo.4032979.workers.dev', box = document.getElementById('memo'), bt = document.getElementById('bmemo'),
+    pass = document.getElementById('mpass'), txt = document.getElementById('mtext'), go = document.getElementById('mgo'), msg = document.getElementById('mmsg'), res = document.getElementById('mres');
+  let saved = ''; try{ saved = localStorage.getItem('hk-pass') || ''; }catch(e){}
+  let plan = null;
+  const open = () => { pass.hidden = !!saved; box.hidden = false; bt.setAttribute('aria-expanded', true); ovPush(); (pass.hidden ? txt : pass).focus(); };
+  closeMemo = fromBack => { if(box.hidden) return; box.hidden = true; bt.setAttribute('aria-expanded', false); if(fromBack !== true) ovPop(); };
+  bt.addEventListener('click', () => box.hidden ? open() : closeMemo());
+  document.getElementById('memox').addEventListener('click', () => closeMemo());
+  const dayOf = id => DAYS.find(d => d.id === id), homeOf = d => d.id === 'macau' ? MHOTEL : HOTEL;
+  // places the list does not know: English name first (photon), then OSM search
+  async function locate(q){ const bb = '&bbox=113.5,22.05,114.45,22.6';
+    try{ const r = await getJ('https://photon.komoot.io/api/?limit=1&q=' + encodeURIComponent(q) + bb); const f = r.features[0]; if(f) return {lat:f.geometry.coordinates[1], lng:f.geometry.coordinates[0]}; }catch(e){}
+    try{ const r = await getJ('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&viewbox=113.5,22.6,114.45,22.05&bounded=1&q=' + encodeURIComponent(q)); if(r[0]) return {lat:+r[0].lat, lng:+r[0].lon}; }catch(e){}
+    return null; }
+  async function toStop(d, x){ const t = /^\d{1,2}:\d{2}$/.test(x.time || '') ? toMin(x.time) : null; let s, how;
+    if(x.rec === 'hotel'){ const o = homeOf(d); s = {id:'h-' + Date.now().toString(36) + (stopSeq++), name:o.name, sub:o.sub, lat:o.lat, lng:o.lng, stay:0}; if(d.id === 'macau') s.rec = 'wynnpalace'; how = '🏨'; }
+    else { const p = x.rec && REC.find(r => r.id === x.rec);
+      if(p){ s = mkStop(p); how = '✓'; }
+      else if(x.en){ const at = await locate([x.en, x.area].filter(Boolean).join(' ')) || await locate(x.en);
+        if(at){ s = {id:'m-' + Date.now().toString(36) + (stopSeq++), name:x.name, sub:[x.en, x.area].filter(Boolean).join(' · '), lat:at.lat, lng:at.lng, stay:45}; how = '📍'; } } }
+    if(!s){ s = {id:'p-' + Date.now().toString(36) + (stopSeq++), kind:'plain', name:x.name}; how = x.en ? '❓' : '·'; }
+    if(t != null && !s.kind) s.fixed = t; if(x.stay > 0 && !s.kind) s.stay = Math.min(x.stay, 600);
+    if(x.note) s.note = s.note ? x.note + ' · ' + s.note : x.note; return [s, how, t]; }
+  const HOW = {'✓':'목록', '📍':'지도', '🏨':'숙소', '❓':'위치 못 찾음', '·':'메모'};
+  function show(){ res.textContent = ''; if(!plan || !plan.length) return;
+    for(const b of plan){ const d = dayOf(b.day); res.append(h('div', 'mday', d.tab + (/^\d{1,2}:\d{2}$/.test(b.start || '') ? ' · 출발 ' + b.start : '')));
+      const ul = h('ul', 'mres'); for(const [s, how, t] of b.stops){ const li = h('li'); li.append(h('span', 't', t != null ? hm(t) : ''), h('span', null, s.name), h('span', 's' + (how === '❓' ? ' bad' : ''), how + ' ' + HOW[how])); ul.append(li); } res.append(ul); }
+    const act = h('div', 'mact'), rpl = h('button', 'chip', '일정 바꾸기'), add = h('button', 'chip', '뒤에 추가'); rpl.type = add.type = 'button'; rpl.setAttribute('aria-pressed', true);
+    rpl.addEventListener('click', () => apply(true)); add.addEventListener('click', () => apply(false)); act.append(rpl, add); res.append(act); }
+  function apply(replace){ const prev = plan.map(b => { const d = dayOf(b.day); return [d, JSON.stringify(d.stops), d.edited, d.start]; });
+    for(const b of plan){ const d = dayOf(b.day), add = b.stops.map(x => x[0]);
+      // a replaced day still leaves from the hotel unless the memo says otherwise (day1 starts at the airport)
+      if(replace && d.id !== 'day1' && !(add[0] && isHome(add[0]))){ const o = homeOf(d), s = {id:'h-' + Date.now().toString(36) + (stopSeq++), name:o.name, sub:o.sub, lat:o.lat, lng:o.lng, stay:0}; if(d.id === 'macau') s.rec = 'wynnpalace'; add.unshift(s); }
+      d.stops = replace ? add : d.stops.filter(x => !(x.kind === 'plain' && /^tbd/.test(x.id))).concat(add);
+      if(replace && /^\d{1,2}:\d{2}$/.test(b.start || '')) d.start = b.start.padStart(5, '0'); d.edited = true; }
+    const first = plan[0].day, n = plan.length; plan = null; res.textContent = ''; txt.value = ''; savePlan(); closeMemo(); setDay(first, true);
+    toast(n > 1 ? n + '일 일정 반영' : '일정 반영', () => { for(const [d, st, ed, start] of prev){ d.stops = JSON.parse(st); d.edited = ed; d.start = start; } sel = null; savePlan(); render(); }); }
+  go.addEventListener('click', async () => { const memo = txt.value.trim(), pw = saved || pass.value.trim(); if(!memo) return txt.focus(); if(!pw){ pass.hidden = false; return pass.focus(); }
+    go.disabled = true; msg.textContent = '정리 중…'; plan = null; res.textContent = '';
+    try{ const r = await fetch(MEMO_URL, {method:'POST', headers:{'content-type':'application/json'},
+        body:JSON.stringify({pass:pw, memo:memo.slice(0, 4000), places:REC.map(p => [p.id, p.n, p.sub || ''].map(v => String(v).slice(0, 120)))})});
+      const j = await r.json().catch(() => ({}));
+      if(r.status === 401){ saved = ''; try{ localStorage.removeItem('hk-pass'); }catch(e){} pass.hidden = false; pass.value = ''; pass.focus(); msg.textContent = '암호 틀림'; return; }
+      if(!r.ok){ msg.textContent = j.error === 'cap' ? '오늘 사용량 끝' : '정리 실패'; return; }
+      if(!saved){ saved = pw; pass.hidden = true; try{ localStorage.setItem('hk-pass', pw); }catch(e){} }
+      const days = (j.days || []).filter(b => dayOf(b.day) && Array.isArray(b.stops) && b.stops.length);
+      if(!days.length){ msg.textContent = j.unclear || '찾은 일정 없음'; return; }
+      msg.textContent = '위치 찾는 중…';
+      plan = []; for(const b of days){ const d = dayOf(b.day), stops = []; for(const x of b.stops.slice(0, 40)) stops.push(await toStop(d, x)); plan.push({day:b.day, start:b.start, stops}); }
+      msg.textContent = j.unclear || ''; show();
+    }catch(e){ msg.textContent = '연결 실패'; }
+    finally{ go.disabled = false; if(msg.textContent === '정리 중…' || msg.textContent === '위치 찾는 중…') msg.textContent = ''; } });
+}
 document.getElementById('gps').addEventListener('click', toggleGps);
 document.getElementById('routeclr').addEventListener('click', clearRoute);
 document.getElementById('ztoilet').addEventListener('click', toggleToilet);

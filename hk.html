@@ -426,7 +426,9 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .toast button{border:0;background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:3px 10px;font-weight:700;flex:0 0 auto}
 /* map mode: map fills the screen, the itinerary is a bottom sheet (peek / half / full) */
 .grip,.peekact,.peekact[hidden]{display:none}
-html.mm #panel[data-st="peek"] .peekact:not([hidden]){display:flex;justify-content:center;flex-wrap:nowrap;margin:0;padding:0 14px 12px;flex:0 0 auto}
+html.mm #panel[data-st="peek"] .peekact:not([hidden]){display:flex;justify-content:safe center;flex-wrap:nowrap;gap:5px;margin:0;padding:0 10px 12px;flex:0 0 auto;overflow-x:auto;scrollbar-width:none}
+.peekact::-webkit-scrollbar{display:none}
+.peekact button{flex:0 0 auto;white-space:nowrap;padding:5px 9px;font-size:12.5px}
 html.mm,html.mm body{height:100%;overflow:hidden}
 html.mm .progress{display:none}
 html.mm .wrap{max-width:none;padding:0}

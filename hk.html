@@ -119,8 +119,6 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .taxi .addr{font-size:19px;font-weight:600;line-height:1.35;margin:2px 0 6px}
 .grouphead{font-family:var(--display);font-size:15px;color:var(--alt);padding:4px 2px 0}
 
-.footd{margin-top:8px}
-.footd .foot{margin:0 0 12px}
 .foot{margin-top:18px;font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
 .foot a{text-decoration:underline}
 
@@ -256,12 +254,18 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .nowline{list-style:none;display:flex;align-items:center;gap:8px;color:var(--accent);font:400 13px var(--display);font-variant-numeric:tabular-nums}
 .nowline::before,.nowline::after{content:"";flex:1;height:2px;border-radius:2px;background:var(--accent);opacity:.45}
 .busl{margin-top:8px;font-weight:700;font-variant-numeric:tabular-nums}
-.guide{display:flex;flex-direction:column;gap:8px;margin-top:18px}
+.guide{display:flex;flex-wrap:wrap;gap:6px;margin-top:18px}
+.gi{position:fixed;z-index:2500;left:0;right:0;bottom:0;max-height:62vh;display:flex;flex-direction:column;background:var(--bg);border-radius:22px 22px 0 0;box-shadow:0 -6px 24px rgba(60,30,40,.25);padding-bottom:env(safe-area-inset-bottom)}
+.gi[hidden],.gib>[hidden]{display:none}
+.gih{display:flex;align-items:center;gap:8px;padding:10px 10px 8px 12px;flex:0 0 auto}
+.gih .cats{flex:1;min-width:0;display:flex;gap:6px;overflow-x:auto;padding:2px 0 4px;scrollbar-width:none}
+.gih .cats::-webkit-scrollbar{display:none}
+#gix{flex:0 0 auto;width:36px;height:36px;border-radius:50%;border:2px solid var(--line);background:var(--surface);color:var(--ink);font-size:14px}
+.gib{overflow:auto;padding:4px 16px 14px;overscroll-behavior:contain}
+.gib .gd{border:0;background:none;border-radius:0;padding:0}
+.gib .foot{margin:0}
+@media (min-width:820px){ .gi{left:auto;right:16px;bottom:16px;width:440px;max-height:70vh;border-radius:22px} .gih{align-items:flex-start} .gih .cats{flex-wrap:wrap;overflow:visible} }
 .gd{border:2px solid var(--line);background:var(--surface);border-radius:16px;padding:0 12px}
-.gd summary{font:400 15.5px var(--display);padding:10px 0;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center}
-.gd summary::-webkit-details-marker{display:none}
-.gd summary::after{content:"+";color:var(--muted);font-size:18px}
-.gd[open] summary::after{content:"−"}
 .gd dl{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;margin:0 0 12px;font-size:13px;line-height:1.45}
 .gd dt{font-weight:700;white-space:nowrap}
 .gd dd{margin:0;color:var(--muted)}
@@ -361,6 +365,7 @@ html.mm .dayhead h2{display:none}
           <button type="button" id="gps" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4"/></svg><span>내 위치</span></button>
           <button type="button" id="zfit"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="6" r="2.2"/><path d="M8 17c5 0 3-10 8-10" stroke-dasharray="2.5 2.5"/></svg><span>전체</span></button>
           <button type="button" id="zhotel"><b>🏨</b><span>호텔로</span></button>
+          <button type="button" id="zinfo" aria-expanded="false" aria-controls="gi"><b>📒</b><span>정보</span></button>
         </div>
         <div class="catp" id="catp" hidden></div>
         <div class="lay">
@@ -410,8 +415,7 @@ html.mm .dayhead h2{display:none}
       </div>
       <ol class="stops" id="list"></ol>
       <div class="guide" id="guide"></div>
-      <details class="gd footd"><summary>📎 표시 설명 · 자료 출처</summary>
-      <div class="foot">
+      <div class="foot" id="foot" hidden>
         <span>🚻 = 가까운 화장실 3곳 · 확대하면 전부 표시 (OpenStreetMap 자료)</span>
         <span>「🚏 실시간」 = 근처 MTR·KMB 버스 도착 시간(정부 공개 자료). 지도 위 🚏 = 내 위치(없으면 지도 가운데) 근처. 시티버스(홍콩섬 대부분)는 안 나옵니다.</span>
         <span>🧭 길찾기 = 내 위치(홍콩 밖이면 이전 장소)에서 도보·MTR·택시 중 빠른 길 · 이동 줄을 눌러도 같은 안내</span>
@@ -424,12 +428,15 @@ html.mm .dayhead h2{display:none}
         <span>가격·영업시간: 2025~26년 공식 페이지·여행 자료 기준 · 현지에서 다를 수 있음</span>
         <span>편집 내용: 이 폰 브라우저에만 저장</span>
       </div>
-      </details>
       </div>
     </section>
   </div>
 </div>
 
+<div class="gi" id="gi" role="dialog" aria-label="여행 정보" hidden>
+  <div class="gih"><div class="cats" id="gitabs"></div><button type="button" id="gix" aria-label="닫기">✕</button></div>
+  <div class="gib" id="gib"></div>
+</div>
 <div class="zc" id="zc" role="dialog" aria-modal="true" aria-label="한자 이름" hidden>
   <small id="zcs"></small>
   <b id="zct"></b>
@@ -1672,9 +1679,10 @@ document.getElementById('pdone').addEventListener('click', () => { if(!sel) retu
     gd = null; };
   grip.addEventListener('pointerup', end); grip.addEventListener('pointercancel', end);
   grip.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); setSheet(shState === 'peek' ? 'half' : 'peek'); } }); }
-function ovPush(){ try{ if(!(history.state && history.state.ov)) history.pushState({ov:1}, ''); }catch(e){} }
-function ovPop(){ try{ if(history.state && history.state.ov) history.back(); }catch(e){} }
-addEventListener('popstate', () => { document.getElementById('zc').hidden = true; if(lbId) closeLb(true); });
+let ovSkip = 0, closeGi = () => {};
+function ovPush(){ try{ history.pushState({ov:((history.state && history.state.ov) || 0) + 1}, ''); }catch(e){} }
+function ovPop(){ try{ if(history.state && history.state.ov){ ovSkip++; history.back(); } }catch(e){} }
+addEventListener('popstate', () => { if(ovSkip){ ovSkip--; return; } const zc = document.getElementById('zc'); if(!zc.hidden) zc.hidden = true; else if(lbId) closeLb(true); else closeGi(true); });
 // big Chinese name card to show a driver or passer-by
 function showZh(s){ const z = zhOf(s); if(!z) return; document.getElementById('zcs').textContent = '請載我去 · Please take me to'; document.getElementById('zct').textContent = z;
   document.getElementById('zca').textContent = (s.taxi || '').replace(/^目的地：[^，]*，/, ''); document.getElementById('zck').textContent = s.name || s.n || '';
@@ -1694,37 +1702,46 @@ function closeLb(fromBack){ document.getElementById('lb').hidden = true; lbId = 
 lbs.addEventListener('scroll', lbCap, {passive:true});
 lbs.addEventListener('click', e => { if(e.target.tagName === 'IMG'){ const n = PH[lbId].length, w = lbs.clientWidth, i = Math.round(lbs.scrollLeft / w); lbs.scrollTo({left:(e.clientX > innerWidth / 2 ? Math.min(n - 1, i + 1) : Math.max(0, i - 1)) * w, behavior:'smooth'}); } else closeLb(); });
 document.getElementById('lbx').addEventListener('click', () => closeLb());
-document.addEventListener('keydown', e => { if(e.key === 'Escape' && !document.getElementById('zc').hidden){ document.getElementById('zc').hidden = true; ovPop(); } if(!lbId) return; if(e.key === 'Escape') closeLb();
+document.addEventListener('keydown', e => { if(e.key === 'Escape' && !document.getElementById('zc').hidden){ document.getElementById('zc').hidden = true; ovPop(); } else if(e.key === 'Escape' && !lbId) closeGi(); if(!lbId) return; if(e.key === 'Escape') closeLb();
   else if(e.key === 'ArrowRight' || e.key === 'ArrowLeft') lbs.scrollBy({left:(e.key === 'ArrowRight' ? 1 : -1) * lbs.clientWidth, behavior:'smooth'}); });
 const GUIDE = [["📅 여행 4일 휴관·행사", [["11/16 월", "M+ 휴관"], ["11/17 화", "고궁박물관 휴관"], ["11/18 수", "심포니 오브 라이트 마지막 공연 20:00 + 불꽃 · 윈터페스트 개막 · 미도카페 휴무"], ["11/19 목", "홍콩미술관 휴관 · 오스트레일리아 데일리컴퍼니 휴무 · 심포니 오브 라이트 없음 · 마카오 그랑프리 연습일"], ["날씨 평년", "최고 24.5° · 최저 20.3° · 얇은 겉옷"]]], ["🚇 교통·결제", [["옥토퍼스(관광객용)", "HK$39 · 보증금 없음 · 잔액만 환불"], ["아이폰", "'Octopus for Tourists' 앱 · 해외 Visa·Mastercard 충전 (한국 카드 미확인)"], ["A21 버스", "공항→침사추이 이스트 · HK$34.6 · 10~20분 간격 · 60~75분"], ["공항철도", "구룡역 HK$105 · 홍콩역 HK$120 · 약 24분"], ["MTR", "하늘색 개찰구에서 Visa·Mastercard 컨택리스"], ["택시(빨간색)", "기본 2km HK$29 · 이후 200m당 HK$2.1 · 해저터널 HK$25~50 · 짐 1개 HK$6"], ["스타페리", "위층 평일 HK$5 · 주말 HK$6.5"], ["피크트램", "편도 HK$82 · 왕복 HK$116 (자료 엇갈림)"]]], ["⚠️ 현지 규칙", [["MTR 안 음식·음료", "물 포함 금지 · 최고 HK$2,000"], ["쓰레기·침", "HK$3,000"], ["흡연", "금연구역·대중교통 줄에서 HK$3,000"], ["전자담배", "반입 금지 · 공공장소에서 갖고만 있어도 HK$3,000"], ["담배·술 면세", "궐련 19개비 · 술 1L"], ["무단횡단", "최고 HK$2,000"], ["비둘기·원숭이 먹이", "HK$5,000"], ["호텔", "일회용 세면도구·생수 무료 제공 안 함"], ["식당", "봉사료 10% (차찬탱은 없음) · 딤섬집 찻값 1인 HK$3~20 · 합석 기본"], ["택시 결제", "QR·옥토퍼스·카드 중 차마다 다름 · 현금 가능"], ["MTR 막차", "침사추이 → 센트럴 00:54쯤"], ["전압", "220V · G형 3핀"], ["입국", "입국카드 없음 · 무비자 90일 · 자동출입국은 도착 후 현장 등록"], ["마카오", "여권 필수 · 무비자 90일 · 홍콩달러 1:1 통용(거스름돈은 파타카) · 옥토퍼스는 버스에서 안 됨"]]], ["🛍️ 쇼핑 메모", [["세금", "부가세·환급 없음 · 식당은 봉사료 10% 많음"], ["쇼핑몰", "10~11시 개점 · 22시 폐점"], ["결제", "몰·체인 카드 OK · 노포·간식집은 현금·옥토퍼스"], ["비닐봉투", "장당 HK$1 이상"], ["드럭스토어", "백화유 · 타이거밤 · 달리 치약 · 닌지옴 캔디 (매닝스·왓슨스)"], ["과자 선물", "제니 베이커리 쿠키 · 기화병가 펑리수·에그롤 · 이금기 소스"], ["11/18부터", "윈터페스트 할인(알리페이 QR)"]]], ["⛴️ 마카오 가는 법", [["침사추이 페리터미널", "마카오행 없음 (주하이행만)"], ["터보젯", "셩완 → 마카오 외항 · 07:30~22:30 · 약 60분 · 평일 HK$194 · 주말 HK$212 · 야간 HK$242"], ["코타이 워터젯", "셩완 → 타이파 · 07:30~22:30 · 평일 HK$192 · 베네시안 무료 셔틀"], ["원버스", "조던 캔톤로드 505 → 샌즈·런더너·베네시안 · 평일 낮 HK$160 · 저녁·주말 HK$180"], ["대교 셔틀버스", "HK$65 · 24시간 · 홍콩 쪽 터미널까지 1시간 이상"], ["11/19~22", "그랑프리로 외항 터미널 주변 통제 → 타이파행 배·원버스"]]]];
 { const g = document.getElementById('guide');
-  for(const [t, rows] of GUIDE){ const d = h('details','gd'), dl = h('dl'); d.append(h('summary', null, t));
+  for(const [t, rows] of GUIDE){ const d = h('div','gd'), dl = h('dl'); d.dataset.t = t;
     for(const [k, v] of rows) dl.append(h('dt', null, k), h('dd', null, v)); d.append(dl); g.append(d); }
   // phrases: tap one to show it large to staff
-  { const d = h('details','gd'), ul = h('div','phr'); d.append(h('summary', null, '🗣️ 보여주는 한마디'));
+  { const d = h('div','gd'), ul = h('div','phr'); d.dataset.t = '🗣️ 보여주는 한마디';
     for(const [ko, zh, say] of [["감사합니다 · 저기요", "唔該", "음꺼이"], ["고맙습니다 (호의·선물)", "多謝", "또제"], ["계산서 주세요", "唔該，埋單", "음꺼이, 마이딴"], ["얼마예요?", "幾多錢？", "께이또친"], ["이거 주세요", "我要呢個", ""], ["두 명이요", "兩位", "렁와이"], ["포장이요", "外賣", "오이마이"], ["먹고 갈게요", "堂食", ""], ["안 맵게 해주세요", "唔要辣", ""], ["고수 빼주세요", "走芫荽", ""], ["얼음 빼주세요", "走冰", "자우빙"], ["영어 메뉴 있나요?", "有冇英文餐牌？", ""], ["카드 돼요?", "可唔可以碌卡？", ""], ["옥토퍼스 돼요?", "可唔可以用八達通？", ""], ["화장실 어디예요?", "洗手間喺邊度？", ""], ["사진 찍어도 돼요?", "可唔可以影相？", ""], ["여기서 내려주세요", "唔該，呢度落車", ""]]){ const b = h('button'); b.type = 'button'; b.append(h('span', null, ko), h('b', null, zh)); if(say) b.append(h('small', null, say));
       b.addEventListener('click', () => { document.getElementById('zcs').textContent = ''; document.getElementById('zct').textContent = zh; document.getElementById('zca').textContent = ''; document.getElementById('zck').textContent = ko + (say ? ' · ' + say : ''); document.getElementById('zc').hidden = false; document.getElementById('zcx').focus(); ovPush(); });
       ul.append(b); }
     d.append(ul); g.append(d); }
   // emergency numbers as tap-to-call links
-  { const d = h('details','gd'), dl = h('dl'); d.append(h('summary', null, '🆘 비상 연락처'));
+  { const d = h('div','gd'), dl = h('dl'); d.dataset.t = '🆘 비상 연락처';
     for(const [k, v, tel] of [['경찰·구급·소방', '999', '999'], ['주홍콩 총영사관', '2529 4141 · 애드미럴티 Far East Finance Centre 5층', '+85225294141'], ['영사콜센터', '+82-2-3210-0404 · 24시간', '+82232100404']]){
       const dd = h('dd'), a = h('a', null, v); a.href = 'tel:' + tel; dd.append(a); dl.append(h('dt', null, k), dd); }
     d.append(dl); g.append(d); }
   // packing list, ticks kept on this phone
-  { const d = h('details','gd'), ul = h('ul','pack'); d.append(h('summary', null, '🎒 준비물')); let st = {}; try{ st = JSON.parse(localStorage.getItem('hk-pack') || '{}') || {}; }catch(e){}
+  { const d = h('div','gd'), ul = h('ul','pack'); d.dataset.t = '🎒 준비물'; let st = {}; try{ st = JSON.parse(localStorage.getItem('hk-pack') || '{}') || {}; }catch(e){}
     for(const t of ['여권', '옥토퍼스 카드 또는 앱', '영국식 3핀 어댑터 (G형 · 220V)', '현금 HK$ (노포·간식집)', '해외 결제 카드', 'eSIM·로밍', '보조배터리', '얇은 겉옷', '접이식 우산', '편한 신발']){
       const li = h('li'), lb = h('label'), cb = h('input'); cb.type = 'checkbox'; cb.checked = !!st[t];
       cb.addEventListener('change', () => { st[t] = cb.checked; try{ localStorage.setItem('hk-pack', JSON.stringify(st)); }catch(e){} }); lb.append(cb, ' ' + t); li.append(lb); ul.append(li); }
     d.append(ul); g.append(d); }
   // currency: daily ECB rate, last value kept for offline
-  { const d = h('details','gd'), box = h('div','fx'), inp = h('input'), out = h('b'), note = h('small'); d.append(h('summary', null, '💱 환율 계산'));
+  { const d = h('div','gd'), box = h('div','fx'), inp = h('input'), out = h('b'), note = h('small'); d.dataset.t = '💱 환율 계산';
     let fx = {r:170.06, d:'2026-11-12'}; try{ const v = JSON.parse(localStorage.getItem('hk-fx')); if(v && typeof v.r === 'number' && v.r > 50 && typeof v.d === 'string') fx = v; }catch(e){}
     inp.type = 'number'; inp.inputMode = 'decimal'; inp.min = 0; inp.value = 100; inp.setAttribute('aria-label', '홍콩달러');
     const draw = () => { const v = +inp.value || 0; out.textContent = '≈ ' + Math.round(v * fx.r).toLocaleString('ko-KR') + '원'; note.textContent = `HK$1 = ${fx.r.toFixed(1)}원 · ${fx.d.slice(5).replace('-', '/')} 기준 · MOP 1 ≈ ${(fx.r / 1.03).toFixed(0)}원`; };
     inp.addEventListener('input', draw); box.append('HK$ ', inp, ' ', out, note); d.append(box); g.append(d); draw();
-    d.addEventListener('toggle', () => { if(!d.open || d.dataset.got) return; d.dataset.got = 1;
-      getJ('https://api.frankfurter.dev/v1/latest?base=HKD&symbols=KRW').then(j => { if(j && j.rates && j.rates.KRW > 50 && typeof j.date === 'string'){ fx = {r:j.rates.KRW, d:j.date}; try{ localStorage.setItem('hk-fx', JSON.stringify(fx)); }catch(e){} draw(); } }).catch(() => {}); }); } }
+    d.onshow = () => { if(d.dataset.got) return; d.dataset.got = 1;
+      getJ('https://api.frankfurter.dev/v1/latest?base=HKD&symbols=KRW').then(j => { if(j && j.rates && j.rates.KRW > 50 && typeof j.date === 'string'){ fx = {r:j.rates.KRW, d:j.date}; try{ localStorage.setItem('hk-fx', JSON.stringify(fx)); }catch(e){} draw(); } }).catch(() => {}); }; }
+  const gi = document.getElementById('gi'), gib = document.getElementById('gib'), tabs = document.getElementById('gitabs'), zi = document.getElementById('zinfo'), ft = document.getElementById('foot');
+  ft.dataset.t = '📎 표시·출처'; const secs = [...g.children, ft]; g.textContent = ''; let cur = 0;
+  const show = i => { cur = i; secs.forEach((d, k) => { d.hidden = k !== i; }); [...tabs.children].forEach((b, k) => b.setAttribute('aria-pressed', k === i)); gib.scrollTop = 0;
+    if(gi.hidden){ gi.hidden = false; zi.setAttribute('aria-expanded', true); ovPush(); } tabs.children[i].scrollIntoView({block:'nearest', inline:'center'}); if(secs[i].onshow) secs[i].onshow(); };
+  secs.forEach((d, i) => { d.hidden = true; gib.append(d);
+    for(const box of [tabs, g]){ const b = h('button','chip', d.dataset.t); b.type = 'button'; b.addEventListener('click', () => show(i)); box.append(b); } });
+  closeGi = fromBack => { if(gi.hidden) return; gi.hidden = true; zi.setAttribute('aria-expanded', false); if(fromBack !== true) ovPop(); };
+  document.getElementById('gix').addEventListener('click', () => closeGi());
+  zi.addEventListener('click', () => { if(gi.hidden) show(cur); else closeGi(); }); }
 document.getElementById('gps').addEventListener('click', toggleGps);
 document.getElementById('routeclr').addEventListener('click', clearRoute);
 document.getElementById('ztoilet').addEventListener('click', toggleToilet);

@@ -446,7 +446,8 @@ html.mm .dayhead h2{display:none}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@maplibre/maplibre-gl-leaflet@0.0.22/leaflet-maplibre-gl.js"></script>
 <script>
-const HOTEL = {name:'호텔 아이콘', sub:'Hotel ICON', lat:22.3007586, lng:114.1796973};
+const HOTEL = {name:'호텔 아이콘', sub:'Hotel ICON', lat:22.3007586, lng:114.1796973}, MHOTEL = {name:'윈 팰리스', sub:'Wynn Palace', lat:22.148099, lng:113.571403};
+const home = () => day.id === 'macau' ? MHOTEL : HOTEL, isHome = s => [HOTEL, MHOTEL].some(o => s.lat === o.lat && s.lng === o.lng);
 const DAYS = [
  {id:'day1', tab:'✈️ Day 1', date:'16일', title:'도착 → 체크인 → 저녁', stops:[
   {id:'apt', far:true, name:'홍콩 국제공항', sub:'Hong Kong International Airport', lat:22.3137, lng:113.9309,
@@ -486,12 +487,13 @@ const DAYS = [
   {id:'tbd3', kind:'plain', name:'이후 일정 미정', note:'일정표에 아직 적힌 내용이 없습니다'}
  ]},
  {id:'macau', tab:'🎰 마카오', date:'', title:'마카오', stops:[
+  {id:'wynn', rec:'wynnpalace', name:MHOTEL.name, sub:'Wynn Palace · 숙소', lat:MHOTEL.lat, lng:MHOTEL.lng},
   {id:'north', name:'북방관 (North)', sub:'베네시안 마카오 Level 1 · Shop 1015', lat:22.1484167, lng:113.5624207,
    note:'일정표에 「북방관」으로만 적혀 있어 베네시안 지점으로 넣었습니다. 다른 지점이면 알려주세요', hours:'11:00–23:00'}
  ]}
 ];
 const DATES = {day1:'2026-11-16', day2:'2026-11-17', day3:'2026-11-18'};
-const STAY = {apt:30, sci:0, icon1:20, icon2:0, mcot:45, peak:90, esc:30, soho:40, pmq:45, icon2b:90, hkma:60, oms:90, icon3:0, adc:45, north:90};
+const STAY = {apt:30, sci:0, icon1:20, icon2:0, mcot:45, peak:90, esc:30, soho:40, pmq:45, icon2b:90, hkma:60, oms:90, icon3:0, adc:45, north:90, wynn:0};
 const BEST = {esc:[600,1410], hkma:[1020,1140]};
 const LEGMIN = {sci:['apt',85], icon1:['sci',5]};
 const CATS = {food:['🍜','맛집'], sweet:['🍡','간식·디저트'], shop:['🛍️','쇼핑'], sight:['🏛️','명소'], hot:['✨','핫플'], bar:['🍸','바·전망'], go:['⛴️','마카오행'], photo:['📸','사진'], event:['🎆','이벤트']};
@@ -580,7 +582,7 @@ const REC = [
  {id:'eyebar', c:'bar', n:"아이바 · 루프톱", sub:"eyebar · 아이스퀘어 30층", lat:22.296943, lng:114.171857, stay:60, hours:'15:00–24:00', best:[1080,1380]},
  {id:'hkmft', c:'go', n:"홍콩마카오 페리터미널", sub:"Shun Tak Centre · 셩완", lat:22.288671, lng:114.152437, stay:30},
  {id:'onebus', c:'go', n:"원버스 정류장 · 마카오 직행", sub:"One Bus · 조던 캔톤로드 505", lat:22.306039, lng:114.167949, stay:15},
-  {id:'wynnpalace', c:'sight', n:"윈 팰리스 · 분수 쇼", sub:"Wynn Palace · 마카오 코타이", lat:22.148099, lng:113.571403, stay:45, best:[1080,1380]},
+  {id:'wynnpalace', c:'sight', n:"윈 팰리스", sub:"Wynn Palace · 숙소 · 마카오 코타이", lat:22.148099, lng:113.571403, stay:45},
   {id:'venetian', c:'sight', n:"베네시안 마카오", sub:"The Venetian Macao · 마카오 코타이", lat:22.1482, lng:113.560472, stay:60},
   {id:'londoner', c:'photo', n:"런더너 마카오", sub:"The Londoner Macao · 마카오 코타이", lat:22.145812, lng:113.565336, stay:40},
   {id:'galaxy', c:'sight', n:"갤럭시 마카오", sub:"Galaxy Macau · 마카오 코타이", lat:22.147446, lng:113.554569, stay:45},
@@ -894,13 +896,13 @@ function clearRoute(){ routeCur = null; pendingRoute = null; redrawRoute(false);
 const legIcon = {walk:'🚶', mtr:'🚇', taxi:'🚕', given:'🚌'};
 const legShort = lg => lg.mode === 'same' ? '바로 옆' : `${legIcon[lg.mode] || ''} 약 ${lg.min}분 · ${fmt(lg.d)}`;
 // tapping a place answers "how far from here": my position, else the selected stop, else the hotel
-function fromHere(p){ return me && nearHK(me) && dist(me.lat, me.lng, p.lat, p.lng) < 60000 ? [me, '내 위치'] : sel && sel.lat && dist(sel.lat, sel.lng, p.lat, p.lng) > 30 ? [sel, sel.name] : (o => o && dist(o.lat, o.lng, p.lat, p.lng) > 30 ? [o, o.name] : [HOTEL, HOTEL.name])(day.id === 'macau' && mapStops(day)[0]); }
+function fromHere(p){ return me && nearHK(me) && dist(me.lat, me.lng, p.lat, p.lng) < 60000 ? [me, '내 위치'] : sel && sel.lat && dist(sel.lat, sel.lng, p.lat, p.lng) > 30 ? [sel, sel.name] : [home(), home().name]; }
 function previewRoute(p){ if(routeCur && !routeCur.preview) return; const o = fromHere(p);
   routeCur = {s:{id:'rec-' + p.id, name:p.n, lat:p.lat, lng:p.lng}, from:{lat:o[0].lat, lng:o[0].lng}, lbl:o[1], nt:{}, preview:true}; redrawRoute(false); }
 function originFor(s){
   if(me && dist(me.lat,me.lng,s.lat,s.lng) < 60000) return [me, '내 위치'];
   const rs = routeStops(day), i = rs.indexOf(s);
-  return i > 0 ? [rs[i-1], rs[i-1].name] : [HOTEL, HOTEL.name];
+  return i > 0 ? [rs[i-1], rs[i-1].name] : [home(), home().name];
 }
 function showRoute(s, o, alts){ pendingRoute = null; if(mm && !wide() && shState !== 'peek') setSheet('peek'); const [from, lbl] = o || originFor(s); routeCur = {s, from:{lat:from.lat, lng:from.lng}, lbl, alts, nt:{}}; redrawRoute(true); }
 // shortcut: route is drawn from where you are when tapped; tap again to refresh as you walk
@@ -1018,7 +1020,7 @@ const ins = () => !mm ? {t:0, l:0, b:0, r:0} : wide() ? {t:56, l:456, b:0, r:0} 
 const fitOpt = (pad, o, extraB) => { const i = ins(); return Object.assign({paddingTopLeft:[pad + i.l + 30, pad + i.t], paddingBottomRight:[pad + i.r + 30, pad + i.b + (extraB || 0)]}, o); };
 function centerOn(lat, lng, z){ const i = ins(), dx = (i.l - i.r) / 2, dy = (i.t - i.b) / 2;
   map.setView(dx || dy ? map.unproject(map.project([lat, lng], z).subtract([dx, dy]), z) : [lat, lng], z); }
-function fit(){ const pts = mapStops(day).map(s => [s.lat,s.lng]); if(!pts.length){ const c = day.id === 'macau' ? MACAU : HOTEL; map.invalidateSize(); centerOn(c.lat, c.lng, 14); return; }
+function fit(){ const pts = mapStops(day).map(s => [s.lat,s.lng]); if(!pts.length){ const c = home(); map.invalidateSize(); centerOn(c.lat, c.lng, 14); return; }
   map.invalidateSize(); if(pts.length===1) centerOn(pts[0][0], pts[0][1], 16); else map.fitBounds(pts, fitOpt(36, {maxZoom:16})); }
 function focus(s){ if(s.lat) centerOn(s.lat, s.lng, Math.max(map.getZoom()||0, 16)); }
 
@@ -1160,7 +1162,7 @@ const INFO = {
  ozone:{d:"118층 호텔 바, 하버 전체 조망.", t:"스마트 캐주얼(슬리퍼·운동복 불가) · 테이블 최소 주문 있음"},
  redsugar:{d:"하버 쪽 야외 테라스가 넓은 호텔 바.", t:"해피아워 16–20시 · 호텔 아이콘에서 해변 산책로로 도보 15~20분"},
  eyebar:{d:"30층 루프톱 바, 하버 정면 야경.", t:"2026년 영업시간 미확인 · 가기 전 확인"},
- wynnpalace:{d:"호수 분수 쇼와 호수 위를 도는 케이블카(스카이캡).", t:"분수 12시~자정 20~30분 간격 · 스카이캡 10시~자정 (공식 확인 못 함)", p:"무료"},
+ wynnpalace:{d:"마카오 숙소. 호텔 앞 호수에서 분수 쇼, 호수 위로 케이블카(스카이캡).", t:"분수 12시~자정 20~30분 간격 · 스카이캡 10시~자정 (공식 확인 못 함)", p:"분수·스카이캡 무료"},
  venetian:{d:"실내 운하와 곤돌라가 있는 리조트·쇼핑몰.", t:"북방관이 이 건물 1층"},
  londoner:{d:"빅벤 모형이 선 런던풍 리조트."},
  cod:{d:"하우스 오브 댄싱 워터 공연이 열리는 리조트.", t:"윈 팰리스 바로 옆"},
@@ -1190,7 +1192,7 @@ function estWait(s, t, w){ const q = qOf(s); if(!q || !q.w) return 0;
   return r; }
 const qPeak = q => q && q.w ? Math.max(...q.w.map(x => x[3])) : 0;
 function orLink(id){ if(!OR[id]) return null; const a = h('a', null, 'OpenRice'); a.href = 'https://www.openrice.com/en/hongkong/' + OR[id]; a.target = '_blank'; a.rel = 'noopener'; return a; }
-const PH = {peak:[["2/27/CWA_6th_Generation_Peak_Tram.jpg", "Samson Ng . D201@EAL", "CC BY-SA 4.0"], ["4/4f/The_Peak_Tram%2C_Hong_Kong_%28Ank_Kumar%29_03.jpg", "Ank Kumar", "CC BY-SA 4.0"], ["5/55/Peak_Tram_at_night.jpg", "Ubahnverleih", "CC0"]],
+const PH = {wynnpalace:[["9/90/Wynn_Palace_2019.jpg", "OJ-JP", "CC BY-SA 4.0"], ["6/69/Wynn_Palace_Night_2016.jpg", "Doraemon.tvb", "CC BY-SA 3.0"], ["9/9c/Wynn_Palace_Cable_car_17-01-2023%282%29.jpg", "LN9267", "CC BY-SA 4.0"]], peak:[["2/27/CWA_6th_Generation_Peak_Tram.jpg", "Samson Ng . D201@EAL", "CC BY-SA 4.0"], ["4/4f/The_Peak_Tram%2C_Hong_Kong_%28Ank_Kumar%29_03.jpg", "Ank Kumar", "CC BY-SA 4.0"], ["5/55/Peak_Tram_at_night.jpg", "Ubahnverleih", "CC0"]],
   esc:[["f/f8/Central-Mid-Levels_Escalator_and_Walkway_System_2017.jpg", "Wpcpey", "CC BY-SA 4.0"], ["2/2e/Mid-Levels_Escalator%2C_Hong_Kong_%282042642893%29.jpg", "Rob Young", "CC BY 2.0"], ["5/51/HK_Central_Cochrane_Street_Central-Mid-Levels_escalators_Upsidedown.JPG", "WingLuk", "CC BY-SA 3.0"]],
   pmq:[["f/f8/PMQ_Overview_201510.jpg", "Wpcpey", "CC BY 4.0"], ["3/35/HK_Sheung_Wan_PMQ_facade_exterior_night_courtyard_Dec-2015_DSC_001.JPG", "Lizatanmenhua", "CC BY-SA 4.0"], ["7/7d/HK_Sheung_Wan_PMQ_Aberdeen_Street_tree_night_Dec-2015_DSC.JPG", "Lizatanmenhua", "CC BY-SA 4.0"]],
   adc:[["3/39/Australia_Dairy_Company_outlook.JPG", "圍棋一級", "CC BY-SA 3.0"], ["1/1f/Australia_Dairy_Company_-_Ham_and_Egg_Sandwich.jpg", "City Foodsters", "CC BY 2.0"], ["0/0f/HK_Jordan_Parkes_Street_%E6%BE%B3%E6%B4%B2%E7%89%9B%E5%A5%B6%E5%85%AC%E5%8F%B8_Australia_Dairy_Company_restaurant_interior_33_evening_Jan-2013.JPG", "Tobeianamsel", "CC BY-SA 3.0"]],
@@ -1427,7 +1429,7 @@ function perm(a, f){ const c = a.slice(), n = c.length, k = new Array(n).fill(0)
   while(i < n){ if(k[i] < i){ const j = i % 2 ? k[i] : 0; [c[j], c[i]] = [c[i], c[j]]; f(c); k[i]++; i = 0; } else { k[i] = 0; i++; } } }
 // hotel stops and ⏰ fixed stops stay put; only the runs between them are reordered
 function bestOrder(d){
-  const anchor = s => s.fixed != null || (s.lat===HOTEL.lat && s.lng===HOTEL.lng);
+  const anchor = s => s.fixed != null || isHome(s);
   let cur = routeStops(d), moved = false;
   for(let i = 1; i < cur.length;){
     if(anchor(cur[i])){ i++; continue; }
@@ -1492,9 +1494,8 @@ function toast(msg, undo, label){
   if(undo){ const b = h('button', null, label || '되돌리기'); b.type = 'button'; b.addEventListener('click', () => { t.hidden = true; undo(); }); t.append(b); }
   t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, undo ? 6000 : 2500);
 }
-const MACAU = {lat:22.1687, lng:113.5519};
-function refPoint(){ const home = day.id === 'macau' ? MACAU : HOTEL; if(me && dist(me.lat, me.lng, home.lat, home.lng) < 35000) return me; if(sel && sel.lat) return sel; const pts = mapStops(day);
-  return day.id === 'macau' ? pts[0] || MACAU : pts.some(s => s.lat === HOTEL.lat) || !pts.length ? HOTEL : pts[0]; }
+function refPoint(){ const hm0 = home(); if(me && dist(me.lat, me.lng, hm0.lat, hm0.lng) < 35000) return me; if(sel && sel.lat) return sel; const pts = mapStops(day);
+  return pts.some(isHome) || !pts.length ? hm0 : pts[0]; }
 function drawSheet(){
   const sh = document.getElementById('sheet'); sh.hidden = !sheetOpen; document.getElementById('badd').setAttribute('aria-pressed', sheetOpen); if(!sheetOpen) return;
   const cats = document.getElementById('cats'); cats.textContent = '';
@@ -1507,7 +1508,7 @@ function drawSheet(){
   let items = poolFor(day).filter(p => (sheetCat==='all' || p.c===sheetCat) && (!q || (p.n+' '+p.sub).toLowerCase().replace(/\s/g, '').includes(nq)))
     .map(p => [dist(ref.lat,ref.lng,p.lat,p.lng), p]).filter(x => q || x[0] < 30000).sort((a,b) => a[0]-b[0]);
   if(q) items = items.concat(searchRes.filter(p => !items.some(x => x[1].n===p.n)).map(p => [dist(ref.lat,ref.lng,p.lat,p.lng), p]));
-  document.getElementById('sref').textContent = '거리·시간 기준: ' + (ref === me ? '내 위치' : ref === sel ? shortName(sel.name) : ref === HOTEL ? HOTEL.name : shortName(ref.name || '이 날 첫 장소'));
+  document.getElementById('sref').textContent = '거리·시간 기준: ' + (ref === me ? '내 위치' : ref === sel ? shortName(sel.name) : ref === home() ? ref.name : shortName(ref.name || '이 날 첫 장소'));
   const ul = document.getElementById('recs'); ul.textContent = '';
   for(const [d, p] of items){ const li = h('li','rec'), b = h('div'), has = inDay.has(p.id);
     b.append(h('div','n',p.n)); if(INFO[p.id] && INFO[p.id].d) b.append(h('div','d1',INFO[p.id].d)); b.append(h('div','m',legShort(legOf(ref, p))+' · '+recMeta(p)));
@@ -1657,7 +1658,7 @@ function setMM(on){ mm = on; root.classList.toggle('mm', on); const b = document
   if(on) setSheet(wide() ? 'half' : 'peek'); else { root.style.removeProperty('--sh'); delete panel.dataset.st; }
   scrollTo(0, 0); map.invalidateSize(); map.closePopup(); drawMap(); if(sel) focus(sel); else if(routeCur) redrawRoute(true); else fit(); }
 document.getElementById('zfull').addEventListener('click', () => setMM(!mm));
-document.getElementById('zhotel').addEventListener('click', () => { const o = originNear(); showRoute({id:'hotel', name:HOTEL.name, lat:HOTEL.lat, lng:HOTEL.lng}, o); });
+document.getElementById('zhotel').addEventListener('click', () => { const o = originNear(); const t = home(); showRoute({id:'hotel', name:t.name, lat:t.lat, lng:t.lng}, o); });
 document.getElementById('pgo').addEventListener('click', () => { if(sel) routeTo(sel); });
 document.getElementById('pmore').addEventListener('click', () => { if(!sel) return; const id = 'stop-' + sel.id; setSheet('half'); setTimeout(() => { const li = document.getElementById(id); if(li) li.scrollIntoView({block:'start'}); }, 60); });
 document.getElementById('pdone').addEventListener('click', () => { if(!sel) return; done[sel.id] = !done[sel.id]; save(); render(); });

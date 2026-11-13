@@ -49,6 +49,8 @@ body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15p
 a{color:inherit}
 button{font:inherit;color:inherit;cursor:pointer}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (pointer:coarse){ input,select,textarea{font-size:16px !important} }
+@media (max-width:819px){ html:not(.mm) .stop{scroll-margin-top:372px} }
 button,a,summary,label,select{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 @media (hover:hover){ button:not(:disabled):hover,.tab:hover,summary:hover{filter:brightness(.96)} }
 
@@ -310,7 +312,7 @@ html.mm #panel[data-st="peek"] .pbody{visibility:hidden}
 html.mm .toast{bottom:calc(var(--sh,64px) + 12px)}
 html.mm .dayhead h2{display:none}
 @media (min-width:820px){
-  html.mm #panel{left:16px;right:auto;width:440px}
+  html.mm #panel{left:max(16px, env(safe-area-inset-left));right:auto;width:440px}
   html.mm .mapinfo{left:472px;right:auto;width:min(420px,calc(100% - 560px));bottom:16px}
   html.mm .leaflet-bottom{bottom:0}
   html.mm .tabs{left:16px;right:auto;background:none}
@@ -332,8 +334,8 @@ html.mm .dayhead h2{display:none}
 .lb[hidden]{display:none}
 .lbs{flex:1;min-height:0;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior:contain}
 .lbs::-webkit-scrollbar{display:none}
-.lbs figure{flex:0 0 100%;margin:0;scroll-snap-align:center;display:grid;place-items:center;padding:calc(52px + env(safe-area-inset-top)) 0 8px}
-.lbs img{max-width:100%;max-height:100%;object-fit:contain}
+.lbs figure{flex:0 0 100%;min-width:0;margin:0;scroll-snap-align:center;display:grid;grid-template:minmax(0,1fr) / minmax(0,1fr);place-items:center;padding:calc(52px + env(safe-area-inset-top)) 0 8px}
+.lbs img{max-width:100%;max-height:100%;min-height:0;object-fit:contain}
 .lbc{flex:0 0 auto;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;padding:8px 16px calc(14px + env(safe-area-inset-bottom));color:#fff;font-size:13px}
 .lbc b{font:400 16px var(--display)}
 .lbc a{color:#cbbfc4;font-size:11.5px;margin-left:auto}
@@ -669,13 +671,14 @@ const stName = c => (MTR.find(s => s[0]===c) || [c,c])[1];
 const BUS = {apt:['001837', 'A21', 'I', '시내행'], sci:['001419', 'A21', 'O', '공항행']};
 const busOpen = new Set(), busLast = {};
 // the list redraws on every GPS fix: reuse an answer younger than 30 s
-async function busEta(el, b){ const c = busLast[b[0]]; if(c && Date.now() - c.t < 30000){ el.textContent = c.txt; return; }
-  el.textContent = c ? c.txt : `🚌 ${b[1]} ${b[3]} · 불러오는 중…`; busLast[b[0]] = {t:Date.now(), txt:el.textContent};
+async function busEta(el, b){ const c = busLast[b[0]]; el.textContent = c ? c.txt : `🚌 ${b[1]} ${b[3]} · 불러오는 중…`; if(c && (c.busy || Date.now() - c.t < 30000)) return;
+  busLast[b[0]] = {t:c ? c.t : 0, txt:el.textContent, busy:true};
   try{ const j = await getJ(`https://rt.data.gov.hk/v2/transport/citybus/eta/CTB/${b[0]}/${b[1]}`);
     const ts = (j.data || []).filter(e => e.dir === b[2] && e.eta).map(e => Math.round((Date.parse(e.eta) - Date.now()) / 60000)).filter(m => m >= 0).sort((x, y) => x - y).slice(0, 3);
-    el.textContent = `🚌 ${b[1]} ${b[3]} · ` + (ts.length ? ts.map(m => m ? m + '분' : '곧 도착').join(' · ') : '예정 없음'); }
-  catch(e){ el.textContent = `🚌 ${b[1]} ${b[3]} · 불러오지 못함`; }
-  busLast[b[0]] = {t:Date.now(), txt:el.textContent}; }
+    busLast[b[0]] = {t:Date.now(), txt:`🚌 ${b[1]} ${b[3]} · ` + (ts.length ? ts.map(m => m ? m + '분' : '곧 도착').join(' · ') : '예정 없음') + ` · ${hm(hkMin())} 기준`}; }
+  catch(e){ busLast[b[0]] = {t:Date.now() - 20000, txt:`🚌 ${b[1]} ${b[3]} · 불러오지 못함`}; }
+  for(const x of document.querySelectorAll('.busl')) if(x.dataset.stop === b[0]) x.textContent = busLast[b[0]].txt; }
+setInterval(() => { if(!document.hidden) for(const x of document.querySelectorAll('.busl')){ const b = Object.values(BUS).find(v => v[0] === x.dataset.stop); if(b) busEta(x, b); } }, 30000);
 const getJ = async u => { const r = await fetch(u); if(!r.ok) throw new Error(r.status); return r.json(); };
 const MSEQ = {"AEL":["HOK","KOW","TSY","AIR","AWE"],"DRL":["DIS","SUN"],"EAL-LMC":["ADM","EXC","HUH","MKK","KOT","TAW","SHT","FOT","UNI","TAP","TWO","FAN","SHS","LMC"],"EAL":["ADM","EXC","HUH","MKK","KOT","TAW","SHT","FOT","UNI","TAP","TWO","FAN","SHS","LOW"],"ISL":["KET","HKU","SYP","SHW","CEN","ADM","WAC","CAB","TIH","FOH","NOP","QUB","TAK","SWH","SKW","HFC","CHW"],"KTL":["WHA","HOM","YMT","MOK","PRE","SKM","KOT","LOF","WTS","DIH","CHH","KOB","NTK","KWT","LAT","YAT","TIK"],"TML":["WKS","MOS","HEO","TSH","SHM","CIO","STW","CKT","TAW","HIK","DIH","KAT","SUW","TKW","HOM","HUH","ETS","AUS","NAC","MEF","TWW","KSR","YUL","LOP","TIS","SIH","TUM"],"TCL":["HOK","KOW","OLY","NAC","LAK","TSY","SUN","TUC"],"TKL-TKS":["TIK","TKO","LHP"],"TKL":["NOP","QUB","YAT","TIK","TKO","HAH","POA"],"TWL":["CEN","ADM","TST","JOR","YMT","MOK","PRE","SSP","CSW","LCK","MEF","LAK","KWF","KWH","TWH","TSW"],"SIL":["ADM","OCP","WCH","LET","SOH"]};
 const MEXIT_RAW = {"WAC":"A4,22.27739,114.17328;A3,22.2768,114.17335;B1,22.27741,114.17267;C,22.27807,114.17289;B2,22.27726,114.17269;A5,22.2772,114.1733;A1,22.27809,114.17322;A2,22.27777,114.17325;D,22.27642,114.17244","CAB":"E,22.28036,114.18507;D1,22.2806,114.18424;F1,22.27988,114.18442;A,22.27838,114.18241;B,22.2802,114.183;D3,22.28044,114.18431;D4,22.28043,114.18419;C,22.2805,114.18277;D2,22.28027,114.18426;F2,22.27995,114.18409;D,22.28048,114.18444","NOP":"B1,22.29095,114.20041;B1,22.29101,114.20049;A4,22.2917,114.20033;B4,22.2907,114.20068;B2,22.29104,114.20063;B3,22.29111,114.20098;A1,22.29225,114.20027;A2,22.29186,114.20031;A3,22.29192,114.20033","SWH":"A,22.28221,114.22235;B,22.28194,114.22221","CHW":"A,22.26387,114.23689;E,22.26396,114.23671;B,22.26408,114.23677;C,22.26493,114.2372;D,22.2654,114.23744","CEN":"D1,22.28181,114.15727;B,22.28249,114.15756;G,22.28182,114.15779;D2,22.28197,114.15706;C,22.28222,114.15746;A,22.28271,114.15794;J2,22.28102,114.16098;H,22.28165,114.15877;J3,22.28126,114.16097;J1,22.28127,114.16048;K,22.2811,114.15954;F,22.28186,114.1587;E,22.28194,114.15839;L,22.28112,114.16138","CSW":"A3,22.33487,114.1572;C2,22.33645,114.15516;B,22.33573,114.15537;A1,22.33431,114.15723;A2,22.33492,114.15781;C1,22.33562,114.15651","AUS":"D2,22.30347,114.1667;B5,22.3059,114.16579;F,22.30316,114.16763;J,22.30382,114.16609;A,22.30434,114.16598;B4,22.30543,114.16583;D4,22.30384,114.16667;N,22.30398,114.16607;B,22.30494,114.16569;M,22.30344,114.16422;K2,22.30538,114.16548;K1,22.30535,114.16554;H,22.30329,114.16596;F,22.30364,114.16474;D,22.30337,114.16428;D1,22.30376,114.16668;B3,22.30522,114.16634;B2,22.30503,114.16605;B1,22.30547,114.16581;C,22.30447,114.16634;K4,22.30499,114.16533;D3,22.30365,114.16708;A,22.30589,114.1663;G,22.30235,114.16611;E,22.30284,114.16738;L,22.30374,114.16452","TUM":"D,22.39536,113.97344;E,22.3962,113.97366;C1,22.39417,113.97369;C2,22.39445,113.97377;C3,22.39441,113.97337;F1,22.39654,113.97346;F2,22.39625,113.97347;B,22.39406,113.97303;A,22.39435,113.97273;B,22.39411,113.97282;F1,22.39651,113.97361","ETS":"J3,22.29429,114.1726;P3,22.29715,114.1754;P2,22.29731,114.17622;P1,22.29697,114.17617;N1,22.29729,114.17452;J2,22.29467,114.17393;K,22.29549,114.17367;J1,22.29519,114.1737","TAK":"A1,22.28509,114.2152;C,22.28438,114.21681;B,22.28454,114.21504;E3,22.28537,114.21687;D1,22.28587,114.21662;A2,22.28481,114.2155;E2,22.28533,114.21693;E1,22.28555,114.2172;D2,22.28583,114.21711","LAT":"B,22.30667,114.23363;C,22.30608,114.23363;A,22.30801,114.23433;D2,22.30722,114.23208;D1,22.30704,114.23184","ADM":"C1,22.27852,114.16477;A,22.2793,114.16507;B,22.27935,114.16411;C2,22.27902,114.16477;D,22.27872,114.16557;F,22.27883,114.16584;E,22.27887,114.16612","TST":"L5,22.29621,114.17036;L6,22.2951,114.17064;N3,22.29727,114.17434;N4,22.29717,114.17371;A1,22.29832,114.17194;A2,22.29818,114.17246;B1,22.29874,114.17228;D1,22.29764,114.17234;D2,22.29766,114.17272;G,22.29704,114.17259;N2,22.29768,114.17407;N5,22.29706,114.1727;E,22.2962,114.17216;H,22.29678,114.17207;R,22.29731,114.17204;D3,22.29773,114.17309;C1,22.29685,114.17212;C2,22.29722,114.1721;L3,22.29564,114.17212;L4,22.29571,114.17177;L1,22.29575,114.17316;J4,22.29491,114.17259;B2,22.29876,114.17256;J5,22.29519,114.17224","TSW":"A3,22.37411,114.11611;B1,22.37315,114.11826;B2,22.37302,114.11854;D,22.37377,114.11729;E,22.37331,114.11829;C,22.37333,114.11851;A,22.37391,114.11698;B,22.37332,114.11826","MOK":"B2,22.32039,114.16967;D1,22.31943,114.16955;A2,22.32019,114.16865;D3,22.31914,114.17008;C3,22.319,114.16868;B1,22.32034,114.16936;B3,22.32052,114.16971;C4,22.31911,114.16883;E2,22.31836,114.16984;C2,22.31929,114.16886;D2,22.31948,114.16983;A1,22.32024,114.16898;C1,22.31934,114.16917;E1,22.31827,114.16932;B4,22.32041,114.16951","YMT":"A1,22.31382,114.17024;B2,22.313,114.17011;A2,22.31391,114.17076;B1,22.31306,114.17044;D,22.31293,114.17092;C,22.31179,114.17071","OLY":"B,22.31849,114.16012;A,22.31838,114.15983;C5,22.31792,114.16095;D1,22.31712,114.16135;C2,22.31804,114.16102;C4,22.31819,114.16103;C3,22.31839,114.16069;D2,22.31669,114.16115;D3,22.31696,114.16107;C1,22.31838,114.16068;A1,22.3182,114.15918;C,22.31721,114.16069;D,22.31715,114.16072;E,22.31708,114.16035;A2,22.31813,114.1591","KOB":"A,22.32265,114.21417;C,22.32362,114.21397;B,22.32429,114.214","POA":"B2,22.32182,114.2582;A1,22.32291,114.25739;B3,22.32181,114.2583;C,22.3224,114.25775;B1,22.3221,114.2584;A2,22.32309,114.25766;B,22.32202,114.25821;A,22.32293,114.25748","TAP":"B,22.44425,114.1708;A3,22.44421,114.17009;A1,22.44422,114.16989;A2,22.44435,114.16974;A,22.44428,114.17014;A,22.44438,114.17001","TAW":"G,22.37239,114.17717;D,22.37304,114.17806;F,22.37239,114.17772;C,22.37266,114.17804;E,22.37262,114.17755;B,22.37295,114.17933;A,22.3736,114.17883;H,22.37337,114.17953","KWT":"B3,22.31171,114.22608;C2,22.31223,114.22691;C1,22.31239,114.22689;A2,22.31243,114.22562;D1,22.31175,114.22754;D3,22.3116,114.22708;D4,22.31143,114.22732;A1,22.31284,114.22563;C3,22.31273,114.22603;B1,22.31154,114.22616;C,22.31237,114.22652;B2,22.3115,114.22615;D,22.31166,114.22726;A,22.3126,114.22575;B,22.312,114.2263","KWF":"E,22.35713,114.12788;D,22.35738,114.12806;A,22.35726,114.12827;B,22.35626,114.12751;C,22.35638,114.12731","MEF":"F,22.33857,114.13685;A,22.33667,114.14028;B,22.3377,114.13981;C1,22.33839,114.13829;E,22.33823,114.13859;C2,22.33822,114.13874;D,22.33805,114.13775;G,22.3397,114.13651","YAT":"B1,22.29853,114.23671;B2,22.29845,114.23658;A1,22.29713,114.23777;A2,22.29704,114.23763","LOF":"A,22.33819,114.18771;B,22.33784,114.18775;A,22.33815,114.18773;A,22.33826,114.18769","SKM":"B2,22.33167,114.16899;A,22.33167,114.16853;C,22.33275,114.16881;B1,22.33148,114.16917;B1,22.33146,114.1687","TKO":"B1,22.30701,114.25903;B2,22.3071,114.259;A2,22.30762,114.26084;C,22.30746,114.25991;A1,22.30772,114.26081","SHM":"C,22.38811,114.20863;B,22.38742,114.20822;A,22.38754,114.20807;D,22.38797,114.20877","FOT":"C,22.39572,114.19867;A,22.39472,114.19803;D,22.39599,114.19811;B,22.39492,114.19765","KSR":"C,22.43429,114.06392;D,22.43417,114.06372;B,22.43551,114.06305;A,22.43539,114.06285","FAN":"B,22.49183,114.13878;A2,22.49188,114.13918;A3,22.49218,114.13888;C,22.49262,114.13837;A,22.49201,114.13895","DIH":"A2,22.34007,114.20033;A1,22.34098,114.2009;C2,22.34018,114.20255;B,22.33928,114.20217;C1,22.34014,114.20224;D,22.33912,114.2016","AIR":"G,22.31656,113.93648;A,22.31515,113.93644;B,22.31578,113.93622;F,22.31537,113.93692;C,22.31642,113.93598","LAK":"B,22.34861,114.12567;A3,22.34825,114.1263;A2,22.34833,114.12642;A1,22.34799,114.12658;C,22.34859,114.1261","UNI":"A,22.41372,114.2099;D,22.41512,114.21068;C,22.41409,114.21002;B,22.41334,114.21034","HFC":"A,22.27678,114.23991","NAC":"A1,22.3278,114.15359;B,22.32624,114.15267;D1,22.32565,114.15522;C,22.325,114.1543;A2,22.32772,114.15363;D2,22.32638,114.15435","SUN":"A,22.33199,114.02862","TSH":"B,22.40768,114.22243;A,22.40777,114.22225","SHS":"A1,22.50135,114.1276;B2,22.50095,114.12851;A4,22.50156,114.12781;A2,22.50155,114.12738;A3,22.50167,114.12765;C,22.50141,114.12752;B1,22.50075,114.12831;E,22.50101,114.12845;D2,22.50152,114.12794;D1,22.50169,114.12767;B,22.50087,114.12839;A,22.50139,114.12777;D,22.5015,114.12784","TWO":"A,22.45062,114.16092;B,22.45102,114.16135","NTK":"B5,22.31507,114.21872;B6,22.31499,114.21849;A,22.31548,114.21942;B3,22.31602,114.21874;B4,22.31588,114.2186;B2,22.31595,114.21916;B1,22.31576,114.21944;B,22.31561,114.21909","QUB":"A,22.2878,114.20995;C,22.29058,114.20793;B,22.28808,114.20986","SKW":"C,22.27884,114.22968;B3,22.27952,114.22828;D2,22.27973,114.22883;A2,22.27871,114.22863;B2,22.27982,114.22987;A3,22.27865,114.22817;A1,22.27895,114.22869;D1,22.28045,114.22982;B1,22.27917,114.22969;D,22.27969,114.2293;B,22.27925,114.22941","WKS":"A1,22.42942,114.24378;B,22.42903,114.24388;A2,22.42941,114.24373","MOS":"A1,22.42505,114.23124;A2,22.42517,114.23168;B,22.42449,114.23164","HEO":"A,22.41788,114.2258;B,22.41783,114.22597;C,22.41927,114.22643","CIO":"B,22.38242,114.2032;A,22.38256,114.20305;D,22.38304,114.20384;C,22.38317,114.2037","STW":"C,22.37734,114.19526;D,22.37719,114.19538;A,22.37687,114.19459;B,22.37671,114.19471","CKT":"A,22.37491,114.18577;B,22.37464,114.18576;C,22.37488,114.18634;D,22.37461,114.18632;E,22.37487,114.18659;F,22.37485,114.18698","SHT":"A3,22.38233,114.18794;A2,22.38255,114.18776;B,22.38288,114.18773;A4,22.38216,114.18734;A1,22.38282,114.18782","SIH":"A,22.41094,113.97855;F,22.41181,113.97906;B1,22.41179,113.97865;B2,22.412,113.97871;D,22.41205,113.97866;C1,22.412,113.9782;C2,22.41205,113.97812;C3,22.41205,113.97821;E,22.41278,113.9791","TIS":"A,22.44687,114.00361;B,22.44706,114.00336;C,22.44817,114.0045;D,22.44913,114.00544;E1,22.44955,114.00587;E2,22.44948,114.00597;E3,22.44934,114.00614","LOP":"B1,22.44752,114.02473;B2,22.44752,114.02419;C,22.44756,114.02489;D,22.44756,114.02595;E,22.44756,114.02648;F,22.44778,114.02654;A,22.44795,114.02476","YUL":"A,22.44624,114.03372;B,22.44595,114.03341;E,22.44594,114.03467;F,22.44594,114.03522;G1,22.44628,114.03513;G2,22.44643,114.03535;H,22.44594,114.03672;J,22.44624,114.0364;C,22.44595,114.03378;K,22.44594,114.03648","LMC":"A,22.51491,114.06626;A,22.51843,114.06432;B,22.51498,114.06566;B,22.51849,114.0637;C,22.51835,114.06348;B,22.51498,114.06564","KET":"A,22.28118,114.12854;C,22.28128,114.12803;B,22.28181,114.12935","HKU":"A2,22.28327,114.13674;B1,22.28566,114.13682;B2,22.28564,114.13515;C1,22.28445,114.13464;C2,22.2859,114.13264;A1,22.28342,114.13666","SYP":"B1,22.28644,114.14181;B2,22.28621,114.1418;A2,22.28776,114.14422;A1,22.28709,114.14447;B3,22.28761,114.14151;C,22.28454,114.14335","SHW":"E4,22.28665,114.15367;A1,22.28639,114.15226;A2,22.28611,114.15221;B,22.28667,114.15201;C,22.28709,114.15211;D,22.28766,114.15224;E1,22.28609,114.15333;E2,22.28589,114.15327;E3,22.28617,114.15364;E5,22.28662,114.15361","HOK":"C,22.28312,114.15709;A,22.28421,114.15893;B2,22.28413,114.15906;B1,22.28413,114.15865;F,22.28536,114.15847;D,22.28487,114.15742;E,22.28504,114.15727","TIH":"A1,22.28292,114.19214;A2,22.28293,114.19189;B,22.2823,114.19175","DIS":"A,22.31523,114.04544","TWH":"B,22.37065,114.12437;A,22.37099,114.12596","KOT":"F,22.33709,114.17625;H,22.33702,114.17565;C1,22.33696,114.17553;C2,22.33668,114.17549;G2,22.33713,114.17593;G1,22.33703,114.17598;B,22.33697,114.17655;D,22.33648,114.17652;E,22.33666,114.17756;A1,22.3369,114.17776;A2,22.33689,114.17798","SSP":"B2,22.33081,114.16312;D1,22.33115,114.16203;C1,22.33096,114.16177;C2,22.33065,114.16155;A1,22.33029,114.16265;A2,22.32998,114.16244;B1,22.33048,114.16288;D2,22.33148,114.16225;B1,22.33054,114.16282","PRE":"C2,22.32404,114.16799;D,22.32507,114.16766;E,22.32514,114.168;A,22.32506,114.16835;C1,22.32408,114.16824;B1,22.32415,114.16858;B2,22.32385,114.16903","TWW":"B1,22.36849,114.10885;E2,22.3681,114.11066;A2,22.36882,114.10988;D,22.36717,114.1109;A1,22.36862,114.10986;E1,22.3679,114.11066;C1,22.36747,114.11021;C3,22.3677,114.11047;C2,22.36784,114.11005;C4,22.36757,114.11034;C5,22.36758,114.11042","LCK":"C,22.337,114.14681;A,22.33733,114.14888;D3,22.33555,114.14897;D4,22.33551,114.14933;D1,22.33635,114.14818;D2,22.33619,114.14823;B2,22.33756,114.14834;B1,22.33779,114.1491;A,22.33733,114.14888","LOW":"D,22.53301,114.11289;A,22.53226,114.11334;A2,22.52889,114.11367;A1,22.52896,114.11281;A,22.5291,114.11337","JOR":"B2,22.30572,114.17228;E,22.30433,114.1719;C2,22.30428,114.17121;D,22.30389,114.17195;A,22.30541,114.17132;B1,22.30557,114.17197;B1,22.30554,114.17194;C1,22.30429,114.1715","WTS":"C1,22.34154,114.19297;C2,22.34137,114.1932;B2,22.3418,114.19345;B1,22.34179,114.19286;A,22.3419,114.19448;E,22.3419,114.19464;D3,22.3413,114.19466;D2,22.34123,114.19468;D1,22.34157,114.19506;B3,22.34195,114.19317","MKK":"A,22.32173,114.17257;C,22.32256,114.1725;D,22.32328,114.17263;B,22.32176,114.17249","HOM":"A1,22.31027,114.18346;B2,22.30898,114.18229;B1,22.30929,114.18286;A3,22.31038,114.18211;A3,22.31039,114.18222;A2,22.31132,114.18353;B,22.30938,114.1828","WHA":"A,22.30581,114.18872;B,22.30523,114.18837;C2,22.30454,114.18988;C1,22.30445,114.18975;D2,22.30406,114.19085;D1,22.30412,114.19065","OCP":"B,22.24807,114.17453;A,22.24834,114.17384;C,22.24891,114.17497","WCH":"B,22.24773,114.16691;A1,22.2481,114.16766;A2,22.2482,114.16809;C,22.24791,114.16805","LET":"A1,22.24365,114.15533;A2,22.2436,114.15543;B,22.241,114.15624","SOH":"A,22.24353,114.14894;B,22.24295,114.14816;C,22.24278,114.14905","TUC":"D,22.2894,113.94184;C,22.2895,113.94153;B,22.28915,113.94098;A,22.28892,113.94117","LHP":"C2,22.29618,114.26966;C1,22.29624,114.26974;B,22.29552,114.26852","KOW":"C,22.30392,114.16356;C1,22.30475,114.16206;E4,22.30489,114.16109;C2,22.3049,114.16165;E5,22.30531,114.16127;D2,22.30495,114.1615;D1,22.30507,114.16113","SUW":"B3,22.3286,114.18986;B2,22.32802,114.18984;B2,22.32791,114.18984;A,22.32613,114.19195;D,22.32567,114.19128;B1,22.32703,114.18961","TKW":"B,22.31793,114.18708;C,22.31628,114.18712;A,22.3178,114.18793;D,22.31532,114.18784;D,22.31532,114.18799","FOH":"B,22.28839,114.19399;A,22.28805,114.19366","HAH":"A1,22.31601,114.26421;A2,22.31597,114.26412;B1,22.31526,114.26472;B2,22.31521,114.26464","HUH":"D1,22.30206,114.18095;A3,22.30412,114.18149;A2,22.30383,114.18149;D3,22.30139,114.18105;D6,22.30216,114.18134;D2,22.30191,114.18213;D5,22.30074,114.18093;D4,22.30079,114.18097","KAT":"B1,22.33155,114.19984;A,22.33088,114.20058;D,22.32979,114.19881;C,22.33071,114.19914;B2,22.33129,114.19944","HIK":"A,22.36364,114.17094","CHH":"B,22.33437,114.2093;C2,22.3356,114.2079;A1,22.33409,114.20973;A2,22.33399,114.20934;A3,22.33407,114.20974","EXC":"B1,22.2815,114.17489;B2,22.28161,114.1749;A3,22.28132,114.17587;A2,22.28162,114.17617;A1,22.28137,114.17614;B3,22.28125,114.17457","TIK":"A2,22.30448,114.25295;A1,22.30459,114.25283;B,22.30422,114.25222","AWE":"B,22.32163,113.94077;A,22.32226,113.94373","KWH":"A,22.36371,114.13133;E,22.36269,114.13127;B,22.36277,114.13129;C,22.36259,114.13107;D,22.36359,114.13111","TSY":"C,22.35811,114.10638;C,22.35801,114.107;B,22.3584,114.10692;A2,22.35901,114.10711;F,22.35867,114.1072;G,22.35865,114.1072;A1,22.35911,114.10698;A,22.35894,114.10693;C,22.35821,114.10671"};
@@ -744,6 +747,17 @@ function legOf(a, b){
   }
   legCache.set(k, r); return r;
 }
+const taxiMin = d => Math.round(5 + Math.min(d, 5000) * 1.3 / 350 + Math.max(0, d - 5000) * 1.3 / 1000);
+// red taxi: HK$29 for the first 2 km, then HK$2.1 per 200 m (road distance about 1.3 x straight line); harbour tunnels cost extra
+const taxiFare = (d, cross) => Math.round(29 + Math.max(0, d * (cross ? 1.6 : 1.3) - 2000) / 200 * 2.1); // the way round to a tunnel is longer
+const onIsland = p => p.lat < 22.2925 && p.lng > 114.1 && p.lng < 114.26;
+function legOpts(a, b){ const best = legOf(a, b); if(best.mode === 'same' || best.mode === 'given') return [best];
+  const d = best.d, out = [], m = best.mode === 'mtr' ? best.m : d > 600 ? mtrRoute(a, b) : null;
+  if(d < 5000) out.push({mode:'walk', min:Math.max(1, Math.round(WALKM(d))), d});
+  if(m) out.push({mode:'mtr', min:Math.round(m.min), d, m});
+  if(d > 700 && d < 60000) out.push({mode:'taxi', min:taxiMin(d), d});
+  return out.length ? out : [best]; }
+const optText = (o, a, b) => `${legIcon[o.mode] || ''} ${o.min}분` + (o.mode === 'taxi' ? ` · 약 HK$${taxiFare(o.d, onIsland(a) !== onIsland(b))}${onIsland(a) !== onIsland(b) ? ' + 터널 25~50' : ''}` : '');
 function legText(leg){
   if(leg.mode === 'walk') return `🚶 도보 약 ${leg.min}분 · ${fmt(leg.d)}`;
   if(leg.mode === 'taxi') return `🚕 택시 약 ${leg.min}분 · ${fmt(leg.d)}`;
@@ -810,25 +824,27 @@ function openRt(key, lat, lng, host){
   const el = h('div','rt','실시간 불러오는 중… 🚃'); el.addEventListener('click', ev => ev.stopPropagation());
   const o = {lat, lng, el}; rtOpen.set(key, o); host.append(el); fillRt(o);
 }
-setInterval(() => { if(!document.hidden) for(const o of rtOpen.values()) fillRt(o); }, 30000);
+setInterval(() => { if(document.hidden) return; for(const [k, o] of rtOpen){ if(o.el.isConnected) fillRt(o); else rtOpen.delete(k); } }, 30000);
 // ---- road/foot geometry (OSRM), cached on this phone ----
 const GKEY = 'hk-geo-v1', geoQ = [], geoFail = new Set();
-let geoStore = {}, geoBusy = false, geoT = 0;
+let geoStore = {}, geoBusy = false, geoT = 0, geoNow = null, geoDirty = false;
 try{ geoStore = JSON.parse(localStorage.getItem(GKEY) || '{}') || {}; }catch(e){ geoStore = {}; }
 const gk = (p, a, b) => p + ':' + a.lat.toFixed(5) + ',' + a.lng.toFixed(5) + ';' + b.lat.toFixed(5) + ',' + b.lng.toFixed(5);
 function geo(p, a, b){
   const k = gk(p, a, b); if(geoStore[k]) return geoStore[k];
-  if(!geoFail.has(k) && !geoQ.some(x => x.k === k)){ geoQ.push({k, p, a, b}); pumpGeo(); }
+  if(!geoFail.has(k) && geoNow !== k && !geoQ.some(x => x.k === k)){ geoQ.push({k, p, a, b}); pumpGeo(); }
   return null;
 }
 async function pumpGeo(){
   if(geoBusy) return; geoBusy = true;
-  while(geoQ.length){ const {k, p, a, b} = geoQ.shift();
+  while(geoQ.length){ const {k, p, a, b} = geoQ.shift(); geoNow = k;
     try{ const r = await getJ(`https://routing.openstreetmap.de/routed-${p}/route/v1/${p === 'car' ? 'driving' : 'foot'}/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=geojson`);
       const rt = r.routes && r.routes[0]; if(!rt) throw new Error('none');
       geoStore[k] = rt.geometry.coordinates.map(c => [+c[1].toFixed(5), +c[0].toFixed(5)]);
-    }catch(e){ geoFail.add(k); }
-    clearTimeout(geoT); geoT = setTimeout(() => { try{ localStorage.setItem(GKEY, JSON.stringify(geoStore)); }catch(e){ geoStore = {}; try{ localStorage.removeItem(GKEY); }catch(e2){} } drawMap(); redrawRoute(false); }, 250);
+    }catch(e){ geoFail.add(k); setTimeout(() => geoFail.delete(k), 60000); } // try again later, e.g. after a tunnel
+    geoNow = null;
+    clearTimeout(geoT); geoT = setTimeout(() => { try{ localStorage.setItem(GKEY, JSON.stringify(geoStore)); }catch(e){ geoStore = {}; try{ localStorage.removeItem(GKEY); }catch(e2){} }
+      if(recOpen) geoDirty = true; else drawMap(); redrawRoute(false); }, 250);
     await new Promise(r => setTimeout(r, 200)); }
   geoBusy = false;
 }
@@ -878,7 +894,7 @@ function redrawRoute(fitIt){
   routeLayer.clearLayers(); const box = document.getElementById('routebox');
   map.getContainer().classList.toggle('routing', !!routeCur);
   if(!routeCur){ box.hidden = true; return; }
-  const {s, from, lbl, alts} = routeCur, leg = legOf(from, s), shapes = legShapes(leg, from, s);
+  const {s, from, lbl, alts} = routeCur, opts = legOpts(from, s), leg = opts.find(o => o.mode === routeCur.mode) || opts.find(o => o.mode === legOf(from, s).mode) || opts[0], shapes = legShapes(leg, from, s);
   for(const sh of shapes) drawShape(sh, routeLayer, 1, true);
   L.circleMarker([from.lat, from.lng], {radius:7, color:'#fff', weight:3, fillColor:'#1a73e8', fillOpacity:1, interactive:false, pane:'route'}).addTo(routeLayer);
   if(routeCur.preview){ box.hidden = true; return; } // line only; the steps open from the popup button
@@ -887,6 +903,10 @@ function redrawRoute(fitIt){
   document.getElementById('routetxt').textContent = `🧭 ${s.name}까지 약 ${leg.min}분`;
   document.getElementById('routefrom').textContent = '출발: ' + lbl;
   const ol = document.getElementById('routesteps'); ol.textContent = '';
+  if(opts.length > 1){ const li = h('li', 'alts');
+    for(const o of opts){ const b = h('button', 'chip', optText(o, from, s)); b.type = 'button'; b.setAttribute('aria-pressed', o.mode === leg.mode);
+      b.addEventListener('click', () => { routeCur.mode = o.mode; redrawRoute(true); }); li.append(b); }
+    ol.append(li); }
   for(const st of legSteps(leg)){ const li = h('li', null, st.t); ol.append(li); if(!st.line) continue;
     const k = st.line + st.sta + st.up, nt = routeCur.nt[k];
     if(nt) li.append(h('span', 'nt', ' · 다음 열차 ' + nt)); else if(nt === undefined){ routeCur.nt[k] = null; nextTrain(st, k, routeCur); } }
@@ -894,7 +914,7 @@ function redrawRoute(fitIt){
     alts.forEach(([d, t], i) => { const b = h('button', 'chip', `🚻 ${i + 1} · ${fmt(d)}`); b.type = 'button'; b.setAttribute('aria-pressed', t[0] === s.lat && t[1] === s.lng);
       b.addEventListener('click', () => showRoute(toiletObj(t), [routeCur.from, routeCur.lbl], alts)); li.append(b); });
     ol.append(li); }
-  if(fitIt){ const pts = shapes.flatMap(x => x.pts); pts.push([from.lat, from.lng]); map.fitBounds(pts, fitOpt(30, {maxZoom:17, animate:false})); }
+  if(fitIt){ const pts = shapes.flatMap(x => x.pts); pts.push([from.lat, from.lng]); map.fitBounds(pts, fitOpt(30, {maxZoom:17, animate:false}, mm && !wide() ? Math.min(document.querySelector('.mapinfo').offsetHeight + 24, innerHeight * .3) : 0)); }
 }
 async function nextTrain(st, k, rc){
   try{ const r = await getJ(`https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=${st.line}&sta=${st.sta}`);
@@ -908,7 +928,7 @@ let toilets = null, showToilet = false;
 const toiletLayer = L.layerGroup().addTo(map);
 const TFLAG = [[1,'♿ 휠체어'], [2,'유료'], [4,'24시간'], [8,'손님 전용'], [16,'기저귀 교환대']];
 const toiletObj = t => ({id:'wc', name:t[3] ? t[3].replace(/^(Public )?toilets?\s*(at\s*)?/i, '').trim() || '공중화장실' : '공중화장실', lat:t[0], lng:t[1]});
-function originNear(){ return me && dist(me.lat,me.lng,22.3,114.17) < 100000 ? [me, '내 위치'] : [map.getCenter(), '지도 가운데']; }
+function originNear(){ return me && dist(me.lat,me.lng,22.3,114.17) < 100000 ? [me, '내 위치'] : [map._loaded ? viewCenter() : L.latLng(HOTEL.lat, HOTEL.lng), '지도 가운데']; }
 function drawToilets(){
   toiletLayer.clearLayers(); if(!showToilet || !toilets || map.getZoom() < 14) return;
   const b = map.getBounds().pad(.2);
@@ -965,7 +985,7 @@ async function importPlan(){
     const o = JSON.parse(txt); history.replaceState(null, '', location.pathname + '#day1');
     if(!confirm('공유받은 일정으로 바꿀까요? 이 폰의 편집 내용은 덮어씁니다.')) return true;
     for(const d of DAYS){ const p = o[d.id]; if(!p) continue; if(/^\d\d:\d\d$/.test(p.start || '')) d.start = p.start;
-      if(Array.isArray(p.stops) && p.stops.length < 60 && p.stops.every(x => x && typeof x.name === 'string' && (x.lat == null || (isFinite(x.lat) && isFinite(x.lng))))){ d.stops = p.stops; d.edited = true; } else { d.stops = JSON.parse(ORIG[d.id]); d.edited = false; } }
+      if(Array.isArray(p.stops) && p.stops.length < 60 && p.stops.every(x => x && typeof x.name === 'string' && (x.lat == null ? x.kind === 'plain' : typeof x.lat === 'number' && typeof x.lng === 'number' && isFinite(x.lat) && isFinite(x.lng)))){ d.stops = p.stops; d.edited = true; d.base = hsh(ORIG[d.id]); d.newer = false; } else { d.stops = JSON.parse(ORIG[d.id]); d.edited = false; } }
     savePlan(); toast('공유 일정 적용됨');
   }catch(e){ history.replaceState(null, '', location.pathname + '#day1'); toast('공유 링크를 읽지 못함'); }
   return true;
@@ -977,10 +997,10 @@ const wide = () => innerWidth >= 820;
 const peekSel = () => sel && sel.lat && sel.kind !== 'plain';
 const shH = st => st === 'peek' ? 64 + sab + (peekSel() ? 46 : 0) : st === 'half' ? Math.round(innerHeight * .5) : innerHeight - 64;
 const ins = () => !mm ? {t:0, l:0, b:0, r:0} : wide() ? {t:56, l:456, b:0, r:0} : {t:56, l:0, b:Math.min(shH(shState), innerHeight * .55), r:0};
-const fitOpt = (pad, o) => { const i = ins(); return Object.assign({paddingTopLeft:[pad + i.l, pad + i.t], paddingBottomRight:[pad + i.r + (mm ? 44 : 0), pad + i.b]}, o); };
+const fitOpt = (pad, o, extraB) => { const i = ins(); return Object.assign({paddingTopLeft:[pad + i.l, pad + i.t], paddingBottomRight:[pad + i.r + (mm ? 44 : 0), pad + i.b + (extraB || 0)]}, o); };
 function centerOn(lat, lng, z){ const i = ins(), dx = (i.l - i.r) / 2, dy = (i.t - i.b) / 2;
   map.setView(dx || dy ? map.unproject(map.project([lat, lng], z).subtract([dx, dy]), z) : [lat, lng], z); }
-function fit(){ const pts = mapStops(day).map(s => [s.lat,s.lng]); if(!pts.length) return;
+function fit(){ const pts = mapStops(day).map(s => [s.lat,s.lng]); if(!pts.length){ const c = day.id === 'macau' ? MACAU : HOTEL; map.invalidateSize(); centerOn(c.lat, c.lng, 14); return; }
   map.invalidateSize(); if(pts.length===1) centerOn(pts[0][0], pts[0][1], 16); else map.fitBounds(pts, fitOpt(36, {maxZoom:16})); }
 function focus(s){ if(s.lat) centerOn(s.lat, s.lng, Math.max(map.getZoom()||0, 16)); }
 
@@ -1293,9 +1313,9 @@ function drawMap(){
     const icon = LM[p.id] ? L.divIcon({className:'lmk' + (li++ % 2 ? ' r' : ''), html:`<b>${LM[p.id]}</b>${nmTag(nm)}${phImg(pid)}`, iconSize:[40,40], iconAnchor:[20,20]})
       : L.divIcon({className:'', html:`<div class="rpin mk">${CATS[p.c][0]}${nmTag(nm)}${phImg(pid)}</div>`, iconSize:[26,26], iconAnchor:[13,13]});
     const m = L.marker([p.lat,p.lng], {icon, title:p.n, pid:p.id, zIndexOffset:LM[p.id] ? -400 : -500}).addTo(recLayer);
-    m.on('popupopen', () => { recOpen = p.id; previewRoute(p); }).on('popupclose', () => { if(recOpen === p.id) recOpen = null; if(routeCur && routeCur.preview) clearRoute(); });
+    m.on('popupopen', () => { recOpen = p.id; previewRoute(p); }).on('popupclose', () => { if(recOpen === p.id) recOpen = null; if(routeCur && routeCur.preview) clearRoute(); if(geoDirty && !recOpen){ geoDirty = false; setTimeout(drawMap, 0); } });
     mkList.push({m, pri:LM[p.id] ? 30 : p.c === 'food' ? 40 : 50, name:nm, ph:!!pid, r:LM[p.id] ? 20 : 13});
-    m.bindPopup(() => { const box = h('div','pop'); if(pid) box.append(phBox(pid, p.n)); box.append(h('b',null,p.n)); const o = fromHere(p); box.append(h('div','rt1', legShort(legOf(o[0], p)) + ' · ' + shortName(o[1]) + '에서')); const inf = INFO[p.id]; if(inf && inf.d) box.append(h('div','d',inf.d)); box.append(h('div','m',recMeta(p))); if(inf && inf.t) box.append(h('div','d','💡 ' + inf.t));
+    m.bindPopup(() => { const box = h('div','pop'); if(pid) box.append(phBox(pid, p.n)); box.append(h('b',null,p.n)); const o = fromHere(p); { const lg = legOf(o[0], p), others = legOpts(o[0], p).filter(x => x.mode !== lg.mode).map(x => optText(x, o[0], p)); box.append(h('div','rt1', legShort(lg) + ' · ' + shortName(o[1]) + '에서')); if(others.length) box.append(h('div','m', others.join(' · '))); } const inf = INFO[p.id]; if(inf && inf.d) box.append(h('div','d',inf.d)); box.append(h('div','m',recMeta(p))); if(inf && inf.t) box.append(h('div','d','💡 ' + inf.t));
       const ol = orLink(p.id); if(ol) box.append(ol);
       if(ZH[p.id]){ const zb = h('button', 'zhb', '🀄 ' + ZH[p.id]); zb.type = 'button'; zb.addEventListener('click', () => showZh({rec:p.id, name:p.n})); box.append(zb); }
       const row = h('div','prow'), go = h('button','ghost','🧭 길찾기'), b = h('button',null,'＋ '+day.tab.replace(/^\S+\s/,'')+'에 추가'); go.type = b.type = 'button';
@@ -1322,7 +1342,7 @@ const viewCenter = () => { const i = ins(); return map.containerPointToLatLng(ma
 function gpsMsg(t){ const e = document.getElementById('gpsmsg'); e.hidden = !t; e.textContent = t || ''; }
 function toggleGps(){ const b = document.getElementById('gps');
   // second tap = back to me, a tap while already centred = off
-  if(watchId!==null && me && nearHK(me) && map.distance(viewCenter(), [me.lat, me.lng]) > 120){ centerOn(me.lat, me.lng, Math.max(map.getZoom(), 16)); return; }
+  if(watchId!==null && me && nearHK(me) && map.latLngToContainerPoint([me.lat, me.lng]).distanceTo(map.latLngToContainerPoint(viewCenter())) > 48){ centerOn(me.lat, me.lng, Math.max(map.getZoom(), 16)); return; }
   if(watchId!==null){ navigator.geolocation.clearWatch(watchId); watchId = null; me = null; b.setAttribute('aria-pressed','false'); gpsMsg(''); if(routeCur && routeCur.lbl === '내 위치') clearRoute(); drawMe(); drawList(); return; }
   if(!navigator.geolocation){ gpsMsg('이 브라우저는 위치 기능을 지원하지 않습니다.'); return; }
   if(!window.isSecureContext){ gpsMsg('위치는 https 주소에서만 켜집니다. 이 파일을 https 사이트에 올려서 열어 주세요.'); return; }
@@ -1331,7 +1351,7 @@ function toggleGps(){ const b = document.getElementById('gps');
       gpsMsg(nearHK(me) ? '내 위치 · 오차 약 '+Math.round(me.acc)+'m' : '지금은 홍콩 밖 · 도착하면 지도에 표시'); drawMe();
       if(DATES[day.id] === hkIso()){ const nx = nextStop(day);
         if(nx && nx.lat && !arrived.has(nx.id) && dist(me.lat, me.lng, nx.lat, nx.lng) < 60 + Math.min(me.acc, 60)){ arrived.add(nx.id);
-          toast(`📍 ${nx.name} 도착`, () => { done[nx.id] = true; save(); render(); }, '완료 체크'); } } if(!editMode) drawList();
+          toast(`📍 ${nx.name} 도착`, () => { done[nx.id] = true; save(); render(); }, '완료 체크'); } } drawProg();
       if(pendingRoute){ const s = pendingRoute; pendingRoute = null; first = false; routeTo(s); }
       else if(first){ first = false; if(nearHK(me)) centerOn(me.lat, me.lng, Math.max(map.getZoom(), 15)); } },
     e => { gpsMsg(e.code===1 ? '위치 권한이 거부되었습니다. 브라우저 설정에서 이 사이트의 위치 접근을 허용해 주세요.' : '위치를 가져오지 못했습니다. 잠시 후 다시 눌러 주세요.');
@@ -1344,19 +1364,21 @@ const hm = m => { m = ((Math.round(m) % 1440) + 1440) % 1440; return String(Math
 const hkNow = () => new Date(Date.now() + 8 * 3600e3), hkIso = () => hkNow().toISOString().slice(0, 10), hkMin = () => hkNow().getUTCHours() * 60 + hkNow().getUTCMinutes();
 // open / closing soon / closed right now — only meaningful on the day itself
 function openNow(s, w){ const cl = s.closed || ((/([일월화수목금토])\s*휴/.exec(s.hours || '') || [])[1] || ''); if(w && cl.includes(w)) return '🔴 오늘 휴무';
-  const hr = hoursOf(s); if(!hr) return ''; let m = hkMin(); if(m < hr[0] && m + 1440 <= hr[1]) m += 1440; // after midnight, still yesterday's opening
+  const hr = hoursOf(s, hkMin()); if(!hr) return ''; let m = hkMin(); if(m < hr[0] && m + 1440 <= hr[1]) m += 1440; // after midnight, still yesterday's opening
   return m < hr[0] ? `⚪ ${hm(hr[0])} 오픈` : m >= hr[1] ? '🔴 영업 종료' : hr[1] - m <= 60 ? `🟠 곧 마감 ${hm(hr[1])}` : '🟢 영업 중'; }
 const toMin = t => { const [a,b] = String(t).split(':').map(Number); return a*60 + (b||0); };
 const recMeta = p => { const q = Q[p.id], pk = qPeak(q), inf = INFO[p.id]; return [p.when, p.sub, p.hours && '영업 '+p.hours, inf && inf.p && '💰 '+inf.p, p.best && `추천 ${hm(p.best[0])}–${hm(p.best[1])}`, (q || p.wait) && '⏳ ' + (pk ? `붐빌 때 약 ${pk}분 · ` : '') + (q ? q.t : p.wait), p.closed && p.closed+' 휴무', p.tip].filter(Boolean).join(' · '); };
-function hoursOf(s){ const m = /(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})/.exec(s.hours || ''); if(!m) return null;
-  const o = +m[1]*60 + +m[2]; let c = +m[3]*60 + +m[4]; if(c <= o) c += 1440; return [o, c]; }
+function hoursOf(s, t){ const all = [], re = /(저녁\s*)?(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})/g; let m;
+  while((m = re.exec(s.hours || ''))){ if(all.length && !m[1]) continue; const o = +m[2]*60 + +m[3]; let c = +m[4]*60 + +m[5]; if(c <= o) c += 1440; all.push([o, c]); }
+  if(!all.length) return null; if(t == null || all.length === 1) return all[0];
+  return all.find(r => t >= r[0] && t <= r[1]) || all.find(r => t < r[0]) || all[all.length - 1]; }
 function schedule(d, rs){
   rs = rs || routeStops(d); const out = new Map(); let t = toMin(d.start || '10:00'), travel = 0, pen = 0;
   const iso = DATES[d.id], w = iso ? DOW[new Date(iso+'T12:00:00+08:00').getUTCDay()] : '';
   rs.forEach((s, i) => { const warn = []; let leg = null;
     if(i){ leg = legOf(rs[i-1], s); t += leg.min; travel += leg.min; }
     if(s.fixed != null){ if(t < s.fixed) t = s.fixed; else if(t > s.fixed + 10){ warn.push(`⚠️ ${hm(s.fixed)}보다 ${Math.round(t - s.fixed)}분 늦음`); pen += (t - s.fixed) * 3; } }
-    const hr = hoursOf(s), cl = s.closed || ((/([일월화수목금토])\s*휴/.exec(s.hours || '') || [])[1] || '');
+    const hr = hoursOf(s, t), cl = s.closed || ((/([일월화수목금토])\s*휴/.exec(s.hours || '') || [])[1] || '');
     if(w && cl.includes(w)){ warn.push(`⚠️ ${w}요일 휴무`); pen += 600; }
     else if(hr){ if(t < hr[0] && hr[0] - t <= 60){ pen += hr[0] - t; t = hr[0]; }
       else if(t < hr[0] || t > hr[1] - 30){ warn.push(t < hr[0] ? `⚠️ ${hm(hr[0])} 오픈` : `⚠️ ${hm(hr[1])} 마감`); pen += 240; } }
@@ -1433,8 +1455,9 @@ function toast(msg, undo, label){
   if(undo){ const b = h('button', null, label || '되돌리기'); b.type = 'button'; b.addEventListener('click', () => { t.hidden = true; undo(); }); t.append(b); }
   t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, undo ? 6000 : 2500);
 }
-function refPoint(){ if(me) return me; const pts = mapStops(day); if(!pts.length) return HOTEL;
-  return {lat:pts.reduce((a,s) => a + s.lat, 0)/pts.length, lng:pts.reduce((a,s) => a + s.lng, 0)/pts.length}; }
+const MACAU = {lat:22.1687, lng:113.5519};
+function refPoint(){ if(me && nearHK(me)) return me; if(sel && sel.lat) return sel; const pts = mapStops(day);
+  return day.id === 'macau' ? pts[0] || MACAU : pts.some(s => s.lat === HOTEL.lat) || !pts.length ? HOTEL : pts[0]; }
 function drawSheet(){
   const sh = document.getElementById('sheet'); sh.hidden = !sheetOpen; document.getElementById('badd').setAttribute('aria-pressed', sheetOpen); if(!sheetOpen) return;
   const cats = document.getElementById('cats'); cats.textContent = '';
@@ -1447,14 +1470,14 @@ function drawSheet(){
   let items = poolFor(day).filter(p => (sheetCat==='all' || p.c===sheetCat) && (!q || (p.n+' '+p.sub).toLowerCase().includes(q)))
     .map(p => [dist(ref.lat,ref.lng,p.lat,p.lng), p]).filter(x => q || x[0] < 30000).sort((a,b) => a[0]-b[0]);
   if(q) items = items.concat(searchRes.filter(p => !items.some(x => x[1].n===p.n)).map(p => [dist(ref.lat,ref.lng,p.lat,p.lng), p]));
-  document.getElementById('sref').textContent = '거리 기준: ' + (me ? '내 위치' : '이 날 동선');
+  document.getElementById('sref').textContent = '거리·시간 기준: ' + (ref === me ? '내 위치' : ref === sel ? shortName(sel.name) : ref === HOTEL ? HOTEL.name : shortName(ref.name || '이 날 첫 장소'));
   const ul = document.getElementById('recs'); ul.textContent = '';
   for(const [d, p] of items){ const li = h('li','rec'), b = h('div'), has = inDay.has(p.id);
     b.append(h('div','n',p.n)); if(INFO[p.id] && INFO[p.id].d) b.append(h('div','d1',INFO[p.id].d)); b.append(h('div','m',legShort(legOf(ref, p))+' · '+recMeta(p)));
     const add = h('button', null, has ? '추가됨' : '추가'); add.type = 'button'; add.disabled = has; add.addEventListener('click', () => addPlace(p));
     const e = h('div','e',(CATS[p.c] || ['📍'])[0]); if(PH[p.id]){ const im = h('img'); im.src = phUrl(p.id, 250); im.alt = ''; im.loading = 'lazy'; im.addEventListener('error', () => im.remove()); e.append(im); }
     li.append(e, b, add);
-    li.addEventListener('click', e => { if(e.target.closest('button')) return; centerOn(p.lat, p.lng, 16); document.getElementById('mapwrap').scrollIntoView({block:'nearest', behavior:'smooth'}); });
+    li.addEventListener('click', e => { if(e.target.closest('button')) return; if(mm && !wide() && shState === 'full') setSheet('half'); centerOn(p.lat, p.lng, 16); document.getElementById('mapwrap').scrollIntoView({block:'nearest', behavior:'smooth'}); });
     ul.append(li); }
   if(!items.length) ul.append(h('li','m', q ? '검색 결과 없음' : '없음'));
 }
@@ -1542,24 +1565,25 @@ function drawList(){
       btn('📝 메모', () => { const v = prompt('메모', s.note || ''); if(v !== null){ s.note = v.trim(); changed(); } });
       btn('✕ 삭제', () => removeStop(s), 'del');
       body.append(ed); }
-    if(busOpen.has(s.id) && BUS[s.id]){ const bl = h('div', 'tip busl'); bl.setAttribute('role', 'status'); body.append(bl); busEta(bl, BUS[s.id]); }
+    if(busOpen.has(s.id) && BUS[s.id]){ const bl = h('div', 'tip busl'); bl.dataset.stop = BUS[s.id][0]; body.append(bl); busEta(bl, BUS[s.id]); }
     if(rtOpen.has(s.id)) body.append(rtOpen.get(s.id).el);
     li.append(num, body); list.append(li);
   }
-  const n = rs.filter(s=>done[s.id]).length;
-  document.getElementById('prog').innerHTML = '';
-  document.getElementById('prog').append('진행 ', h('b',null, n+' / '+rs.length), nx ? ' · 다음: '+nx.name + (me && nx.lat ? ' (직선 '+fmt(dist(me.lat,me.lng,nx.lat,nx.lng))+')' : '') : ' · 모두 완료');
+  drawProg();
 }
+function drawProg(){ const rs = routeStops(day), nx = nextStop(day), n = rs.filter(s=>done[s.id]).length, pr = document.getElementById('prog'); pr.textContent = '';
+  pr.append('진행 ', h('b',null, n+' / '+rs.length), nx ? ' · 다음: '+nx.name + (me && nx.lat ? ' (직선 '+fmt(dist(me.lat,me.lng,nx.lat,nx.lng))+')' : '') : ' · 모두 완료'); }
 function render(){ const nm = !!day.nomap;
   document.getElementById('mapwrap').hidden = nm; const nb = document.getElementById('nomap'); nb.hidden = !nm; nb.textContent = day.nomap || '';
   if(!nm) drawMap(); drawList(); drawEvents(); drawSheet();
   document.getElementById('bedit').setAttribute('aria-pressed', editMode); document.getElementById('breset').hidden = !editMode; }
-function select(s, scroll){ sel = s; focus(s); render();
+function select(s, scroll){ sel = s; if(mm && !wide() && shState === 'full') setSheet('half'); focus(s); render();
   if(scroll){ const li = document.getElementById('stop-'+s.id); if(li) li.scrollIntoView({block:'nearest', behavior:'smooth'}); } }
-function setDay(id, push){ day = DAYS.find(d=>d.id===id) || DAYS[0]; sel = null;
+function setDay(id, push){ day = DAYS.find(d=>d.id===id) || DAYS[0]; sel = null; recOpen = null; map.closePopup();
+  { const t = document.getElementById('toast'); if(t) t.hidden = true; } // its undo would act on the day being left
   for(const b of document.querySelectorAll('.tab')) b.setAttribute('aria-selected', b.dataset.id===day.id);
   document.getElementById('mapwrap').hidden = !!day.nomap; fit(); render();
-  if(push){ try{ location.hash = day.id; }catch(e){} } }
+  if(push){ try{ history.replaceState(null, '', '#' + day.id); }catch(e){} } } // no history entry per tab: the back swipe should leave the page
 
 const tabs = document.getElementById('tabs');
 for(const d of DAYS){ const b = h('button','tab',d.tab); b.type='button'; b.id='tab-'+d.id; b.dataset.id = d.id; b.setAttribute('role','tab');
@@ -1582,7 +1606,7 @@ document.getElementById('pdone').addEventListener('click', () => { if(!sel) retu
 { let gd = null;
   grip.addEventListener('pointerdown', e => { gd = {y:e.clientY, h:panel.offsetHeight, moved:false}; grip.setPointerCapture(e.pointerId); });
   grip.addEventListener('pointermove', e => { if(!gd) return; const dy = e.clientY - gd.y; if(Math.abs(dy) > 6) gd.moved = true;
-    if(gd.moved){ panel.classList.add('drag'); root.style.setProperty('--sh', Math.max(shH('peek'), Math.min(shH('full'), gd.h - dy)) + 'px'); } });
+    if(gd.moved){ panel.classList.add('drag'); panel.dataset.st = 'drag'; root.style.setProperty('--sh', Math.max(shH('peek'), Math.min(shH('full'), gd.h - dy)) + 'px'); } });
   const end = () => { if(!gd) return; panel.classList.remove('drag');
     if(gd.moved){ const now = panel.offsetHeight; setSheet(['peek','half','full'].reduce((a, b) => Math.abs(shH(b) - now) < Math.abs(shH(a) - now) ? b : a)); }
     else setSheet(shState === 'peek' ? 'half' : 'peek');
@@ -1610,7 +1634,7 @@ lbs.addEventListener('click', e => { if(e.target.tagName === 'IMG'){ const n = P
 document.getElementById('lbx').addEventListener('click', closeLb);
 document.addEventListener('keydown', e => { if(e.key === 'Escape') document.getElementById('zc').hidden = true; if(!lbId) return; if(e.key === 'Escape') closeLb();
   else if(e.key === 'ArrowRight' || e.key === 'ArrowLeft') lbs.scrollBy({left:(e.key === 'ArrowRight' ? 1 : -1) * lbs.clientWidth, behavior:'smooth'}); });
-const GUIDE = [["📅 여행 4일 휴관·행사", [["11/16 월", "M+ 휴관"], ["11/17 화", "고궁박물관 휴관"], ["11/18 수", "심포니 오브 라이트 마지막 공연 20:00 + 불꽃 · 윈터페스트 개막 · 미도카페 휴무"], ["11/19 목", "홍콩미술관 휴관 · 오스트레일리아 데일리컴퍼니 휴무 · 심포니 오브 라이트 없음 · 마카오 그랑프리 연습일"], ["날씨 평년", "최고 24.5° · 최저 20.3° · 얇은 겉옷"]]], ["🚇 교통·결제", [["옥토퍼스(관광객용)", "HK$39 · 보증금 없음 · 잔액만 환불"], ["아이폰", "'Octopus for Tourists' 앱 · 해외 Visa·Mastercard 충전 (한국 카드 미확인)"], ["A21 버스", "공항→침사추이 이스트 · HK$34.6 · 10~20분 간격 · 60~75분"], ["공항철도", "구룡역 HK$105 · 홍콩역 HK$120 · 약 24분"], ["MTR", "하늘색 개찰구에서 Visa·Mastercard 컨택리스"], ["택시(빨간색)", "기본 2km HK$29 · 이후 200m당 HK$2.1 · 해저터널 HK$25~50 · 짐 1개 HK$6"], ["스타페리", "위층 평일 HK$5 · 주말 HK$6.5"], ["피크트램", "편도 HK$82 · 왕복 HK$116 (자료 엇갈림)"]]], ["🛍️ 쇼핑 메모", [["세금", "부가세·환급 없음 · 식당은 봉사료 10% 많음"], ["쇼핑몰", "10~11시 개점 · 22시 폐점"], ["결제", "몰·체인 카드 OK · 노포·간식집은 현금·옥토퍼스"], ["비닐봉투", "장당 HK$1 이상"], ["드럭스토어", "백화유 · 타이거밤 · 달리 치약 · 닌지옴 캔디 (매닝스·왓슨스)"], ["과자 선물", "제니 베이커리 쿠키 · 기화병가 펑리수·에그롤 · 이금기 소스"], ["11/18부터", "윈터페스트 할인(알리페이 QR)"]]], ["⛴️ 마카오 가는 법", [["침사추이 페리터미널", "마카오행 없음 (주하이행만)"], ["터보젯", "셩완 → 마카오 외항 · 07:30~22:30 · 약 60분 · 평일 HK$194 · 주말 HK$212 · 야간 HK$242"], ["코타이 워터젯", "셩완 → 타이파 · 07:30~22:30 · 평일 HK$192 · 베네시안 무료 셔틀"], ["원버스", "조던 캔톤로드 505 → 샌즈·런더너·베네시안 · 평일 낮 HK$160 · 저녁·주말 HK$180"], ["대교 셔틀버스", "HK$65 · 24시간 · 홍콩 쪽 터미널까지 1시간 이상"], ["11/19~22", "그랑프리로 외항 터미널 주변 통제 → 타이파행 배·원버스"]]]];
+const GUIDE = [["📅 여행 4일 휴관·행사", [["11/16 월", "M+ 휴관"], ["11/17 화", "고궁박물관 휴관"], ["11/18 수", "심포니 오브 라이트 마지막 공연 20:00 + 불꽃 · 윈터페스트 개막 · 미도카페 휴무"], ["11/19 목", "홍콩미술관 휴관 · 오스트레일리아 데일리컴퍼니 휴무 · 심포니 오브 라이트 없음 · 마카오 그랑프리 연습일"], ["날씨 평년", "최고 24.5° · 최저 20.3° · 얇은 겉옷"]]], ["🚇 교통·결제", [["옥토퍼스(관광객용)", "HK$39 · 보증금 없음 · 잔액만 환불"], ["아이폰", "'Octopus for Tourists' 앱 · 해외 Visa·Mastercard 충전 (한국 카드 미확인)"], ["A21 버스", "공항→침사추이 이스트 · HK$34.6 · 10~20분 간격 · 60~75분"], ["공항철도", "구룡역 HK$105 · 홍콩역 HK$120 · 약 24분"], ["MTR", "하늘색 개찰구에서 Visa·Mastercard 컨택리스"], ["택시(빨간색)", "기본 2km HK$29 · 이후 200m당 HK$2.1 · 해저터널 HK$25~50 · 짐 1개 HK$6"], ["스타페리", "위층 평일 HK$5 · 주말 HK$6.5"], ["피크트램", "편도 HK$82 · 왕복 HK$116 (자료 엇갈림)"]]], ["⚠️ 현지 규칙", [["MTR 안 음식·음료", "물 포함 금지 · 최고 HK$2,000"], ["쓰레기·침", "HK$3,000"], ["흡연", "금연구역·대중교통 줄에서 HK$3,000"], ["전자담배", "반입 금지 · 공공장소에서 갖고만 있어도 HK$3,000"], ["담배·술 면세", "궐련 19개비 · 술 1L"], ["무단횡단", "최고 HK$2,000"], ["비둘기·원숭이 먹이", "HK$5,000"], ["호텔", "일회용 세면도구·생수 무료 제공 안 함"], ["식당", "봉사료 10% (차찬탱은 없음) · 딤섬집 찻값 1인 HK$3~20 · 합석 기본"], ["택시 결제", "QR·옥토퍼스·카드 중 차마다 다름 · 현금 가능"], ["MTR 막차", "침사추이 → 센트럴 00:54쯤"], ["전압", "220V · G형 3핀"], ["입국", "입국카드 없음 · 무비자 90일 · 자동출입국은 도착 후 현장 등록"], ["마카오", "여권 필수 · 무비자 90일 · 홍콩달러 1:1 통용(거스름돈은 파타카) · 옥토퍼스는 버스에서 안 됨"]]], ["🛍️ 쇼핑 메모", [["세금", "부가세·환급 없음 · 식당은 봉사료 10% 많음"], ["쇼핑몰", "10~11시 개점 · 22시 폐점"], ["결제", "몰·체인 카드 OK · 노포·간식집은 현금·옥토퍼스"], ["비닐봉투", "장당 HK$1 이상"], ["드럭스토어", "백화유 · 타이거밤 · 달리 치약 · 닌지옴 캔디 (매닝스·왓슨스)"], ["과자 선물", "제니 베이커리 쿠키 · 기화병가 펑리수·에그롤 · 이금기 소스"], ["11/18부터", "윈터페스트 할인(알리페이 QR)"]]], ["⛴️ 마카오 가는 법", [["침사추이 페리터미널", "마카오행 없음 (주하이행만)"], ["터보젯", "셩완 → 마카오 외항 · 07:30~22:30 · 약 60분 · 평일 HK$194 · 주말 HK$212 · 야간 HK$242"], ["코타이 워터젯", "셩완 → 타이파 · 07:30~22:30 · 평일 HK$192 · 베네시안 무료 셔틀"], ["원버스", "조던 캔톤로드 505 → 샌즈·런더너·베네시안 · 평일 낮 HK$160 · 저녁·주말 HK$180"], ["대교 셔틀버스", "HK$65 · 24시간 · 홍콩 쪽 터미널까지 1시간 이상"], ["11/19~22", "그랑프리로 외항 터미널 주변 통제 → 타이파행 배·원버스"]]]];
 { const g = document.getElementById('guide');
   for(const [t, rows] of GUIDE){ const d = h('details','gd'), dl = h('dl'); d.append(h('summary', null, t));
     for(const [k, v] of rows) dl.append(h('dt', null, k), h('dd', null, v)); d.append(dl); g.append(d); }
@@ -1643,10 +1667,10 @@ document.getElementById('gps').addEventListener('click', toggleGps);
 document.getElementById('routeclr').addEventListener('click', clearRoute);
 document.getElementById('ztoilet').addEventListener('click', toggleToilet);
 document.getElementById('bshare').addEventListener('click', sharePlan);
-map.on('moveend', () => { if(showToilet) drawToilets(); });
+map.on('moveend', () => { if(showToilet && !document.getElementById('mapwrap').classList.contains('popon')) drawToilets(); });
 map.on('click', () => { if(mm && sel && shState === 'peek'){ sel = null; render(); } });
-document.getElementById('zrt').addEventListener('click', () => { const c = me || map.getCenter(); openRt('_here', c.lat, c.lng, document.getElementById('herert')); });
-document.getElementById('zfit').addEventListener('click', () => { sel = null; fit(); render(); });
+document.getElementById('zrt').addEventListener('click', () => { const c = me || (map._loaded ? viewCenter() : HOTEL); openRt('_here', c.lat, c.lng, document.getElementById('herert')); });
+document.getElementById('zfit').addEventListener('click', () => { sel = null; recOpen = null; map.closePopup(); fit(); render(); });
 document.getElementById('reset').addEventListener('click', () => { for(const s of day.stops) delete done[s.id]; save(); render(); });
 document.getElementById('dstart').addEventListener('change', e => { if(!e.target.value) return; day.start = e.target.value; savePlan(); render(); });
 document.getElementById('bedit').addEventListener('click', () => { editMode = !editMode; render(); });
@@ -1675,7 +1699,7 @@ document.getElementById('q').addEventListener('input', () => {
 });
 window.addEventListener('resize', () => { if(mm) setSheet(shState); map.invalidateSize(); });
 if('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
-window.addEventListener('hashchange', () => setDay(location.hash.slice(1), false));
+window.addEventListener('hashchange', () => { if(/^#plan=/.test(location.hash)) importPlan().then(() => setDay('day1', false)); else setDay(location.hash.slice(1), false); });
 const today = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10), todayId = (Object.entries(DATES).find(([, v]) => v === today) || [])[0]; // Hong Kong date
 setDay(location.hash.slice(1) || todayId || 'day1', false); zoomCls();
 try{ if(localStorage.getItem('hk-mm')) setMM(true); }catch(e){}

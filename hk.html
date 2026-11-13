@@ -76,7 +76,12 @@ h1{font-family:var(--display);font-weight:400;font-size:28px;color:var(--accent)
 .zoom button,.lay button{width:46px;height:44px;padding:0;border-radius:14px;border:2px solid var(--line);background:var(--surface);color:var(--ink);display:grid;place-items:center;align-content:center;gap:2px;font:700 9.5px/1 var(--body);box-shadow:0 2px 0 var(--line)}
 .zoom svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .lay b,.zoom b{font-size:16px;font-weight:400;line-height:1}
-@media (pointer:fine){ .lay{top:calc(var(--ctop) + 78px)} }
+.catp{position:absolute;left:62px;top:var(--ctop);z-index:510;display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:6px;max-height:calc(100% - var(--ctop) - 12px);overflow:auto;border-radius:16px;border:2px solid var(--line);background:var(--surface);box-shadow:0 4px 14px rgba(60,30,40,.18)}
+.catp[hidden]{display:none}
+.catp .chip{justify-content:flex-start;font-size:12px;padding:4px 7px;gap:2px}
+.catp .chip:last-child{grid-column:1 / -1;justify-content:center;color:var(--muted)}
+.map.popon .catp{display:none}
+@media (pointer:fine){ .lay,.catp{top:calc(var(--ctop) + 78px)} }
 @media (pointer:coarse){ .leaflet-control-zoom{display:none} }
 .maphint{position:absolute;left:8px;bottom:8px;font-size:11px;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:2px 6px}
 .nomap{border:1px dashed var(--line);border-radius:12px;padding:14px;color:var(--muted);font-size:13px}
@@ -303,6 +308,7 @@ html.mm .dayhead h2{display:none}
   html.mm .tabs{left:16px;right:auto;background:none}
   html.mm .leaflet-top.leaflet-left{left:456px}
   html.mm .lay{left:464px}
+  html.mm .catp{left:518px}
 }
 @media (prefers-reduced-motion:reduce){ html.mm #panel{transition:none} }
 /* photo viewer */
@@ -343,8 +349,9 @@ html.mm .dayhead h2{display:none}
           <button type="button" id="zfit"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="6" r="2.2"/><path d="M8 17c5 0 3-10 8-10" stroke-dasharray="2.5 2.5"/></svg><span>전체</span></button>
           <button type="button" id="zhotel"><b>🏨</b><span>호텔로</span></button>
         </div>
+        <div class="catp" id="catp" hidden></div>
         <div class="lay">
-          <button type="button" id="zrec" aria-pressed="true"><b>⭐</b><span>추천</span></button>
+          <button type="button" id="zrec" aria-pressed="true" aria-expanded="false" aria-controls="catp"><b>⭐</b><span>추천</span></button>
           <button type="button" id="ztoilet" aria-pressed="false"><b>🚻</b><span>화장실</span></button>
           <button type="button" id="zrt"><b>🚏</b><span>실시간</span></button>
         </div>
@@ -1263,7 +1270,7 @@ function drawMap(){
   // drawMap reruns when route geometry arrives; reopen the popup the user was looking at
   const keep = recOpen; recLayer.clearLayers(); recOpen = keep;
   const inDay = new Set(day.stops.map(s => s.rec)); let li = 0;
-  for(const p of poolFor(day)){ if(inDay.has(p.id) || (!showRec && !LM[p.id])) continue;
+  for(const p of poolFor(day)){ if(inDay.has(p.id) || (!recCats.has(p.c) && !LM[p.id])) continue;
     const nm = shortName(p.n), pid = PH[p.id] ? p.id : null;
     const icon = LM[p.id] ? L.divIcon({className:'lmk' + (li++ % 2 ? ' r' : ''), html:`<b>${LM[p.id]}</b>${nmTag(nm)}${phImg(pid)}`, iconSize:[40,40], iconAnchor:[20,20]})
       : L.divIcon({className:'', html:`<div class="rpin mk">${CATS[p.c][0]}${nmTag(nm)}${phImg(pid)}</div>`, iconSize:[26,26], iconAnchor:[13,13]});
@@ -1612,7 +1619,16 @@ document.getElementById('bopt').addEventListener('click', optimizeDay);
 document.getElementById('badd').addEventListener('click', () => { sheetOpen = !sheetOpen; render(); });
 document.getElementById('breset').addEventListener('click', () => { if(!confirm('이 날 일정을 처음 상태로 되돌릴까요?')) return;
   day.stops = JSON.parse(ORIG[day.id]); day.edited = false; day.newer = false; delete day.base; sel = null; savePlan(); render(); });
-document.getElementById('zrec').addEventListener('click', e => { showRec = !showRec; e.currentTarget.setAttribute('aria-pressed', showRec); drawMap(); });
+// ⭐ opens a category picker for the recommended places shown on the map
+let recCats = new Set(Object.keys(CATS)); try{ const v = JSON.parse(localStorage.getItem('hk-cats')); if(Array.isArray(v)) recCats = new Set(v.filter(k => CATS[k])); }catch(e){}
+function drawCats(){ const box = document.getElementById('catp'); box.textContent = '';
+  const mk = (lbl, on, f) => { const b = h('button', 'chip', lbl); b.type = 'button'; b.setAttribute('aria-pressed', on); b.addEventListener('click', () => { f(); try{ localStorage.setItem('hk-cats', JSON.stringify([...recCats])); }catch(e){} drawCats(); drawMap(); }); box.append(b); };
+  for(const [k, v] of Object.entries(CATS)) mk(v[0] + ' ' + v[1], recCats.has(k), () => { if(recCats.has(k)) recCats.delete(k); else recCats.add(k); });
+  mk(recCats.size ? '모두 끄기' : '모두 켜기', false, () => { recCats = new Set(recCats.size ? [] : Object.keys(CATS)); });
+  showRec = recCats.size > 0; document.getElementById('zrec').setAttribute('aria-pressed', showRec); }
+document.getElementById('zrec').addEventListener('click', () => { const box = document.getElementById('catp'); box.hidden = !box.hidden; document.getElementById('zrec').setAttribute('aria-expanded', !box.hidden); });
+map.on('click', () => { document.getElementById('catp').hidden = true; });
+drawCats();
 document.getElementById('q').addEventListener('input', () => {
   clearTimeout(qTimer); const q = document.getElementById('q').value.trim(); searchRes = []; drawSheet(); if(q.length < 2) return;
   qTimer = setTimeout(async () => { const ref = refPoint();

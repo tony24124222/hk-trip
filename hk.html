@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>홍콩 동선 지도</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.css">
@@ -213,6 +213,50 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;max-width:calc(100% - 32px);background:var(--ink);color:var(--surface);border-radius:999px;padding:8px 16px;font-size:14px;font-weight:700;z-index:3000;box-shadow:0 4px 12px rgba(0,0,0,.25)}
 .toast[hidden]{display:none}
 .toast button{border:0;background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:3px 10px;font-weight:700;flex:0 0 auto}
+/* map mode: map fills the screen, the itinerary is a bottom sheet (peek / half / full) */
+.grip{display:none}
+html.mm,html.mm body{height:100%;overflow:hidden}
+html.mm header,html.mm .progress{display:none}
+html.mm .wrap{max-width:none;padding:0}
+html.mm .grid{display:block}
+html.mm .tabs{position:fixed;z-index:30;left:0;right:0;top:0;padding:calc(8px + env(safe-area-inset-top)) 10px 10px;background:linear-gradient(var(--bg) 55%,transparent)}
+html.mm .mapbox{position:fixed;inset:0;z-index:1;padding:0;background:var(--land)}
+html.mm .map{height:100%;border:0;border-radius:0;box-shadow:none}
+html.mm .zoom{top:calc(60px + env(safe-area-inset-top))}
+html.mm .leaflet-top{top:calc(52px + env(safe-area-inset-top))}
+html.mm .leaflet-bottom{bottom:var(--sh,64px)}
+html.mm .mapinfo{position:absolute;z-index:600;left:8px;right:8px;bottom:calc(var(--sh,64px) + 24px);max-height:40%;overflow:auto;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+html.mm .mapinfo>*{pointer-events:auto;margin:0}
+html.mm .mapinfo .gpsmsg{align-self:flex-start;background:var(--surface);border:2px solid var(--line);border-radius:999px;padding:3px 10px}
+html.mm .mapinfo .nomap{background:var(--surface)}
+html.mm #panel{position:fixed;z-index:20;left:0;right:0;bottom:0;height:var(--sh,64px);background:var(--bg);border-radius:22px 22px 0 0;box-shadow:0 -6px 24px rgba(60,30,40,.2);display:flex;flex-direction:column;overflow:hidden;transition:height .28s cubic-bezier(.2,.8,.2,1)}
+html.mm #panel.drag{transition:none}
+html.mm .grip{display:flex;flex-direction:column;align-items:center;gap:7px;width:100%;flex:0 0 auto;border:0;background:none;padding:9px 16px 10px;touch-action:none;cursor:grab}
+.grip i{width:44px;height:5px;border-radius:99px;background:var(--line)}
+.grip span{max-width:100%;font:400 15.5px var(--display);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.mm .pbody{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:2px 14px calc(28px + env(safe-area-inset-bottom))}
+html.mm #panel[data-st="peek"] .pbody{visibility:hidden}
+html.mm .toast{bottom:calc(var(--sh,64px) + 12px)}
+html.mm .dayhead h2{display:none}
+@media (min-width:820px){
+  html.mm #panel{left:16px;right:auto;width:440px}
+  html.mm .mapinfo{left:472px;right:auto;width:min(420px,calc(100% - 560px));bottom:16px}
+  html.mm .leaflet-bottom{bottom:0}
+  html.mm .tabs{left:16px;right:auto;background:none}
+  html.mm .leaflet-top.leaflet-left{left:456px}
+}
+@media (prefers-reduced-motion:reduce){ html.mm #panel{transition:none} }
+/* photo viewer */
+.lb{position:fixed;inset:0;z-index:4000;background:#100a0d;display:flex;flex-direction:column}
+.lb[hidden]{display:none}
+.lbs{flex:1;min-height:0;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior:contain}
+.lbs::-webkit-scrollbar{display:none}
+.lbs figure{flex:0 0 100%;margin:0;scroll-snap-align:center;display:grid;place-items:center;padding:calc(52px + env(safe-area-inset-top)) 0 8px}
+.lbs img{max-width:100%;max-height:100%;object-fit:contain}
+.lbc{flex:0 0 auto;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;padding:8px 16px calc(14px + env(safe-area-inset-bottom));color:#fff;font-size:13px}
+.lbc b{font:400 16px var(--display)}
+.lbc a{color:#cbbfc4;font-size:11.5px;margin-left:auto}
+#lbx{position:absolute;right:12px;top:calc(10px + env(safe-area-inset-top));width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,.16);color:#fff;font-size:17px}
 </style>
 </head>
 <body>
@@ -228,6 +272,7 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
       <div class="map" id="mapwrap">
         <div id="map"></div>
         <div class="zoom">
+          <button type="button" id="zfull" class="fit" aria-pressed="false">크게</button>
           <button type="button" id="gps" class="fit" aria-pressed="false">내 위치</button>
           <button type="button" id="zfit" class="fit" aria-label="전체 보기">전체</button>
           <button type="button" id="zrt" class="fit" aria-label="여기 근처 실시간">🚏</button>
@@ -235,6 +280,7 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
           <button type="button" id="ztoilet" class="fit" aria-pressed="false" aria-label="화장실">🚻</button>
         </div>
       </div>
+      <div class="mapinfo">
       <div class="gpsmsg" id="gpsmsg" hidden></div>
       <div id="herert"></div>
       <div class="routebox" id="routebox" hidden>
@@ -243,9 +289,12 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
         <ol class="steps" id="routesteps"></ol>
       </div>
       <div class="nomap" id="nomap" hidden></div>
+      </div>
       <div class="progress"><span id="prog"></span><button type="button" id="reset">이 날 체크 지우기</button></div>
     </div>
-    <section>
+    <section id="panel">
+      <button type="button" class="grip" id="grip" aria-label="일정 펼치기·접기" aria-expanded="false"><i></i><span id="gripsum"></span></button>
+      <div class="pbody" id="pbody">
       <div class="dayhead">
         <h2 id="daytitle"></h2>
         <label class="chip">출발 <input type="time" id="dstart"></label>
@@ -277,10 +326,16 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
         <span>📷 사진: Wikimedia Commons (사진 누르면 작가·라이선스)</span>
         <span>편집 내용: 이 폰 브라우저에만 저장</span>
       </div>
+      </div>
     </section>
   </div>
 </div>
 
+<div class="lb" id="lb" hidden>
+  <div class="lbs" id="lbs"></div>
+  <div class="lbc"><b id="lbt"></b><span id="lbn"></span><a id="lba" target="_blank" rel="noopener"></a></div>
+  <button type="button" id="lbx" aria-label="닫기">✕</button>
+</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@maplibre/maplibre-gl-leaflet@0.0.22/leaflet-maplibre-gl.js"></script>
@@ -665,7 +720,7 @@ function originFor(s){
   const rs = routeStops(day), i = rs.indexOf(s);
   return i > 0 ? [rs[i-1], rs[i-1].name] : [HOTEL, HOTEL.name];
 }
-function showRoute(s, o, alts){ const [from, lbl] = o || originFor(s); routeCur = {s, from:{lat:from.lat, lng:from.lng}, lbl, alts, nt:{}}; redrawRoute(true); }
+function showRoute(s, o, alts){ if(mm && !wide() && shState !== 'peek') setSheet('peek'); const [from, lbl] = o || originFor(s); routeCur = {s, from:{lat:from.lat, lng:from.lng}, lbl, alts, nt:{}}; redrawRoute(true); }
 // shortcut: route is drawn from where you are when tapped; tap again to refresh as you walk
 function routeTo(s){
   showRoute(s);
@@ -690,7 +745,7 @@ function redrawRoute(fitIt){
     alts.forEach(([d, t], i) => { const b = h('button', 'chip', `🚻 ${i + 1} · ${fmt(d)}`); b.type = 'button'; b.setAttribute('aria-pressed', t[0] === s.lat && t[1] === s.lng);
       b.addEventListener('click', () => showRoute(toiletObj(t), [routeCur.from, routeCur.lbl], alts)); li.append(b); });
     ol.append(li); }
-  if(fitIt){ const pts = shapes.flatMap(x => x.pts); pts.push([from.lat, from.lng]); map.fitBounds(pts, {padding:[30,30], maxZoom:17, animate:false}); }
+  if(fitIt){ const pts = shapes.flatMap(x => x.pts); pts.push([from.lat, from.lng]); map.fitBounds(pts, fitOpt(30, {maxZoom:17, animate:false})); }
 }
 async function nextTrain(st, k, rc){
   try{ const r = await getJ(`https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=${st.line}&sta=${st.sta}`);
@@ -761,9 +816,17 @@ async function importPlan(){
   return true;
 }
 
+// map mode covers part of the map (tabs on top, sheet below or panel at the left): keep points inside what is left
+let mm = false, shState = 'peek';
+const wide = () => innerWidth >= 820;
+const shH = st => st === 'peek' ? 64 + sab : st === 'half' ? Math.round(innerHeight * .5) : innerHeight - 64;
+const ins = () => !mm ? {t:0, l:0, b:0, r:0} : wide() ? {t:56, l:456, b:0, r:0} : {t:56, l:0, b:Math.min(shH(shState), innerHeight * .55), r:0};
+const fitOpt = (pad, o) => { const i = ins(); return Object.assign({paddingTopLeft:[pad + i.l, pad + i.t], paddingBottomRight:[pad + i.r + (mm ? 44 : 0), pad + i.b]}, o); };
+function centerOn(lat, lng, z){ const i = ins(), dx = (i.l - i.r) / 2, dy = (i.t - i.b) / 2;
+  map.setView(dx || dy ? map.unproject(map.project([lat, lng], z).subtract([dx, dy]), z) : [lat, lng], z); }
 function fit(){ const pts = mapStops(day).map(s => [s.lat,s.lng]); if(!pts.length) return;
-  map.invalidateSize(); if(pts.length===1) map.setView(pts[0], 16); else map.fitBounds(pts, {padding:[36,36], maxZoom:16}); }
-function focus(s){ if(s.lat) map.setView([s.lat,s.lng], Math.max(map.getZoom()||0, 16)); }
+  map.invalidateSize(); if(pts.length===1) centerOn(pts[0][0], pts[0][1], 16); else map.fitBounds(pts, fitOpt(36, {maxZoom:16})); }
+function focus(s){ if(s.lat) centerOn(s.lat, s.lng, Math.max(map.getZoom()||0, 16)); }
 
 // ---- our illustrated layer: Korean district/sea names, MTR lines and stations ----
 map.createPane('base').style.zIndex = 350; map.getPane('base').style.pointerEvents = 'none';
@@ -865,15 +928,16 @@ const phPage = p => 'https://commons.wikimedia.org/wiki/File:' + p[0].split('/')
 const phCred = p => (p[3] ? '비슷한 음식 · ' : '') + [p[1], p[2]].filter(Boolean).join(' · ');
 const phImg = id => id ? `<img class="ph" src="${phUrl(id, 250)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : '';
 // popup: swipe (or tap) through all photos; card: small thumbnails linking to the file page
-function phBox(id){ const f = h('div','pph'), n = PH[id].length;
+function phBox(id, name){ const f = h('div','pph'), n = PH[id].length;
   PH[id].forEach((p, i) => { const it = h('figure'), im = h('img'), a = h('a', null, '📷 ' + phCred(p));
     im.src = phUrl(id, 500, i); im.alt = ''; im.loading = 'lazy'; im.addEventListener('error', () => it.remove());
-    if(n > 1) im.addEventListener('click', () => f.scrollTo({left: f.scrollLeft + f.clientWidth >= f.scrollWidth - 4 ? 0 : f.scrollLeft + f.clientWidth, behavior:'smooth'}));
+    im.addEventListener('click', () => openLb(id, i, name));
     a.href = phPage(p); a.target = '_blank'; a.rel = 'noopener'; it.append(im, a); if(n > 1) it.append(h('i', null, (i + 1) + '/' + n)); f.append(it); });
   return f; }
-function phStrip(id){ const f = h('div','cph');
+function phStrip(id, name){ const f = h('div','cph');
   PH[id].forEach((p, i) => { const a = h('a'), im = h('img'); a.href = phPage(p); a.target = '_blank'; a.rel = 'noopener'; a.title = phCred(p);
-    im.src = phUrl(id, 250, i); im.alt = ''; im.loading = 'lazy'; im.addEventListener('error', () => a.remove()); a.append(im); f.append(a); });
+    im.src = phUrl(id, 250, i); im.alt = ''; im.loading = 'lazy'; im.addEventListener('error', () => a.remove()); a.append(im); f.append(a);
+    a.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); openLb(id, i, name); }); });
   return f; }
 const shortName = n => { n = n.split(' · ')[0].replace(/\s*\(.*?\)\s*/g, '').trim(); return n.length > 14 ? n.slice(0, 13) + '…' : n; };
 const nmTag = (n, d) => `<span class="nm${d ? ' d' : ''}">${n.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c])}</span>`;
@@ -921,7 +985,7 @@ function drawMap(){
     const m = L.marker([p.lat,p.lng], {icon, title:p.n, pid:p.id, zIndexOffset:LM[p.id] ? -400 : -500}).addTo(recLayer);
     m.on('popupopen', () => { recOpen = p.id; }).on('popupclose', () => { if(recOpen === p.id) recOpen = null; });
     mkList.push({m, pri:LM[p.id] ? 30 : p.c === 'food' ? 40 : 50, name:nm, ph:!!pid, r:LM[p.id] ? 20 : 13});
-    m.bindPopup(() => { const box = h('div','pop'); if(pid) box.append(phBox(pid)); box.append(h('b',null,p.n), h('div','m',recMeta(p)));
+    m.bindPopup(() => { const box = h('div','pop'); if(pid) box.append(phBox(pid, p.n)); box.append(h('b',null,p.n), h('div','m',recMeta(p)));
       const ol = orLink(p.id); if(ol) box.append(ol);
       const b = h('button',null,'＋ '+day.tab.replace(/^\S+\s/,'')+'에 추가'); b.type = 'button';
       b.addEventListener('click', () => { map.closePopup(); addPlace(p); }); box.append(b); return box; }, popOpt());
@@ -941,7 +1005,7 @@ function toggleGps(){ const b = document.getElementById('gps');
   watchId = navigator.geolocation.watchPosition(p => { me = {lat:p.coords.latitude, lng:p.coords.longitude, acc:p.coords.accuracy};
       gpsMsg('내 위치 표시 중 · 오차 약 '+Math.round(me.acc)+'m'); drawMe(); if(!editMode) drawList();
       if(pendingRoute){ const s = pendingRoute; pendingRoute = null; first = false; routeTo(s); }
-      else if(first){ first = false; map.setView([me.lat,me.lng], Math.max(map.getZoom(), 15)); } },
+      else if(first){ first = false; centerOn(me.lat, me.lng, Math.max(map.getZoom(), 15)); } },
     e => { gpsMsg(e.code===1 ? '위치 권한이 거부되었습니다. 브라우저 설정에서 이 사이트의 위치 접근을 허용해 주세요.' : '위치를 가져오지 못했습니다. 잠시 후 다시 눌러 주세요.');
       pendingRoute = null;
       if(e.code===1){ navigator.geolocation.clearWatch(watchId); watchId = null; b.setAttribute('aria-pressed','false'); } },
@@ -1041,7 +1105,7 @@ function drawSheet(){
     b.append(h('div','n',p.n), h('div','m',fmt(d)+' · '+recMeta(p)));
     const add = h('button', null, has ? '추가됨' : '추가'); add.type = 'button'; add.disabled = has; add.addEventListener('click', () => addPlace(p));
     li.append(h('div','e',(CATS[p.c] || ['📍'])[0]), b, add);
-    li.addEventListener('click', e => { if(e.target.closest('button')) return; map.setView([p.lat,p.lng], 16); document.getElementById('mapwrap').scrollIntoView({block:'nearest', behavior:'smooth'}); });
+    li.addEventListener('click', e => { if(e.target.closest('button')) return; centerOn(p.lat, p.lng, 16); document.getElementById('mapwrap').scrollIntoView({block:'nearest', behavior:'smooth'}); });
     ul.append(li); }
   if(!items.length) ul.append(h('li','m', q ? '검색 결과 없음' : '없음'));
 }
@@ -1057,6 +1121,8 @@ function drawList(){
   const list = document.getElementById('list'); list.textContent = '';
   document.getElementById('daytitle').textContent = (day.date ? day.date+' · ' : '') + day.title;
   const nx = nextStop(day), rs = routeStops(day), sch = schedule(day), firstAlt = day.stops.find(x => x.kind==='alt'), grp = (day.stops.find(x => x.group) || {}).group;
+  { const g = sel && sch.out.get(sel) ? sel : nx, gi = g && sch.out.get(g);
+    document.getElementById('gripsum').textContent = (day.date ? day.date + ' · ' : '') + (g ? (sel === g ? '' : '다음 ') + (gi ? hm(gi.arr) + ' ' : '') + g.name : day.title); }
   document.getElementById('dstart').value = day.start;
   document.getElementById('dsum').textContent = rs.length > 1 ? `이동 약 ${sch.travel}분 · ${hm(sch.end)} 끝` : '';
   document.getElementById('dwx').textContent = wxText(day);
@@ -1086,7 +1152,7 @@ function drawList(){
     if(s.fixed != null) nm.append(h('span','tag','⏰ '+hm(s.fixed)));
     body.append(nm);
     if(s.sub) body.append(h('div','hours',s.sub));
-    { const pid = phId(s); if(pid && !editMode) body.append(phStrip(pid)); }
+    { const pid = phId(s); if(pid && !editMode) body.append(phStrip(pid, s.name)); }
     if(s.note) body.append(h('div','note',s.note));
     if(s.hours) body.append(h('div','hours','영업 '+s.hours));
     if(info) for(const w of info.warn) body.append(h('div','warn',w));
@@ -1138,6 +1204,42 @@ const tabs = document.getElementById('tabs');
 for(const d of DAYS){ const b = h('button','tab',d.tab); b.type='button'; b.id='tab-'+d.id; b.dataset.id = d.id; b.setAttribute('role','tab');
   if(d.date) b.append(h('small',null,d.date)); const wx = h('small','wx'); wx.id = 'wx-'+d.id; b.append(wx); b.addEventListener('click', () => setDay(d.id, true)); tabs.append(b); }
 
+// bottom safe-area height, read once from CSS
+const sab = (() => { const d = h('div'); d.style.cssText = 'position:fixed;visibility:hidden;padding-bottom:env(safe-area-inset-bottom)'; document.body.append(d); const v = parseFloat(getComputedStyle(d).paddingBottom) || 0; d.remove(); return v; })();
+const root = document.documentElement, panel = document.getElementById('panel'), grip = document.getElementById('grip');
+function setSheet(st){ const b0 = ins().b; shState = st; const db = ins().b - b0; if(db && map._loaded) map.panBy([0, db / 2], {animate:true, duration:.28}); // keep what was centred above the sheet centred
+  root.style.setProperty('--sh', shH(st) + 'px'); panel.dataset.st = st; grip.setAttribute('aria-expanded', st !== 'peek'); }
+function setMM(on){ mm = on; root.classList.toggle('mm', on); const b = document.getElementById('zfull'); b.setAttribute('aria-pressed', on); b.textContent = on ? '작게' : '크게';
+  try{ localStorage.setItem('hk-mm', on ? '1' : ''); }catch(e){}
+  if(on) setSheet(wide() ? 'half' : 'peek'); else { root.style.removeProperty('--sh'); delete panel.dataset.st; }
+  scrollTo(0, 0); map.invalidateSize(); if(sel) focus(sel); else if(routeCur) redrawRoute(true); else fit(); }
+document.getElementById('zfull').addEventListener('click', () => setMM(!mm));
+{ let gd = null;
+  grip.addEventListener('pointerdown', e => { gd = {y:e.clientY, h:panel.offsetHeight, moved:false}; grip.setPointerCapture(e.pointerId); });
+  grip.addEventListener('pointermove', e => { if(!gd) return; const dy = e.clientY - gd.y; if(Math.abs(dy) > 6) gd.moved = true;
+    if(gd.moved){ panel.classList.add('drag'); root.style.setProperty('--sh', Math.max(shH('peek'), Math.min(shH('full'), gd.h - dy)) + 'px'); } });
+  const end = () => { if(!gd) return; panel.classList.remove('drag');
+    if(gd.moved){ const now = panel.offsetHeight; setSheet(['peek','half','full'].reduce((a, b) => Math.abs(shH(b) - now) < Math.abs(shH(a) - now) ? b : a)); }
+    else setSheet(shState === 'peek' ? 'half' : 'peek');
+    gd = null; };
+  grip.addEventListener('pointerup', end); grip.addEventListener('pointercancel', end);
+  grip.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); setSheet(shState === 'peek' ? 'half' : 'peek'); } }); }
+// photo viewer
+let lbId = null, lbName = '';
+const lbs = document.getElementById('lbs');
+function lbCap(){ if(!lbId) return; const n = PH[lbId].length, i = Math.max(0, Math.min(n - 1, Math.round(lbs.scrollLeft / (lbs.clientWidth || 1)))), ph = PH[lbId][i];
+  document.getElementById('lbt').textContent = lbName; document.getElementById('lbn').textContent = n > 1 ? `${i + 1} / ${n}` : '';
+  const a = document.getElementById('lba'); a.textContent = '📷 ' + phCred(ph); a.href = phPage(ph); }
+function openLb(id, i, name){ lbId = id; lbName = name || ''; lbs.textContent = '';
+  PH[id].forEach((ph, k) => { const f = h('figure'), im = h('img'); im.alt = ''; im.src = phUrl(id, 960, k);
+    im.addEventListener('error', () => { if(!im.dataset.fb){ im.dataset.fb = 1; im.src = phUrl(id, 500, k); } }); f.append(im); lbs.append(f); });
+  document.getElementById('lb').hidden = false; lbs.scrollLeft = (i || 0) * lbs.clientWidth; lbCap(); document.getElementById('lbx').focus(); }
+function closeLb(){ document.getElementById('lb').hidden = true; lbId = null; lbs.textContent = ''; }
+lbs.addEventListener('scroll', lbCap, {passive:true});
+lbs.addEventListener('click', e => { if(e.target.tagName === 'IMG'){ const n = PH[lbId].length, w = lbs.clientWidth, i = Math.round(lbs.scrollLeft / w); lbs.scrollTo({left:(e.clientX > innerWidth / 2 ? Math.min(n - 1, i + 1) : Math.max(0, i - 1)) * w, behavior:'smooth'}); } else closeLb(); });
+document.getElementById('lbx').addEventListener('click', closeLb);
+document.addEventListener('keydown', e => { if(!lbId) return; if(e.key === 'Escape') closeLb();
+  else if(e.key === 'ArrowRight' || e.key === 'ArrowLeft') lbs.scrollBy({left:(e.key === 'ArrowRight' ? 1 : -1) * lbs.clientWidth, behavior:'smooth'}); });
 document.getElementById('gps').addEventListener('click', toggleGps);
 document.getElementById('routeclr').addEventListener('click', clearRoute);
 document.getElementById('ztoilet').addEventListener('click', toggleToilet);
@@ -1162,9 +1264,10 @@ document.getElementById('q').addEventListener('input', () => {
         sub:[f.properties.street, f.properties.locality || f.properties.district].filter(Boolean).join(' · '), lat:f.geometry.coordinates[1], lng:f.geometry.coordinates[0], stay:45}));
       drawSheet(); }catch(err){ toast('검색 실패'); } }, 450);
 });
-window.addEventListener('resize', () => map.invalidateSize());
+window.addEventListener('resize', () => { if(mm) setSheet(shState); map.invalidateSize(); });
 window.addEventListener('hashchange', () => setDay(location.hash.slice(1), false));
 setDay(location.hash.slice(1) || 'day1', false); zoomCls();
+try{ if(localStorage.getItem('hk-mm')) setMM(true); }catch(e){}
 importPlan().then(ch => { if(ch) setDay('day1', false); });
 loadWx();
 </script>

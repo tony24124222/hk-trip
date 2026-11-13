@@ -73,7 +73,7 @@ h1{font-family:var(--display);font-weight:400;font-size:28px;color:var(--accent)
 .lay{left:8px}
 .zoom button,.lay button{width:46px;height:44px;padding:0;border-radius:14px;border:2px solid var(--line);background:var(--surface);color:var(--ink);display:grid;place-items:center;align-content:center;gap:2px;font:700 9.5px/1 var(--body);box-shadow:0 2px 0 var(--line)}
 .zoom svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-.lay b{font-size:16px;font-weight:400;line-height:1}
+.lay b,.zoom b{font-size:16px;font-weight:400;line-height:1}
 @media (pointer:fine){ .lay{top:calc(var(--ctop) + 78px)} }
 @media (pointer:coarse){ .leaflet-control-zoom{display:none} }
 .maphint{position:absolute;left:8px;bottom:8px;font-size:11px;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:2px 6px}
@@ -110,6 +110,8 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .taxi .addr{font-size:19px;font-weight:600;line-height:1.35;margin:2px 0 6px}
 .grouphead{font-family:var(--display);font-size:15px;color:var(--alt);padding:4px 2px 0}
 
+.footd{margin-top:8px}
+.footd .foot{margin:0 0 12px}
 .foot{margin-top:18px;font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
 .foot a{text-decoration:underline}
 
@@ -235,6 +237,7 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .pop{display:flex;flex-direction:column;gap:4px;min-width:170px}
 .pop b{font:400 15px var(--display)}
 .pop .d{font-size:13px;line-height:1.45}
+.pop .zhb{align-self:flex-start;background:none;color:var(--ink);border:2px solid var(--line);padding:3px 10px;font-weight:400;font-size:13.5px}
 .desc{font-size:13.5px;line-height:1.5;margin:3px 0 2px}
 .guide{display:flex;flex-direction:column;gap:8px;margin-top:18px}
 .gd{border:2px solid var(--line);background:var(--surface);border-radius:16px;padding:0 12px}
@@ -245,6 +248,14 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .gd dl{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;margin:0 0 12px;font-size:13px;line-height:1.45}
 .gd dt{font-weight:700;white-space:nowrap}
 .gd dd{margin:0;color:var(--muted)}
+.pack{list-style:none;margin:0 0 12px;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;font-size:13.5px}
+.pack label{display:flex;align-items:center;gap:6px}
+.pack input{width:18px;height:18px;accent-color:var(--accent)}
+.fx{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:0 0 12px;font-size:15px}
+.fx input{width:110px;font:inherit;border:2px solid var(--line);border-radius:12px;padding:6px 10px;background:var(--bg);color:inherit}
+.fx b{font:400 19px var(--display);color:var(--accent)}
+.fx small{flex:1 1 100%;color:var(--muted);font-size:12px}
+@media (max-width:420px){ .pack{grid-template-columns:1fr} }
 .rec .e{position:relative;width:44px;height:44px;display:grid;place-items:center}
 .rec .e img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:12px}
 .rec .d1{font-size:12.5px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
@@ -292,6 +303,14 @@ html.mm .dayhead h2{display:none}
 }
 @media (prefers-reduced-motion:reduce){ html.mm #panel{transition:none} }
 /* photo viewer */
+.zc{position:fixed;inset:0;z-index:4100;background:#fff;color:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:calc(24px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom));text-align:center;font-family:"PingFang HK","PingFang TC","Microsoft JhengHei","Noto Sans CJK TC",sans-serif}
+.zc[hidden]{display:none}
+.zc small{font-size:15px;color:#666}
+.zc b{font-size:clamp(40px,13vw,104px);line-height:1.15;font-weight:700;word-break:break-all}
+.zc span{font-size:clamp(18px,5.2vw,30px);line-height:1.4}
+.zc span:empty{display:none}
+.zc em{font-style:normal;font-size:14px;color:#666;font-family:var(--body)}
+#zcx{position:absolute;right:14px;top:calc(12px + env(safe-area-inset-top));width:44px;height:44px;border-radius:50%;border:0;background:#eee;color:#111;font-size:18px}
 .lb{position:fixed;inset:0;z-index:4000;background:#100a0d;display:flex;flex-direction:column}
 .lb[hidden]{display:none}
 .lbs{flex:1;min-height:0;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior:contain}
@@ -319,6 +338,7 @@ html.mm .dayhead h2{display:none}
           <button type="button" id="zfull" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><span>크게</span></button>
           <button type="button" id="gps" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4"/></svg><span>내 위치</span></button>
           <button type="button" id="zfit"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="6" r="2.2"/><path d="M8 17c5 0 3-10 8-10" stroke-dasharray="2.5 2.5"/></svg><span>전체</span></button>
+          <button type="button" id="zhotel"><b>🏨</b><span>호텔로</span></button>
         </div>
         <div class="lay">
           <button type="button" id="zrec" aria-pressed="true"><b>⭐</b><span>추천</span></button>
@@ -367,6 +387,7 @@ html.mm .dayhead h2{display:none}
       </div>
       <ol class="stops" id="list"></ol>
       <div class="guide" id="guide"></div>
+      <details class="gd footd"><summary>📎 표시 설명 · 자료 출처</summary>
       <div class="foot">
         <span>🚻 = 가까운 화장실 3곳 · 확대하면 전부 표시 (OpenStreetMap 자료)</span>
         <span>「🚏 실시간」 = 근처 MTR·KMB 버스 도착 시간(정부 공개 자료). 지도 위 🚏 = 내 위치(없으면 지도 가운데) 근처. 시티버스(홍콩섬 대부분)는 안 나옵니다.</span>
@@ -380,11 +401,19 @@ html.mm .dayhead h2{display:none}
         <span>가격·영업시간: 2025~26년 공식 페이지·여행 자료 기준 · 현지에서 다를 수 있음</span>
         <span>편집 내용: 이 폰 브라우저에만 저장</span>
       </div>
+      </details>
       </div>
     </section>
   </div>
 </div>
 
+<div class="zc" id="zc" hidden>
+  <small>請載我去 · Please take me to</small>
+  <b id="zct"></b>
+  <span id="zca"></span>
+  <em id="zck"></em>
+  <button type="button" id="zcx" aria-label="닫기">✕</button>
+</div>
 <div class="lb" id="lb" hidden>
   <div class="lbs" id="lbs"></div>
   <div class="lbc"><b id="lbt"></b><span id="lbn"></span><a id="lba" target="_blank" rel="noopener"></a></div>
@@ -868,7 +897,13 @@ async function toggleToilet(){
 // ---- weather (Hong Kong Observatory 9-day forecast) ----
 const WX = {}, PSR = {'Low':'낮음', 'Medium Low':'조금 낮음', 'Medium':'보통', 'Medium High':'조금 높음', 'High':'높음'};
 const wxIcon = n => n === 50 ? '☀️' : n <= 52 ? '🌤️' : n <= 54 ? '🌦️' : n <= 61 ? '☁️' : n <= 64 ? '🌧️' : n === 65 ? '⛈️' : '🌤️';
-const wxText = d => { const f = WX[DATES[d.id]]; return f ? `${wxIcon(+f.ForecastIcon)} ${f.forecastMintemp.value}–${f.forecastMaxtemp.value}° · 비 ${PSR[f.PSR] || f.PSR}` : ''; };
+// sunset in Hong Kong (minutes after midnight, HKT) from the standard sunrise equation
+function sunsetMin(iso){ const rad = Math.PI / 180, lat = 22.3, lng = 114.17, n = Math.floor((Date.parse(iso + 'T12:00:00Z') - Date.UTC(2000, 0, 1, 12)) / 864e5);
+  const Js = n - lng / 360, M = (357.5291 + .98560028 * Js) % 360, C = 1.9148 * Math.sin(M * rad) + .02 * Math.sin(2 * M * rad) + .0003 * Math.sin(3 * M * rad), L = (M + C + 282.9372) % 360;
+  const Jt = Js + .0053 * Math.sin(M * rad) - .0069 * Math.sin(2 * L * rad), dec = Math.asin(Math.sin(L * rad) * Math.sin(23.44 * rad));
+  const w = Math.acos((Math.sin(-.833 * rad) - Math.sin(lat * rad) * Math.sin(dec)) / (Math.cos(lat * rad) * Math.cos(dec))) / rad;
+  return Math.round((((Jt + w / 360) % 1) + 1) % 1 * 1440 + 720 + 480) % 1440; }
+const wxText = d => { const f = WX[DATES[d.id]]; const sun = DATES[d.id] ? `🌇 일몰 ${hm(sunsetMin(DATES[d.id]))}` : ''; return [f && `${wxIcon(+f.ForecastIcon)} ${f.forecastMintemp.value}–${f.forecastMaxtemp.value}° · 비 ${PSR[f.PSR] || f.PSR}`, sun].filter(Boolean).join(' · '); };
 async function loadWx(){
   try{ const r = await getJ('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=en');
     for(const f of r.weatherForecast || []) WX[f.forecastDate.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3')] = f;
@@ -1060,6 +1095,8 @@ const COURSES = [
  {e:"🎰", n:"마카오 반도 → 타이파", ids:["senado", "stpaul", "monte", "margaret", "cunha", "eiffel"], min:300, only:"macau"}
 ];
 /*INFO-END*/
+const ZH = {"timho": "添好運", "tsimchai": "沾仔記", "kaukee": "九記牛腩", "lanfong": "蘭芳園", "taicheong": "泰昌餅家", "singheung": "勝香園", "yatlok": "一樂燒鵝", "maxim": "美心皇宮（大會堂）", "hohung": "何洪記", "joyhing": "再興燒臘飯店", "mido": "美都餐室", "fourseasons": "四季煲仔飯", "onedim": "一點心", "kamwah": "金華冰廳", "wongchikei": "黃枝記", "margaret": "瑪嘉烈蛋撻", "lordstow": "安德魯餅店", "aos": "星光大道", "ferry": "天星碼頭", "st428": "凌霄閣摩天台", "temple": "廟街夜市", "manmo": "文武廟", "mplus": "M+博物館", "palace": "香港故宮文化博物館", "wts": "黃大仙祠", "repulse": "淺水灣", "buddha": "天壇大佛", "senado": "議事亭前地", "stpaul": "大三巴牌坊", "mtower": "澳門旅遊塔", "ama": "媽閣廟", "k11": "K11 MUSEA", "harbourcity": "海港城", "taikwun": "大館", "lkf": "蘭桂坊", "starst": "星街", "taiping": "太平山街", "ladies": "女人街", "stanley": "赤柱市集", "cunha": "官也街", "lugard": "盧吉道", "artpark": "西九藝術公園", "wheel": "香港摩天輪", "monster": "益昌大廈", "choihung": "彩虹邨", "bluehouse": "藍屋", "nanlian": "南蓮園池", "goldfish": "金魚街", "monte": "大炮台", "eiffel": "澳門巴黎人", "peak": "山頂纜車總站", "esc": "中環至半山自動扶梯", "soho": "蘇豪區", "pmq": "元創方 PMQ", "hkma": "香港藝術館", "mcot": "我杯茶", "oms": "愛文生", "adc": "澳洲牛奶公司", "yung": "榕哥陳皮燒鵝", "kam": "甘牌燒鵝", "ohw": "豪華小食", "north": "北方館（威尼斯人）", "apt": "香港國際機場", "sci": "香港科學館", "jenny": "珍妮曲奇", "god": "住好啲 G.O.D.", "donki": "驚安之殿堂（美麗華廣場）", "theone": "The ONE", "sneakers": "波鞋街", "langham": "朗豪坊", "timessq": "時代廣場", "hysan": "希慎廣場", "sogo": "崇光百貨", "fashionwalk": "名店坊", "ifc": "國際金融中心商場", "leetung": "利東街", "catst": "摩羅上街", "citygate": "東薈城名店倉", "bakehouse": "Bakehouse（漢口道44號）", "hashtagb": "Hashtag B（加拿芬道49號）", "cheunghing": "祥興記上海生煎包", "kaikai": "佳佳甜品", "feijie": "肥姐小食店", "kungwo": "公和荳品廠", "hopyik": "合益泰小食", "luklam": "綠林甜品", "leekeung": "利強記北角雞蛋仔", "makman": "麥文記麵家", "linheung": "蓮香樓（金巴利道25號）", "hingkee": "避風塘興記", "hohochak": "好好吃", "sisterwah": "華姐清湯腩", "ozone": "OZONE（麗思卡爾頓酒店）", "redsugar": "嘉里酒店 Red Sugar", "eyebar": "eyebar（iSQUARE 國際廣場30樓）"};
+const zhOf = s => s.lat === HOTEL.lat && s.lng === HOTEL.lng ? '唯港薈 Hotel ICON' : ZH[s.rec || s.id];
 const infoOf = s => INFO[s.rec || s.id];
 const qOf = s => Q[s.rec || s.id];
 function estWait(s, t, w){ const q = qOf(s); if(!q || !q.w) return 0;
@@ -1213,6 +1250,7 @@ function drawMap(){
     mkList.push({m, pri:LM[p.id] ? 30 : p.c === 'food' ? 40 : 50, name:nm, ph:!!pid, r:LM[p.id] ? 20 : 13});
     m.bindPopup(() => { const box = h('div','pop'); if(pid) box.append(phBox(pid, p.n)); box.append(h('b',null,p.n)); const inf = INFO[p.id]; if(inf && inf.d) box.append(h('div','d',inf.d)); box.append(h('div','m',recMeta(p))); if(inf && inf.t) box.append(h('div','d','💡 ' + inf.t));
       const ol = orLink(p.id); if(ol) box.append(ol);
+      if(ZH[p.id]){ const zb = h('button', 'zhb', '🀄 ' + ZH[p.id]); zb.type = 'button'; zb.addEventListener('click', () => showZh({rec:p.id, name:p.n})); box.append(zb); }
       const b = h('button',null,'＋ '+day.tab.replace(/^\S+\s/,'')+'에 추가'); b.type = 'button';
       b.addEventListener('click', () => { map.closePopup(); addPlace(p); }); box.append(b); return box; }, popOpt());
   }
@@ -1427,6 +1465,7 @@ function drawList(){
       const open = h('a',null,'Google 지도'); open.href = /^https:\/\//.test(s.link || '') ? s.link : `https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lng}`; open.target='_blank'; open.rel='noopener';
       const rtb = h('button','rtb','🚏 실시간'); rtb.type='button'; rtb.addEventListener('click', () => openRt(s.id, s.lat, s.lng, body));
       acts.append(rb, open, rtb);
+      if(zhOf(s)){ const zb = h('button', null, '🀄 한자'); zb.type = 'button'; zb.title = zhOf(s); zb.addEventListener('click', () => showZh(s)); acts.append(zb); }
       if(s.kind!=='alt'){ const ck = h('button',null, done[s.id] ? '완료됨' : '완료 체크'); ck.type='button'; ck.id='done-'+s.id; ck.setAttribute('aria-pressed', !!done[s.id]);
         ck.addEventListener('click', () => { done[s.id] = !done[s.id]; save(); render(); }); acts.append(ck); }
       body.append(acts); }
@@ -1472,6 +1511,7 @@ function setMM(on){ mm = on; root.classList.toggle('mm', on); const b = document
   if(on) setSheet(wide() ? 'half' : 'peek'); else { root.style.removeProperty('--sh'); delete panel.dataset.st; }
   scrollTo(0, 0); map.invalidateSize(); if(sel) focus(sel); else if(routeCur) redrawRoute(true); else fit(); }
 document.getElementById('zfull').addEventListener('click', () => setMM(!mm));
+document.getElementById('zhotel').addEventListener('click', () => { const o = originNear(); showRoute({id:'hotel', name:HOTEL.name, lat:HOTEL.lat, lng:HOTEL.lng}, o); });
 document.getElementById('pgo').addEventListener('click', () => { if(sel) routeTo(sel); });
 document.getElementById('pmore').addEventListener('click', () => { if(!sel) return; const id = 'stop-' + sel.id; setSheet('half'); setTimeout(() => { const li = document.getElementById(id); if(li) li.scrollIntoView({block:'start'}); }, 60); });
 document.getElementById('pdone').addEventListener('click', () => { if(!sel) return; done[sel.id] = !done[sel.id]; save(); render(); });
@@ -1485,6 +1525,11 @@ document.getElementById('pdone').addEventListener('click', () => { if(!sel) retu
     gd = null; };
   grip.addEventListener('pointerup', end); grip.addEventListener('pointercancel', end);
   grip.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); setSheet(shState === 'peek' ? 'half' : 'peek'); } }); }
+// big Chinese name card to show a driver or passer-by
+function showZh(s){ const z = zhOf(s); if(!z) return; document.getElementById('zct').textContent = z;
+  document.getElementById('zca').textContent = (s.taxi || '').replace(/^目的地：[^，]*，/, ''); document.getElementById('zck').textContent = s.name || s.n || '';
+  document.getElementById('zc').hidden = false; document.getElementById('zcx').focus(); }
+document.getElementById('zc').addEventListener('click', () => { document.getElementById('zc').hidden = true; });
 // photo viewer
 let lbId = null, lbName = '';
 const lbs = document.getElementById('lbs');
@@ -1499,12 +1544,31 @@ function closeLb(){ document.getElementById('lb').hidden = true; lbId = null; lb
 lbs.addEventListener('scroll', lbCap, {passive:true});
 lbs.addEventListener('click', e => { if(e.target.tagName === 'IMG'){ const n = PH[lbId].length, w = lbs.clientWidth, i = Math.round(lbs.scrollLeft / w); lbs.scrollTo({left:(e.clientX > innerWidth / 2 ? Math.min(n - 1, i + 1) : Math.max(0, i - 1)) * w, behavior:'smooth'}); } else closeLb(); });
 document.getElementById('lbx').addEventListener('click', closeLb);
-document.addEventListener('keydown', e => { if(!lbId) return; if(e.key === 'Escape') closeLb();
+document.addEventListener('keydown', e => { if(e.key === 'Escape') document.getElementById('zc').hidden = true; if(!lbId) return; if(e.key === 'Escape') closeLb();
   else if(e.key === 'ArrowRight' || e.key === 'ArrowLeft') lbs.scrollBy({left:(e.key === 'ArrowRight' ? 1 : -1) * lbs.clientWidth, behavior:'smooth'}); });
 const GUIDE = [["📅 여행 4일 휴관·행사", [["11/16 월", "M+ 휴관"], ["11/17 화", "고궁박물관 휴관"], ["11/18 수", "심포니 오브 라이트 마지막 공연 20:00 + 불꽃 · 윈터페스트 개막 · 미도카페 휴무"], ["11/19 목", "홍콩미술관 휴관 · 오스트레일리아 데일리컴퍼니 휴무 · 심포니 오브 라이트 없음 · 마카오 그랑프리 연습일"], ["날씨 평년", "최고 24.5° · 최저 20.3° · 얇은 겉옷"]]], ["🚇 교통·결제", [["옥토퍼스(관광객용)", "HK$39 · 보증금 없음 · 잔액만 환불"], ["아이폰", "'Octopus for Tourists' 앱 · 해외 Visa·Mastercard 충전 (한국 카드 미확인)"], ["A21 버스", "공항→침사추이 이스트 · HK$34.6 · 10~20분 간격 · 60~75분"], ["공항철도", "구룡역 HK$105 · 홍콩역 HK$120 · 약 24분"], ["MTR", "하늘색 개찰구에서 Visa·Mastercard 컨택리스"], ["택시(빨간색)", "기본 2km HK$29 · 이후 200m당 HK$2.1 · 해저터널 HK$25~50 · 짐 1개 HK$6"], ["스타페리", "위층 평일 HK$5 · 주말 HK$6.5"], ["피크트램", "편도 HK$82 · 왕복 HK$116 (자료 엇갈림)"]]], ["🛍️ 쇼핑 메모", [["세금", "부가세·환급 없음 · 식당은 봉사료 10% 많음"], ["쇼핑몰", "10~11시 개점 · 22시 폐점"], ["결제", "몰·체인 카드 OK · 노포·간식집은 현금·옥토퍼스"], ["비닐봉투", "장당 HK$1 이상"], ["드럭스토어", "백화유 · 타이거밤 · 달리 치약 · 닌지옴 캔디 (매닝스·왓슨스)"], ["과자 선물", "제니 베이커리 쿠키 · 기화병가 펑리수·에그롤 · 이금기 소스"], ["11/18부터", "윈터페스트 할인(알리페이 QR)"]]], ["⛴️ 마카오 가는 법", [["침사추이 페리터미널", "마카오행 없음 (주하이행만)"], ["터보젯", "셩완 → 마카오 외항 · 07:30~22:30 · 약 60분 · 평일 HK$194 · 주말 HK$212 · 야간 HK$242"], ["코타이 워터젯", "셩완 → 타이파 · 07:30~22:30 · 평일 HK$192 · 베네시안 무료 셔틀"], ["원버스", "조던 캔톤로드 505 → 샌즈·런더너·베네시안 · 평일 낮 HK$160 · 저녁·주말 HK$180"], ["대교 셔틀버스", "HK$65 · 24시간 · 홍콩 쪽 터미널까지 1시간 이상"], ["11/19~22", "그랑프리로 외항 터미널 주변 통제 → 타이파행 배·원버스"]]]];
 { const g = document.getElementById('guide');
   for(const [t, rows] of GUIDE){ const d = h('details','gd'), dl = h('dl'); d.append(h('summary', null, t));
-    for(const [k, v] of rows) dl.append(h('dt', null, k), h('dd', null, v)); d.append(dl); g.append(d); } }
+    for(const [k, v] of rows) dl.append(h('dt', null, k), h('dd', null, v)); d.append(dl); g.append(d); }
+  // emergency numbers as tap-to-call links
+  { const d = h('details','gd'), dl = h('dl'); d.append(h('summary', null, '🆘 비상 연락처'));
+    for(const [k, v, tel] of [['경찰·구급·소방', '999', '999'], ['주홍콩 총영사관', '2529 4141 · 애드미럴티 Far East Finance Centre 5층', '+85225294141'], ['영사콜센터', '+82-2-3210-0404 · 24시간', '+82232100404']]){
+      const dd = h('dd'), a = h('a', null, v); a.href = 'tel:' + tel; dd.append(a); dl.append(h('dt', null, k), dd); }
+    d.append(dl); g.append(d); }
+  // packing list, ticks kept on this phone
+  { const d = h('details','gd'), ul = h('ul','pack'); d.append(h('summary', null, '🎒 준비물')); let st = {}; try{ st = JSON.parse(localStorage.getItem('hk-pack') || '{}') || {}; }catch(e){}
+    for(const t of ['여권', '옥토퍼스 카드 또는 앱', '영국식 3핀 어댑터 (G형 · 220V)', '현금 HK$ (노포·간식집)', '해외 결제 카드', 'eSIM·로밍', '보조배터리', '얇은 겉옷', '접이식 우산', '편한 신발']){
+      const li = h('li'), lb = h('label'), cb = h('input'); cb.type = 'checkbox'; cb.checked = !!st[t];
+      cb.addEventListener('change', () => { st[t] = cb.checked; try{ localStorage.setItem('hk-pack', JSON.stringify(st)); }catch(e){} }); lb.append(cb, ' ' + t); li.append(lb); ul.append(li); }
+    d.append(ul); g.append(d); }
+  // currency: daily ECB rate, last value kept for offline
+  { const d = h('details','gd'), box = h('div','fx'), inp = h('input'), out = h('b'), note = h('small'); d.append(h('summary', null, '💱 환율 계산'));
+    let fx = {r:170.06, d:'2026-11-12'}; try{ fx = JSON.parse(localStorage.getItem('hk-fx')) || fx; }catch(e){}
+    inp.type = 'number'; inp.inputMode = 'decimal'; inp.min = 0; inp.value = 100; inp.setAttribute('aria-label', '홍콩달러');
+    const draw = () => { const v = +inp.value || 0; out.textContent = '≈ ' + Math.round(v * fx.r).toLocaleString('ko-KR') + '원'; note.textContent = `HK$1 = ${fx.r.toFixed(1)}원 · ${fx.d.slice(5).replace('-', '/')} 기준 · MOP 1 ≈ ${(fx.r / 1.03).toFixed(0)}원`; };
+    inp.addEventListener('input', draw); box.append('HK$ ', inp, ' ', out, note); d.append(box); g.append(d); draw();
+    d.addEventListener('toggle', () => { if(!d.open || d.dataset.got) return; d.dataset.got = 1;
+      getJ('https://api.frankfurter.dev/v1/latest?base=HKD&symbols=KRW').then(j => { if(j && j.rates && j.rates.KRW > 50){ fx = {r:j.rates.KRW, d:j.date}; try{ localStorage.setItem('hk-fx', JSON.stringify(fx)); }catch(e){} draw(); } }).catch(() => {}); }); } }
 document.getElementById('gps').addEventListener('click', toggleGps);
 document.getElementById('routeclr').addEventListener('click', clearRoute);
 document.getElementById('ztoilet').addEventListener('click', toggleToilet);

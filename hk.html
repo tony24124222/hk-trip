@@ -91,7 +91,12 @@ button,a,summary,label,select{touch-action:manipulation;-webkit-tap-highlight-co
 
 .progress{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;color:var(--muted);padding:2px 2px 0}
 .progress b{color:var(--ink)}
-.progress button{border:0;background:none;text-decoration:underline;color:var(--muted);font-size:12px;padding:4px}
+.progress #reset{border:0;background:none;text-decoration:underline;color:var(--muted);font-size:12px;padding:4px}
+.progress #prog{flex:1;min-width:0}
+.pst{display:flex;gap:6px;flex:0 0 auto}
+.pstep{width:34px;height:34px;flex:0 0 auto;display:grid;place-items:center;padding:0 0 3px;border-radius:50%;border:2px solid var(--line);background:var(--surface);color:var(--ink);font-size:21px;line-height:1}
+.pstep:disabled{opacity:.35}
+#panel>.pstep{display:none}
 
 h2{font-family:var(--display);font-weight:400;font-size:19px;margin:0 0 8px}
 ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
@@ -279,11 +284,18 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .mres .s.bad{color:var(--accent)}
 .mact{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .mctx{display:flex;align-items:center;gap:8px;margin:0 0 8px}
-.mctx[hidden],#mgo[hidden]{display:none}
+.mctx[hidden]{display:none}
 .mctx b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:400 15px var(--display)}
 .mctx .gx{width:30px;height:30px;font-size:12px}
 #mq{margin:0 0 8px}
-#memo.onp #mtext{min-height:52px;height:52px}
+.min{display:flex;gap:8px;align-items:stretch;margin:0 0 8px}
+.min #mtext{flex:1;min-width:0;margin:0}
+.msend{flex:0 0 auto;min-height:48px;padding:0 16px;border:0;border-radius:14px;background:var(--accent);color:var(--accent-ink);font:700 14.5px var(--body);box-shadow:0 2px 0 rgba(0,0,0,.12)}
+.mprim{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);padding:8px 16px;font-size:14px}
+.msend:disabled,.mprim:disabled{opacity:.5}
+#memo[data-m="memo"] .msend,#memo[data-m="memo"] #mq,#memo[data-m="ask"] #mgo{display:none}
+#memo[data-m="ask"] #mtext{min-height:48px;height:48px;resize:none}
+#memo[data-m="ask"] .mrow{margin:0;min-height:0}
 .msrc{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:8px;font-size:12px}
 .msrc a{color:var(--muted)}
 .pop .prow{flex-wrap:wrap}
@@ -292,7 +304,12 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .kv dt{color:var(--muted);white-space:nowrap}
 .kv dd{margin:0;min-width:0;overflow-wrap:anywhere}
 .rec .m.go{color:var(--ink)}
-.mans{white-space:pre-wrap;font-size:14.5px;line-height:1.65;margin:10px 0 0}
+.mqq{width:fit-content;max-width:85%;margin:12px 0 8px auto;background:var(--accent);color:var(--accent-ink);border-radius:16px 16px 4px 16px;padding:7px 12px;font-size:13.5px;font-weight:700;overflow-wrap:anywhere}
+.mans{background:var(--surface);border:2px solid var(--line);border-radius:4px 16px 16px 16px;padding:12px 14px;font-size:14.5px;line-height:1.6}
+.mans p{margin:0 0 8px}
+.mans p:last-of-type{margin-bottom:0}
+.mans .lead{font:400 16.5px/1.5 var(--display)}
+.mans .mact{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
 .fx input{font-size:16px}
 .fx input[type=text]{flex:1;min-width:90px}
 .spend{list-style:none;margin:0 0 8px;padding:0}
@@ -348,7 +365,10 @@ html.mm .mapinfo .gpsmsg{align-self:flex-start;background:var(--surface);border:
 html.mm .mapinfo .nomap{background:var(--surface)}
 html.mm #panel{position:fixed;z-index:20;left:0;right:0;bottom:var(--nav);height:var(--sh,64px);background:var(--bg);border-radius:22px 22px 0 0;box-shadow:0 -6px 24px rgba(60,30,40,.2);display:flex;flex-direction:column;overflow:hidden;transition:height .28s cubic-bezier(.2,.8,.2,1)}
 html.mm #panel.drag{transition:none}
-html.mm .grip{display:flex;flex-direction:column;align-items:center;gap:7px;width:100%;flex:0 0 auto;border:0;background:none;padding:9px 16px 10px;touch-action:none;cursor:grab}
+html.mm #panel>.pstep{display:grid;position:absolute;top:14px;z-index:2}
+html.mm #panel>.pstep[data-d="-1"]{left:10px}
+html.mm #panel>.pstep[data-d="1"]{right:10px}
+html.mm .grip{display:flex;flex-direction:column;align-items:center;gap:7px;width:100%;flex:0 0 auto;border:0;background:none;padding:9px 52px 10px;touch-action:none;cursor:grab}
 .grip i{width:44px;height:5px;border-radius:99px;background:var(--line)}
 .grip span{max-width:100%;font:400 15.5px var(--display);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 html.mm .pbody{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:2px 14px 28px}
@@ -417,10 +437,11 @@ html.mm .dayhead h2{display:none}
       </div>
       <div class="nomap" id="nomap" hidden></div>
       </div>
-      <div class="progress"><span id="prog"></span><button type="button" id="reset">이 날 체크 지우기</button></div>
+      <div class="progress"><span id="prog"></span><span class="pst"><button type="button" class="pstep" data-d="-1" aria-label="이전 장소">‹</button><button type="button" class="pstep" data-d="1" aria-label="다음 장소">›</button></span><button type="button" id="reset">이 날 체크 지우기</button></div>
     </div>
     <section id="panel">
       <button type="button" class="grip" id="grip" aria-label="일정 펼치기·접기" aria-expanded="false"><i></i><span id="gripsum"></span></button>
+      <button type="button" class="pstep" data-d="-1" aria-label="이전 장소">‹</button><button type="button" class="pstep" data-d="1" aria-label="다음 장소">›</button>
       <div class="acts peekact" id="peekact" hidden>
         <button type="button" class="go" id="pgo">🧭 길찾기</button>
         <button type="button" id="pmore">자세히</button>
@@ -476,14 +497,14 @@ html.mm .dayhead h2{display:none}
   <button type="button" id="zinfo" aria-expanded="false" aria-controls="gi"><b>📒</b><span>정보</span></button>
   <button type="button" id="zask" aria-expanded="false" aria-controls="memo"><b>💬</b><span>질문</span></button>
 </nav>
-<div class="gi" id="memo" role="dialog" aria-label="메모 · 질문" hidden>
-  <div class="gih"><b class="mt">📝 메모 · 질문</b><button type="button" id="memox" class="gx" aria-label="닫기">✕</button></div>
+<div class="gi" id="memo" role="dialog" aria-label="질문" data-m="ask" hidden>
+  <div class="gih"><b class="mt" id="mtitle">💬 질문</b><button type="button" id="memox" class="gx" aria-label="닫기">✕</button></div>
   <div class="gib">
     <input type="password" id="mpass" aria-label="접속 암호" placeholder="접속 암호" autocomplete="off" hidden>
     <div class="mctx" id="mctx" hidden><b id="mctxn"></b><button type="button" id="mctxx" class="gx" aria-label="장소 지우기">✕</button></div>
-    <textarea id="mtext" aria-label="메모" rows="6" placeholder="17일 점심 침차이키 → 피크트램 → 저녁 7시 애문생"></textarea>
+    <div class="min"><textarea id="mtext" aria-label="질문" rows="6"></textarea><button type="button" class="msend" id="mask">물어보기</button></div>
     <div class="cats" id="mq"></div>
-    <div class="mrow"><button type="button" class="chip" id="mgo">일정으로 정리</button><button type="button" class="chip" id="mask">물어보기</button><span id="mmsg"></span></div>
+    <div class="mrow"><button type="button" class="chip mprim" id="mgo">일정으로 정리</button><span id="mmsg"></span></div>
     <div id="mres"></div>
   </div>
 </div>
@@ -978,7 +999,7 @@ function originFor(s){
   const rs = routeStops(day), i = rs.indexOf(s);
   return i > 0 ? [rs[i-1], rs[i-1].name] : [home(), home().name];
 }
-function showRoute(s, o, alts){ pendingRoute = null; if(mm && !wide() && shState !== 'peek') setSheet('peek'); const [from, lbl] = o || originFor(s); routeCur = {s, from:{lat:from.lat, lng:from.lng}, lbl, alts, nt:{}}; redrawRoute(true); }
+function showRoute(s, o, alts){ pendingRoute = null; noSheets(); if(mm && !wide() && shState !== 'peek') setSheet('peek'); const [from, lbl] = o || originFor(s); routeCur = {s, from:{lat:from.lat, lng:from.lng}, lbl, alts, nt:{}}; redrawRoute(true); }
 // shortcut: route is drawn from where you are when tapped; tap again to refresh as you walk
 function routeTo(s){
   showRoute(s);
@@ -1387,7 +1408,7 @@ const nmTag = (n, d) => `<span class="nm${d ? ' d' : ''}">${n.replace(/[&<>"]/g,
 let mkList = [], recOpen = null;
 // popups must fit the 300px phone map: scroll inside, and the side buttons step aside while one is open
 const popOpt = () => ({minWidth:200, maxWidth:260, maxHeight:Math.max(160, map.getSize().y - 46), autoPanPaddingTopLeft:[8, 8 + ins().t], autoPanPaddingBottomRight:[8, 8 + (mm && !wide() ? shH(shState) : 0)]});
-map.on('popupopen', e => { document.getElementById('mapwrap').classList.add('popon');
+map.on('popupopen', e => { noSheets(); document.getElementById('mapwrap').classList.add('popon');
   // the map changes height between list and map mode after the popup was bound
   const mh = Math.max(160, map.getSize().y - 46 - ins().t - (mm && !wide() ? shH(shState) : 0)); if(e.popup.options.maxHeight !== mh){ e.popup.options.maxHeight = mh; e.popup.update(); }
 }).on('popupclose', () => document.getElementById('mapwrap').classList.remove('popon'));
@@ -1634,6 +1655,7 @@ function drawList(){
   const nx = nextStop(day), rs = routeStops(day), sch = schedule(day), firstAlt = day.stops.find(x => x.kind==='alt'), grp = (day.stops.find(x => x.group) || {}).group;
   { const g = sel && sch.out.get(sel) ? sel : nx, gi = g && sch.out.get(g);
     document.getElementById('gripsum').textContent = (day.date ? day.date + ' · ' : '') + (g ? (sel === g ? '' : '다음 ') + (gi ? hm(gi.arr) + ' ' : '') + g.name + (sel === g && gi && gi.leg && gi.leg.mode !== 'same' ? ` · ${legIcon[gi.leg.mode] || ''}${gi.leg.min}분` : '') : day.title); }
+  { const rs2 = rs.filter(x => x.lat), k = rs2.indexOf(sel); for(const b of document.querySelectorAll('.pstep')) b.disabled = rs2.length < 2 || (+b.dataset.d < 0 ? k === 0 : k === rs2.length - 1); }
   { const pa = document.getElementById('peekact'), on = !!peekSel(); pa.hidden = !on;
     if(on){ const pd = document.getElementById('pdone'); pd.hidden = sel.kind === 'alt'; pd.textContent = done[sel.id] ? '완료됨' : '완료 체크'; pd.setAttribute('aria-pressed', !!done[sel.id]); }
     if(mm && shState === 'peek') root.style.setProperty('--sh', shH('peek') + 'px'); }
@@ -1731,7 +1753,7 @@ function stopPop(s){ const box = h('div','pop'), info = schedule(day).out.get(s)
   if(zhOf(s)){ const z = h('button', null, '🀄 한자'); z.type = 'button'; z.addEventListener('click', () => showZh(s)); row.append(z); }
   { const q = h('button', null, '💬 질문'); q.type = 'button'; q.addEventListener('click', () => { map.closePopup(); askAbout(s); }); row.append(q); }
   box.append(row); return box; }
-function select(s, scroll){ sel = s; if(mm && !wide() && shState === 'full') setSheet('half'); if(!(scroll && !mm)) focus(s); render();
+function select(s, scroll){ sel = s; noSheets(); if(mm && !wide() && shState === 'full') setSheet('half'); if(!(scroll && !mm)) focus(s); render();
   if(scroll && !mm && s.lat) L.popup(Object.assign(popOpt(), {offset:[0, -12]})).setLatLng([s.lat, s.lng]).setContent(stopPop(s)).openOn(map);
   if(scroll){ const li = document.getElementById('stop-'+s.id); if(li) li.scrollIntoView({block:'nearest', behavior:'smooth'}); } }
 function setDay(id, push){ const was = day; day = DAYS.find(d=>d.id===id) || DAYS[0]; sel = null; recOpen = null; map.closePopup(); if(routeCur && was !== day) clearRoute();
@@ -1756,6 +1778,10 @@ function setMM(on){ mm = on; root.classList.toggle('mm', on); document.getElemen
 document.getElementById('nlist').addEventListener('click', () => { closeGi(); closeMemo(); if(mm) setMM(false); else scrollTo({top:0, behavior:'smooth'}); });
 document.getElementById('nmap').addEventListener('click', () => { closeGi(); closeMemo(); if(!mm) setMM(true); else setSheet('peek'); });
 document.getElementById('zhotel').addEventListener('click', () => { const o = originNear(); const t = home(); showRoute({id:'hotel', name:t.name, lat:t.lat, lng:t.lng}, o); });
+// with nothing selected, › starts at the next unvisited stop and ‹ at the one before it
+function step(d){ const rs = routeStops(day).filter(x => x.lat); if(!rs.length) return; let i = rs.indexOf(sel); if(i < 0) i = Math.max(0, rs.indexOf(nextStop(day))) - (d > 0 ? 1 : 0);
+  const t = rs[Math.max(0, Math.min(rs.length - 1, i + d))]; if(t !== sel) select(t); }
+for(const b of document.querySelectorAll('.pstep')) b.addEventListener('click', () => step(+b.dataset.d));
 document.getElementById('pgo').addEventListener('click', () => { if(sel) routeTo(sel); });
 document.getElementById('pmore').addEventListener('click', () => { if(!sel) return; const id = 'stop-' + sel.id; setSheet('half'); setTimeout(() => { const li = document.getElementById(id); if(li) li.scrollIntoView({block:'start'}); }, 60); });
 document.getElementById('pdone').addEventListener('click', () => { if(!sel) return; done[sel.id] = !done[sel.id]; save(); render(); });
@@ -1770,6 +1796,10 @@ document.getElementById('pdone').addEventListener('click', () => { if(!sel) retu
   grip.addEventListener('pointerup', end); grip.addEventListener('pointercancel', end);
   grip.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); setSheet(shState === 'peek' ? 'half' : 'peek'); } }); }
 let ovSkip = 0, ovKeep = false, closeGi = () => {};
+// before a bottom sheet opens: no map popup or category panel behind it, and the plan sheet folds down
+function tidy(){ if(wide()) return; map.closePopup(); const c = document.getElementById('catp'); if(!c.hidden){ c.hidden = true; document.getElementById('zrec').setAttribute('aria-expanded', false); }
+  if(mm && shState !== 'peek') setSheet('peek'); }
+function noSheets(){ if(wide()) return; try{ closeGi(); closeMemo(); }catch(e){} }
 function ovPush(){ if(ovKeep){ ovKeep = false; return; } try{ history.pushState({ov:((history.state && history.state.ov) || 0) + 1}, ''); }catch(e){} }
 function ovPop(){ try{ if(history.state && history.state.ov){ ovSkip++; history.back(); } }catch(e){} }
 let closeMemo = () => {}, askAbout = () => {};
@@ -1843,7 +1873,7 @@ const GUIDE = [["📅 여행 4일 휴관·행사", [["11/16 월", "M+ 휴관"], 
   const gi = document.getElementById('gi'), gib = document.getElementById('gib'), tabs = document.getElementById('gitabs'), zi = document.getElementById('zinfo'), ft = document.getElementById('foot');
   ft.dataset.t = '📎 표시·출처'; const secs = [...g.children, ft]; g.textContent = ''; let cur = 0;
   const show = i => { cur = i; secs.forEach((d, k) => { d.hidden = k !== i; }); [...tabs.children].forEach((b, k) => b.setAttribute('aria-pressed', k === i)); gib.scrollTop = 0;
-    if(gi.hidden){ gi.hidden = false; zi.setAttribute('aria-expanded', true); ovPush(); } tabs.children[i].scrollIntoView({block:'nearest', inline:'center'}); if(secs[i].onshow) secs[i].onshow(); };
+    if(gi.hidden){ tidy(); gi.hidden = false; zi.setAttribute('aria-expanded', true); ovPush(); } tabs.children[i].scrollIntoView({block:'nearest', inline:'center'}); if(secs[i].onshow) secs[i].onshow(); };
   secs.forEach((d, i) => { d.hidden = true; gib.append(d);
     { const b = h('button','chip', d.dataset.t); b.type = 'button'; b.addEventListener('click', () => show(i)); tabs.append(b); } });
   closeGi = fromBack => { if(gi.hidden) return; gi.hidden = true; zi.setAttribute('aria-expanded', false); if(fromBack !== true) ovPop(); };
@@ -1852,11 +1882,12 @@ const GUIDE = [["📅 여행 4일 휴관·행사", [["11/16 월", "M+ 휴관"], 
 { const MEMO_URL = 'https://hk-trip-memo.4032979.workers.dev', box = document.getElementById('memo'), bt = document.getElementById('bmemo'),
     pass = document.getElementById('mpass'), txt = document.getElementById('mtext'), go = document.getElementById('mgo'), msg = document.getElementById('mmsg'), res = document.getElementById('mres');
   let saved = ''; try{ saved = localStorage.getItem('hk-pass') || ''; }catch(e){}
-  let plan = null, ctx = null; const stored = () => { try{ return localStorage.getItem('hk-memo') || ''; }catch(e){ return ''; } }; txt.value = stored();
-  txt.addEventListener('input', () => { if(!ctx) try{ localStorage.setItem('hk-memo', txt.value.slice(0, 4000)); }catch(e){} });
+  let plan = null, ctx = null, mode = 'ask', key = 'ask|'; const stored = () => { try{ return localStorage.getItem('hk-memo') || ''; }catch(e){ return ''; } };
+  txt.addEventListener('input', () => { if(mode === 'memo') try{ localStorage.setItem('hk-memo', txt.value.slice(0, 4000)); }catch(e){} });
+  txt.addEventListener('keydown', e => { if(mode === 'ask' && e.key === 'Enter' && !e.shiftKey && !e.isComposing){ e.preventDefault(); ask.click(); } });
   const cx = document.getElementById('mctx'), mq = document.getElementById('mq');
   const QS = {eat:['오늘 열어?', '지금 웨이팅', '추천 메뉴', '가는 길 막혀?'], see:['오늘 열어?', '지금 붐벼?', '볼거리·꿀팁', '가는 길 막혀?'], any:['지금 근처 맛집', '비 오면 어디?', '오늘 일정 무리 없어?', '지금 차 막혀?']};
-  function setCtx(c){ ctx = c || null; cx.hidden = !ctx; document.getElementById('mctxn').textContent = ctx ? '📍 ' + ctx.name : ''; go.hidden = !!ctx; box.classList.toggle('onp', !!ctx); mq.textContent = '';
+  function setCtx(c){ ctx = c || null; cx.hidden = !ctx; document.getElementById('mctxn').textContent = ctx ? '📍 ' + ctx.name : ''; mq.textContent = '';
     for(const q of ctx ? (/food|sweet|bar/.test(ctx.c) ? QS.eat : QS.see) : QS.any){ const b = h('button', 'chip', q); b.type = 'button'; b.addEventListener('click', () => { txt.value = q; ask.click(); }); mq.append(b); } }
   // what the page knows about one place, sent along with a question about it
   const placeCtx = s => { const id = s.rec || s.id, r = REC.find(x => x.id === id) || {}, inf = INFO[id] || {}, nm = s.name || s.n, hrs = s.hours || r.hours, cl = s.closed || r.closed,
@@ -1864,12 +1895,19 @@ const GUIDE = [["📅 여행 4일 휴관·행사", [["11/16 월", "M+ 휴관"], 
       wq = estWait(s.name ? s : {rec:id}, info ? info.arr : hkMin(), iso ? DOW[new Date(iso + 'T12:00:00+08:00').getUTCDay()] : '');
     return {name:shortName(nm), c:r.c || s.c || (/차찬탱|딤섬|국수|완탕|카페|요리|맛집|식당|타르트|거위|해산물|디저트|빵|저녁|점심/.test([nm, s.sub, s.note].join(' ')) ? 'food' : ''), text:[nm, s.sub || r.sub, hrs && '영업 ' + hrs, cl && cl + ' 휴무', inf.d, inf.t, inf.p && '가격 ' + inf.p, s.note && '메모: ' + s.note,
       info && `일정: ${day.id} ${hm(info.arr)} 도착`, wq > 0 && `앱 예상 웨이팅 약 ${wq}분 (방문 후기 기준)`, lg.mode !== 'same' && `${shortName(o[1])}에서 ${legShort(lg)}`, `좌표 ${s.lat.toFixed(5)},${s.lng.toFixed(5)}`].filter(Boolean).join(' · ').slice(0, 900)}; };
-  const open = c => { if((c ? c.text : '') !== (ctx ? ctx.text : '')){ plan = null; res.textContent = ''; msg.textContent = ''; txt.value = c ? '' : stored(); } setCtx(c); pass.hidden = !!saved;
-    if(box.hidden){ if(!document.getElementById('gi').hidden){ closeGi(true); ovKeep = true; } box.hidden = false; bt.setAttribute('aria-expanded', true); ovPush(); } za.setAttribute('aria-expanded', true); if(!pass.hidden) pass.focus(); else if(!c) txt.focus(); };
-  askAbout = s => open(placeCtx(s));
   const za = document.getElementById('zask');
+  // m = 'memo' (paste a plan) or 'ask'; c = the place a question is about
+  const open = (c, m) => { m = m || 'ask'; const k = m + '|' + (c ? c.text : '');
+    if(k !== key){ key = k; plan = null; res.textContent = ''; msg.textContent = ''; txt.value = m === 'memo' ? stored() : ''; }
+    mode = box.dataset.m = m; setCtx(m === 'ask' ? c : null); pass.hidden = !!saved;
+    document.getElementById('mtitle').textContent = m === 'memo' ? '📝 메모로 일정 넣기' : '💬 질문'; box.setAttribute('aria-label', m === 'memo' ? '메모로 일정 넣기' : '질문');
+    txt.placeholder = m === 'memo' ? '17일 점심 침차이키 → 피크트램 → 저녁 7시 애문생' : '비 오면 어디 가?'; txt.setAttribute('aria-label', m === 'memo' ? '메모' : '질문');
+    if(box.hidden){ tidy(); if(!document.getElementById('gi').hidden){ closeGi(true); ovKeep = true; } box.hidden = false; ovPush(); }
+    bt.setAttribute('aria-expanded', m === 'memo'); za.setAttribute('aria-expanded', m === 'ask'); if(!pass.hidden) pass.focus(); else if(m === 'memo') txt.focus(); };
+  askAbout = s => open(placeCtx(s));
   closeMemo = fromBack => { if(box.hidden) return; box.hidden = true; bt.setAttribute('aria-expanded', false); za.setAttribute('aria-expanded', false); if(fromBack !== true) ovPop(); };
-  for(const b of [bt, document.getElementById('zask')]) b.addEventListener('click', () => box.hidden || ctx ? open() : closeMemo());
+  bt.addEventListener('click', () => box.hidden || mode !== 'memo' ? open(null, 'memo') : closeMemo());
+  za.addEventListener('click', () => box.hidden || mode !== 'ask' || ctx ? open() : closeMemo());
   document.getElementById('mctxx').addEventListener('click', () => open());
   document.getElementById('memox').addEventListener('click', () => closeMemo());
   const dayOf = id => DAYS.find(d => d.id === id), homeOf = d => d.id === 'macau' ? MHOTEL : HOTEL;
@@ -1929,14 +1967,15 @@ const GUIDE = [["📅 여행 4일 휴관·행사", [["11/16 월", "M+ 휴관"], 
   const planText = () => { const near = me && nearHK(me) ? REC.map(p => [dist(me.lat, me.lng, p.lat, p.lng), p]).sort((x, y) => x[0] - y[0])[0] : null;
     return (DAYS.map(d => { const rs = routeStops(d), sch = schedule(d, rs); return `${d.id} ${DATES[d.id] || ''}: ` + rs.map(x => hm(sch.out.get(x).arr) + ' ' + x.name).join(' → '); }).join('\n')
       + `\n보고 있는 날: ${day.id}` + (near ? `\n지금 위치: ${near[1].n} 근처 (${fmt(near[0])})` : '')).slice(0, 4000); };
-  ask.addEventListener('click', async () => { const busy = '찾아보는 중…';
+  ask.addEventListener('click', async () => { const busy = '찾아보는 중…', q = txt.value.trim();
     try{ const j = await call({mode:'ask', place:ctx ? ctx.text : '', plan:planText(), facts:GUIDE.map(g => g[0] + ': ' + g[1].map(r => r.join(' = ')).join(' / ')).join(String.fromCharCode(10)).slice(0, 6000), places:REC.map(p => [p.id, p.n, [p.sub, p.hours && '영업 ' + p.hours, p.closed && p.closed + ' 휴무'].filter(Boolean).join(' · ')].map(v => String(v).slice(0, 120)))}, busy); if(!j) return;
-      res.append(h('p', 'mans', won(String(j.answer || '답 없음').slice(0, 1500))));
+      const card = h('div', 'mans'); won(String(j.answer || '답 없음').slice(0, 1500)).split(/\n+/).map(x => x.trim()).filter(Boolean).forEach((x, n) => card.append(h('p', n ? null : 'lead', x)));
       const src = (Array.isArray(j.src) ? j.src : []).filter(x => x && /^https:\/\//.test(x.u)).slice(0, 3);
-      if(src.length){ const sr = h('div', 'msrc'); for(const x of src){ const a = h('a', null, '🔗 ' + (String(x.t || '').slice(0, 28) || '출처')); a.href = x.u; a.target = '_blank'; a.rel = 'noopener'; sr.append(a); } res.append(sr); }
+      if(src.length){ const sr = h('div', 'msrc'); for(const x of src){ const a = h('a', null, '🔗 ' + (String(x.t || '').slice(0, 28) || '출처')); a.href = x.u; a.target = '_blank'; a.rel = 'noopener'; sr.append(a); } card.append(sr); }
       const recs = (Array.isArray(j.recs) ? j.recs : []).map(id => REC.find(p => p.id === id)).filter(Boolean).slice(0, 4);
       if(recs.length){ const row = h('div', 'mact'); for(const p of recs){ const b = h('button', 'chip', '＋ ' + shortName(p.n)); b.type = 'button'; b.disabled = day.stops.some(x => x.rec === p.id);
-          b.addEventListener('click', () => { closeMemo(); addPlace(p); }); row.append(b); } res.append(row); }
+          b.addEventListener('click', () => { closeMemo(); addPlace(p); }); row.append(b); } card.append(row); }
+      res.append(h('div', 'mqq', q), card); txt.value = ''; card.scrollIntoView({block:'nearest', behavior:'smooth'});
     }catch(e){ msg.textContent = '실패'; } finally{ idle(busy); } });
 }
 document.getElementById('gps').addEventListener('click', toggleGps);

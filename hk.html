@@ -252,6 +252,8 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .pop .prow .ghost{background:#1a73e8;color:#fff}
 .pop .zhb{align-self:flex-start;background:none;color:var(--ink);border:2px solid var(--line);padding:3px 10px;font-weight:400;font-size:13.5px}
 .desc{font-size:13.5px;line-height:1.5;margin:3px 0 2px}
+.nowline{list-style:none;display:flex;align-items:center;gap:8px;color:var(--accent);font:400 13px var(--display);font-variant-numeric:tabular-nums}
+.nowline::before,.nowline::after{content:"";flex:1;height:2px;border-radius:2px;background:var(--accent);opacity:.45}
 .busl{margin-top:8px;font-weight:700;font-variant-numeric:tabular-nums}
 .guide{display:flex;flex-direction:column;gap:8px;margin-top:18px}
 .gd{border:2px solid var(--line);background:var(--surface);border-radius:16px;padding:0 12px}
@@ -1585,10 +1587,16 @@ function drawList(){
       body.append(ed); }
     if(busOpen.has(s.id) && BUS[s.id]){ const bl = h('div', 'tip busl'); bl.dataset.stop = BUS[s.id][0]; body.append(bl); busEta(bl, BUS[s.id]); }
     if(rtOpen.has(s.id)) body.append(rtOpen.get(s.id).el);
+    if(info) li.dataset.arr = Math.round(info.arr);
     li.append(num, body); list.append(li);
   }
-  drawProg();
+  drawProg(); placeNow();
 }
+function placeNow(){ const list = document.getElementById('list'); for(const x of list.querySelectorAll('.nowline')) x.remove();
+  if(DATES[day.id] !== hkIso() || editMode) return; const m = hkMin(), rows = [...list.querySelectorAll('.stop[data-arr]')]; if(!rows.length) return;
+  const nl = h('li', 'nowline', '지금 ' + hm(m)), next = rows.find(r => +r.dataset.arr > m);
+  if(!next) list.append(nl); else { const prev = next.previousElementSibling; list.insertBefore(nl, prev && prev.classList.contains('leg') ? prev : next); } }
+setInterval(placeNow, 60000);
 function drawProg(){ const rs = routeStops(day), nx = nextStop(day), n = rs.filter(s=>done[s.id]).length, pr = document.getElementById('prog'); pr.textContent = '';
   pr.append('진행 ', h('b',null, n+' / '+rs.length), nx ? ' · 다음: '+nx.name + (me && nx.lat ? ' (직선 '+fmt(dist(me.lat,me.lng,nx.lat,nx.lng))+')' : '') : ' · 모두 완료'); }
 function render(){ const nm = !!day.nomap;

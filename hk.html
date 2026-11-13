@@ -49,6 +49,8 @@ body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15p
 a{color:inherit}
 button{font:inherit;color:inherit;cursor:pointer}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button,a,summary,label,select{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+@media (hover:hover){ button:not(:disabled):hover,.tab:hover,summary:hover{filter:brightness(.96)} }
 
 .wrap{max-width:1080px;margin:0 auto;padding:env(safe-area-inset-top) 16px 48px}
 header{position:relative;display:flex;align-items:flex-start;justify-content:space-between;gap:8px;min-height:104px;margin:14px 0 10px;padding:14px 14px 12px 16px;border-radius:22px;overflow:hidden;border:3px solid var(--surface);box-shadow:0 0 0 2px var(--line);background:var(--land) url(banner.jpg) right center/cover no-repeat}
@@ -381,7 +383,7 @@ html.mm .dayhead h2{display:none}
       <div class="sheet" id="sheet" hidden>
         <div class="cats" id="courses"></div>
         <div class="cats" id="cats"></div>
-        <input type="search" id="q" placeholder="장소 이름 검색 (영어·한자)" autocomplete="off">
+        <input type="search" id="q" name="q" aria-label="장소 검색" placeholder="장소 이름 검색 (영어·한자)…" autocomplete="off">
         <div class="sref" id="sref"></div>
         <ul class="recs" id="recs"></ul>
       </div>
@@ -407,14 +409,14 @@ html.mm .dayhead h2{display:none}
   </div>
 </div>
 
-<div class="zc" id="zc" hidden>
+<div class="zc" id="zc" role="dialog" aria-modal="true" aria-label="한자 이름" hidden>
   <small>請載我去 · Please take me to</small>
   <b id="zct"></b>
   <span id="zca"></span>
   <em id="zck"></em>
   <button type="button" id="zcx" aria-label="닫기">✕</button>
 </div>
-<div class="lb" id="lb" hidden>
+<div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="사진 보기" hidden>
   <div class="lbs" id="lbs"></div>
   <div class="lbc"><b id="lbt"></b><span id="lbn"></span><a id="lba" target="_blank" rel="noopener"></a></div>
   <button type="button" id="lbx" aria-label="닫기">✕</button>
@@ -1359,7 +1361,9 @@ function addPlace(p){
 }
 function passGroup(s){ if(!s.group) return; const n = day.stops.find(x => x !== s && x.kind==='alt'); if(n && !n.group) n.group = s.group; delete s.group; }
 function move(s, dir){ const a = day.stops, i = a.indexOf(s), j = i + dir; if(j < 0 || j >= a.length) return; [a[i], a[j]] = [a[j], a[i]]; changed(); }
-function removeStop(s){ passGroup(s); day.stops.splice(day.stops.indexOf(s), 1); delete done[s.id]; save(); if(sel===s) sel = null; changed(); }
+function removeStop(s){ const prev = JSON.stringify(day.stops), wasEdited = day.edited, wasDone = done[s.id];
+  passGroup(s); day.stops.splice(day.stops.indexOf(s), 1); delete done[s.id]; save(); if(sel===s) sel = null; changed();
+  toast('삭제됨', () => { day.stops = JSON.parse(prev); day.edited = wasEdited; if(wasDone){ done[s.id] = true; save(); } sel = null; savePlan(); render(); }); }
 function confirmAlt(s){ passGroup(s); delete s.kind; day.stops.splice(day.stops.indexOf(s), 1);
   const rs = routeStops(day); day.stops.splice(rs.length ? day.stops.indexOf(rs[rs.length-1]) + 1 : 0, 0, s); changed(); }
 function changed(){ day.edited = true; savePlan(); render(); }
@@ -1429,6 +1433,7 @@ function drawList(){
     const info = sch.out.get(s), ri = rs.indexOf(s);
     if(s===firstAlt && grp) list.append(h('li','grouphead',grp));
     if(info && info.leg && info.leg.mode !== 'same'){ const p = rs[ri-1], lg = h('li','leg', info.leg.mode === 'given' ? s.leg : legText(info.leg));
+      lg.tabIndex = 0; lg.setAttribute('role', 'button'); lg.addEventListener('keydown', e => { if(e.key === 'Enter') lg.click(); });
       lg.addEventListener('click', () => { showRoute(s, [p, p.name]); document.getElementById('mapwrap').scrollIntoView({block:'nearest', behavior:'smooth'}); });
       list.append(lg); }
     const li = h('li', 'stop' + (s.kind==='alt'?' alt':'') + (s.kind==='plain'?' plain':'') + (done[s.id]?' done':'') + (s===sel?' sel':'')); li.id = 'stop-'+s.id;

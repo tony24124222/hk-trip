@@ -611,10 +611,10 @@ const dist = (a,b,c,d) => { const R=6371000,t=Math.PI/180,x=(d-b)*t*Math.cos((a+
 const fmt = m => m>=1000 ? (m/1000).toFixed(1)+'km' : Math.round(m/10)*10+'m';
 
 const map = L.map('map', {zoomControl:true, maxZoom:19}); map.attributionControl.setPrefix(false);
-const DARK = matchMedia('(prefers-color-scheme: dark)').matches;
-const PAL = DARK
-  ? {land:'#2a2125', land2:'#2f252a', park:'#2d3b2d', water:'#1d4744', waterText:'#86d6cc', sand:'#3a3424', bldg:'#3a2e33', bldgLine:'#463840', road:'#46383e', casing:'#2a2125', major:'#6a4352', majCasing:'#2a2125', waterEdge:'#2f6b66', path:'#55464c', rail:'#6a5a60', text:'#f2e4e9', halo:'#221a1e', poi:'#d6bcc6'}
-  : {land:'#fdf4ec', land2:'#fbeee3', park:'#d9f0cf', water:'#bde6df', waterText:'#3b8f85', sand:'#fbf0cf', bldg:'#f4e1d4', bldgLine:'#ead0c0', road:'#ffffff', casing:'#efd9cc', major:'#ffe4eb', majCasing:'#f6c3d1', waterEdge:'#8fd3c8', path:'#ffffff', rail:'#d6c3c9', text:'#5b4a51', halo:'#ffffff', poi:'#8a6f78'};
+const darkMq = matchMedia('(prefers-color-scheme: dark)');
+const PALS = [{land:'#fdf4ec', land2:'#fbeee3', park:'#d9f0cf', water:'#bde6df', waterText:'#3b8f85', sand:'#fbf0cf', bldg:'#f4e1d4', bldgLine:'#ead0c0', road:'#ffffff', casing:'#efd9cc', major:'#ffe4eb', majCasing:'#f6c3d1', waterEdge:'#8fd3c8', path:'#ffffff', rail:'#d6c3c9', text:'#5b4a51', halo:'#ffffff', poi:'#8a6f78'},
+  {land:'#2a2125', land2:'#2f252a', park:'#2d3b2d', water:'#1d4744', waterText:'#86d6cc', sand:'#3a3424', bldg:'#3a2e33', bldgLine:'#463840', road:'#46383e', casing:'#2a2125', major:'#6a4352', majCasing:'#2a2125', waterEdge:'#2f6b66', path:'#55464c', rail:'#6a5a60', text:'#f2e4e9', halo:'#221a1e', poi:'#d6bcc6'}];
+let PAL = PALS[+darkMq.matches], styleJson = null, glLayer = null;
 function rasterBase(){ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19, attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(map); }
 function restyle(st){
   const drop = /^(natural_earth|poi_|airport|label_|water_name|waterway_line_label|highway-shield|boundary|park_outline|road_area_pattern)|rail|transit|one_way/;
@@ -658,10 +658,12 @@ function restyle(st){
   if(!window.maplibregl || !L.maplibreGL || !(c.getContext('webgl2') || c.getContext('webgl'))){ rasterBase(); return; }
   try{
     const r = await fetch('https://tiles.openfreemap.org/styles/liberty'); if(!r.ok) throw new Error(r.status);
-    const gl = L.maplibreGL({style:restyle(await r.json()), attributionControl:false, localIdeographFontFamily:"'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif",
+    styleJson = await r.text();
+    glLayer = L.maplibreGL({style:restyle(JSON.parse(styleJson)), attributionControl:false, localIdeographFontFamily:"'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif",
       attribution:'<a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> &copy; <a href="https://www.openmaptiles.org/" target="_blank" rel="noopener">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'}).addTo(map);
   }catch(e){ rasterBase(); }
 })();
+darkMq.addEventListener('change', () => { PAL = PALS[+darkMq.matches]; const gm = glLayer && glLayer.getMaplibreMap && glLayer.getMaplibreMap(); if(gm && styleJson) gm.setStyle(restyle(JSON.parse(styleJson))); });
 const recLayer = L.layerGroup().addTo(map);
 let showRec = true, editMode = false, sheetOpen = false, sheetCat = 'all', searchRes = [], qTimer = 0, toastT = 0;
 map.createPane('route').style.zIndex = 450;

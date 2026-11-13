@@ -563,8 +563,6 @@ html.mm .dayhead h2{display:none}
       <button type="button" class="pstep" data-d="-1" aria-label="이전 장소">‹</button><button type="button" class="pstep" data-d="1" aria-label="다음 장소">›</button>
       <div class="acts peekact" id="peekact" hidden>
         <button type="button" class="go" id="pgo">🧭 길찾기</button>
-        <button type="button" id="pfrom">📍 출발</button>
-        <button type="button" id="psv">🛣️ 거리뷰</button>
         <button type="button" id="pmore">자세히</button>
         <button type="button" id="pdone" aria-pressed="false">완료 체크</button>
       </div>
@@ -1363,22 +1361,25 @@ for(const [id, end] of [['rpa', false], ['rpb', true]]){ const el = document.get
 document.getElementById('rswap').addEventListener('click', () => { if(!routeCur) return; const {from, lbl, s} = routeCur;
   routeCur.from = {lat:s.lat, lng:s.lng}; routeCur.lbl = s.name; routeCur.s = {id:'pt', name:lbl, lat:from.lat, lng:from.lng};
   routeCur.mode = null; routeCur.alts = null; routeCur.nt = {}; stopRun(); redrawRoute(true); });
-let abFrom = null;
-let abPick = false;
-function abSet(p, pick){ abFrom = p ? {lat:p.lat, lng:p.lng, name:p.name || p.n || '지정 위치'} : null; abPick = !!(p ? abPick : pick);
-  const b = document.getElementById('abbar'); b.hidden = !abFrom && !abPick; document.getElementById('zab').setAttribute('aria-pressed', !b.hidden);
-  document.getElementById('abtxt').textContent = abFrom ? `📍 ${shortName(abFrom.name)} → 도착지?` : '🧭 출발지 누르기';
-  if(abFrom) map.closePopup(); }
-function abTo(d){ if(abPick && !abFrom){ abSet(d); return true; } const f = abFrom; if(!f) return false; abSet(null); if(dist(f.lat, f.lng, d.lat, d.lng) < 15) return true;
-  showRoute(d, [f, f.name]); return true; } // the run starts once a way to go is picked in the route box
+let abFrom = null, abDest = null, abPick = false;
+const abPt = p => ({id:p.id && p.id !== 'pin' ? p.id : 'pt', lat:p.lat, lng:p.lng, name:p.name || p.n || '지정 위치'});
+function abDraw(){ const on = !!(abFrom || abDest || abPick); document.getElementById('abbar').hidden = !on; document.getElementById('zab').setAttribute('aria-pressed', on);
+  document.getElementById('abtxt').textContent = abFrom && abDest ? `📍 ${shortName(abFrom.name)} → 🏁 ${shortName(abDest.name)}` : abFrom ? `📍 ${shortName(abFrom.name)} → 도착지?` : abDest ? `출발지? → 🏁 ${shortName(abDest.name)}` : '🧭 출발지 누르기'; }
+function abGo(){ map.closePopup(); if(abFrom && abDest){ if(dist(abFrom.lat, abFrom.lng, abDest.lat, abDest.lng) < 15) abDest = null; else showRoute(abDest, [abFrom, abFrom.name]); } abDraw(); }
+// the start; called with nothing it ends the picking (pick = true starts it from the map button)
+function abSet(p, pick){ if(!p){ abFrom = abDest = null; abPick = !!pick; abDraw(); return; } abFrom = abPt(p); abGo(); }
+// the destination; with a route already open and no start picked, the route's own start stays
+function abEnd(p){ if(!abFrom && routeCur && !routeCur.preview) abFrom = {id:'pt', lat:routeCur.from.lat, lng:routeCur.from.lng, name:routeCur.lbl || '출발'}; abDest = abPt(p); abGo(); }
+// a place tapped while picking: the start if there is none yet, otherwise the (new) destination
+function abTo(d){ if(!(abFrom || abDest || abPick)) return false; if(abFrom) abEnd(d); else abSet(d); return true; }
 document.getElementById('abx').addEventListener('click', () => abSet(null));
 let mapPh = true; try{ mapPh = localStorage.getItem('hk-mapph') !== '0'; }catch(e){}
 { const b = document.getElementById('zph'); b.setAttribute('aria-pressed', mapPh);
   b.addEventListener('click', () => { mapPh = !mapPh; b.setAttribute('aria-pressed', mapPh); try{ localStorage.setItem('hk-mapph', mapPh ? '1' : '0'); }catch(e){} declutter(); }); }
-document.getElementById('zab').addEventListener('click', () => { if(abPick || abFrom) return abSet(null); stopRun(); abSet(null, true); });
-map.on('click', e => { if(abPick || abFrom) abTo({id:'pt', name:'지정 위치', lat:e.latlng.lat, lng:e.latlng.lng}); });
+document.getElementById('zab').addEventListener('click', () => { if(abPick || abFrom || abDest) return abSet(null); stopRun(); abSet(null, true); });
+map.on('click', e => { abTo({id:'pt', name:'지정 위치', lat:e.latlng.lat, lng:e.latlng.lng}); });
 // a popup opening while a start is set means "this is where I'm going"
-map.on('popupopen', e => { if(!abFrom && !abPick) return; const src = e.popup._source, ll = e.popup.getLatLng(), nm = src && src.options.title || '지정 위치';
+map.on('popupopen', e => { if(!abFrom && !abDest && !abPick) return; const src = e.popup._source, ll = e.popup.getLatLng(), nm = src && src.options.title || '지정 위치';
   setTimeout(() => { map.closePopup(); abTo({id:'pt', name:nm, lat:ll.lat, lng:ll.lng}); }, 0); });
 async function nextTrain(st, k, rc){
   try{ const r = await getJ(`https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=${st.line}&sta=${st.sta}`);
@@ -1829,7 +1830,7 @@ function drawMap(){
       go.addEventListener('click', () => { showRoute({id:'rec-' + p.id, name:p.n, lat:p.lat, lng:p.lng}, fromHere(p)); map.closePopup(); });
       b.addEventListener('click', () => { map.closePopup(); addPlace(p); }); const qb = h('button', null, '💬 질문'); qb.type = 'button'; qb.addEventListener('click', () => { map.closePopup(); askAbout(p); });
       const fb = h('button', null, '📍 출발'); fb.type = 'button'; fb.addEventListener('click', () => abSet({lat:p.lat, lng:p.lng, name:p.n}));
-      row.append(go, fb, b, qb, svBtn(() => svView(p.lat, p.lng, false), null)); box.append(row); return box; }, popOpt());
+      row.append(go, fb, (() => { const e = h('button', null, '🏁 도착'); e.type = 'button'; e.addEventListener('click', () => abEnd({id:'rec-' + p.id, lat:p.lat, lng:p.lng, name:p.n})); return e; })(), b, qb, svBtn(() => svView(p.lat, p.lng, false), null)); box.append(row); return box; }, popOpt());
   }
   declutter();
   if(recOpen){ const k = recLayer.getLayers().find(m => m.options.pid === recOpen); if(k) k.openPopup(); else recOpen = null; }
@@ -2079,7 +2080,8 @@ function drawList(){
       const open = h('a',null,'Google 지도 ↗'); open.href = /^https:\/\//.test(s.link || '') ? s.link : `https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lng}`; open.target='_blank'; open.rel='noopener';
       const rtb = h('button','rtb','🚏 실시간'); rtb.type='button'; rtb.addEventListener('click', () => openRt(s.id, s.lat, s.lng, body));
       const fb = h('button', null, '📍 출발'); fb.type = 'button'; fb.addEventListener('click', () => { abSet(s); document.getElementById('mapwrap').scrollIntoView({block:'nearest', behavior:'smooth'}); });
-      acts.append(rb, fb, svBtn(() => svView(s.lat, s.lng, false), null), open, rtb);
+      const eb = h('button', null, '🏁 도착'); eb.type = 'button'; eb.addEventListener('click', () => { abEnd(s); document.getElementById('mapwrap').scrollIntoView({block:'nearest', behavior:'smooth'}); });
+      acts.append(rb, fb, eb, svBtn(() => svView(s.lat, s.lng, false), null), open, rtb);
       if(BUS[s.id]){ const bb = h('button', null, '🚌 ' + BUS[s.id][1] + ' ' + BUS[s.id][3]); bb.type = 'button'; bb.setAttribute('aria-pressed', busOpen.has(s.id));
         bb.addEventListener('click', () => { if(busOpen.has(s.id)) busOpen.delete(s.id); else busOpen.add(s.id); render(); }); acts.append(bb); }
       if(zhOf(s)){ const zb = h('button', null, '🀄 한자'); zb.type = 'button'; zb.title = zhOf(s); zb.addEventListener('click', () => showZh(s)); acts.append(zb); }
@@ -2143,7 +2145,7 @@ function stopPop(s){ const box = h('div','pop'), info = schedule(day).out.get(s)
   if(info) box.append(h('div','rt1', hm(info.arr) + (info.dep > info.arr ? '–' + hm(info.dep) : '') + (info.leg && info.leg.mode !== 'same' ? ' · ' + (info.leg.mode === 'given' ? s.leg : legShort(info.leg)) : '')));
   const inf = infoOf(s); if(inf && inf.d) box.append(h('div','d',inf.d)); if(s.note) box.append(h('div','m',s.note)); { const t = kv(placeRows(s, s.rec || s.id)); if(t) box.append(t); }
   const row = h('div','prow'), go = h('button','ghost','🧭 길찾기'); go.type = 'button'; go.addEventListener('click', () => { map.closePopup(); routeTo(s); }); row.append(go);
-  { const f = h('button', null, '📍 출발'); f.type = 'button'; f.addEventListener('click', () => abSet(s)); row.append(f, svBtn(() => svView(s.lat, s.lng, false), null)); }
+  { const f = h('button', null, '📍 출발'); f.type = 'button'; f.addEventListener('click', () => abSet(s)); row.append(f, (() => { const e = h('button', null, '🏁 도착'); e.type = 'button'; e.addEventListener('click', () => abEnd(s)); return e; })(), svBtn(() => svView(s.lat, s.lng, false), null)); }
   if(zhOf(s)){ const z = h('button', null, '🀄 한자'); z.type = 'button'; z.addEventListener('click', () => showZh(s)); row.append(z); }
   { const q = h('button', null, '💬 질문'); q.type = 'button'; q.addEventListener('click', () => { map.closePopup(); askAbout(s); }); row.append(q); }
   box.append(row); return box; }
@@ -2179,8 +2181,6 @@ function step(d){ const rs = routeStops(day).filter(x => x.lat); if(!rs.length) 
   const t = rs[Math.max(0, Math.min(rs.length - 1, i + d))]; if(t !== sel) select(t); }
 for(const b of document.querySelectorAll('.pstep')) b.addEventListener('click', () => step(+b.dataset.d));
 document.getElementById('pgo').addEventListener('click', () => { if(sel) routeTo(sel); });
-document.getElementById('pfrom').addEventListener('click', () => { if(sel) abSet(sel); });
-document.getElementById('psv').addEventListener('click', () => { if(sel) svView(sel.lat, sel.lng, false).then(openSv); });
 document.getElementById('pmore').addEventListener('click', () => { if(!sel) return; const id = 'stop-' + sel.id; setSheet('half'); setTimeout(() => { const li = document.getElementById(id); if(li) li.scrollIntoView({block:'start'}); }, 60); });
 document.getElementById('pdone').addEventListener('click', () => { if(!sel) return; done[sel.id] = !done[sel.id]; if(done[sel.id]) noteArr(sel.id); save(); render(); });
 { let gd = null;
@@ -2391,7 +2391,7 @@ function gval(v){ const dd = h('dd'), parts = won(v).split(' · '); if(parts.len
 document.getElementById('gps').addEventListener('click', toggleGps);
 document.getElementById('routenav').addEventListener('click', navStart);
 document.getElementById('routerun').addEventListener('click', () => { if(!routeCur) return; routeCur.run = Date.now(); redrawRoute(true); });
-document.getElementById('routeclr').addEventListener('click', clearRoute);
+document.getElementById('routeclr').addEventListener('click', () => { clearRoute(); abSet(null); });
 document.getElementById('ztoilet').addEventListener('click', toggleToilet);
 document.getElementById('bshare').addEventListener('click', sharePlan);
 map.on('moveend', () => { if(showToilet && !document.getElementById('mapwrap').classList.contains('popon')) drawToilets(); });
@@ -2440,7 +2440,7 @@ function flagPop(t){ const p = {id:'pt', name:t[2], lat:t[0], lng:t[1]}; if(abTo
   ph.className = 'pph'; const noSv = t[2] === '마카오 공항'; // no street photos around the airport
   go.addEventListener('click', () => { showRoute(p, fromHere(p)); map.closePopup(); });
   fb.addEventListener('click', () => abSet(p));
-  row.append(go, fb); box.append(row); if(!noSv) box.append(sv);
+  row.append(go, fb, (() => { const e = h('button', null, '🏁 도착'); e.type = 'button'; e.addEventListener('click', () => abEnd(p)); return e; })()); box.append(row); if(!noSv) box.append(sv);
   const pop = L.popup(popOpt()).setLatLng([t[0], t[1]]).setContent(box).openOn(map);
   towerInfo(t[2]).then(r => { const id = 'tw:' + t[2]; if(r.ph.length){ PH[id] = r.ph; ph.append(...phBox(id, t[2]).children); }
     else if(!noSv){ const sf = h('figure', 'svp'), fr = h('iframe'); fr.title = t[2] + ' 거리뷰'; fr.tabIndex = -1; sf.append(fr, h('b', null, '🛣️ 거리뷰 · Google')); ph.append(sf);
@@ -2454,8 +2454,9 @@ map.on('contextmenu', e => { const p = {id:'pin', n:'지정 위치', sub:'지도
   go.addEventListener('click', () => { showRoute({id:'pin', name:'지정 위치', lat:p.lat, lng:p.lng}, fromHere(p)); map.closePopup(); });
   b.addEventListener('click', () => { map.closePopup(); addPlace(Object.assign({}, p, {id:'pin' + Date.now().toString(36)})); });
   const fb = h('button', null, '📍 출발'); fb.type = 'button'; fb.addEventListener('click', () => abSet({lat:p.lat, lng:p.lng, name:'지정 위치'}));
+  const eb = (() => { const e = h('button', null, '🏁 도착'); e.type = 'button'; e.addEventListener('click', () => abEnd({lat:p.lat, lng:p.lng, name:'지정 위치'})); return e; })();
   const sv = svBtn(() => svView(p.lat, p.lng, false));
-  row.append(go, fb, b); box.append(row, sv);
+  row.append(go, fb, eb, b); box.append(row, sv);
   pinPop = L.popup(popOpt()).setLatLng(e.latlng).setContent(box).openOn(map); previewRoute(p); });
 map.on('popupclose', e => { if(e.popup === pinPop){ pinPop = null; if(routeCur && routeCur.preview) clearRoute(); } if(showToilet) setTimeout(() => { if(!document.getElementById('mapwrap').classList.contains('popon')) drawToilets(); }, 0); });
 // ⭐ opens a category picker for the recommended places shown on the map

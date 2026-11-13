@@ -192,7 +192,8 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .newer{display:flex;flex-wrap:wrap;align-items:center;gap:6px;width:100%;padding:8px 10px;border:2px solid #f5c04a;border-radius:14px;background:var(--surface);font-size:13.5px}
 .newer[hidden]{display:none}
 .routebox .rh{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.routebox .rh b{font:400 15.5px var(--display);color:#1a73e8}
+.routebox .rh b{font:400 15.5px var(--display);color:#1a73e8;flex:1 1 auto;min-width:0}
+.routebox .rh #routerun{background:#1a73e8;border-color:#1a73e8;color:#fff}
 .rpick{display:flex;align-items:flex-end;gap:6px;margin:6px 0 4px}
 .rpick label{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:2px;font-size:11.5px;font-weight:700;color:var(--muted)}
 .rpick input{width:100%;min-width:0;box-sizing:border-box;font:16px var(--body);padding:5px 8px;border:2px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
@@ -455,6 +456,14 @@ html.mm .dayhead h2{display:none}
 #zcx{position:absolute;right:14px;top:calc(12px + env(safe-area-inset-top));width:44px;height:44px;border-radius:50%;border:0;background:#eee;color:#111;font-size:18px}
 .lb{position:fixed;inset:0;z-index:4000;background:#100a0d;display:flex;flex-direction:column}
 .lb[hidden]{display:none}
+.svv{position:fixed;inset:0;z-index:4000;background:#100a0d}
+.svv[hidden]{display:none}
+.svv iframe{width:100%;height:100%;border:0;display:block}
+#svx{position:absolute;left:12px;bottom:calc(44px + env(safe-area-inset-bottom));width:44px;height:44px;border-radius:50%;border:0;background:#3b2a33;color:#fff;font-size:18px;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.pph .svp{position:relative;cursor:pointer}
+.pph .svp iframe{width:100%;height:150px;border:0;border-radius:12px;background:var(--line);pointer-events:none;display:block}
+@media (max-width:819px){.pph .svp iframe{height:110px}}
+.pph .svp b{position:absolute;left:6px;bottom:6px;font:700 11px sans-serif;background:rgba(0,0,0,.6);color:#fff;border-radius:999px;padding:2px 8px}
 .lbs{flex:1;min-height:0;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior:contain}
 .lbs::-webkit-scrollbar{display:none}
 .lbs figure{flex:0 0 100%;min-width:0;margin:0;scroll-snap-align:center;display:grid;grid-template:minmax(0,1fr) / minmax(0,1fr);place-items:center;padding:calc(52px + env(safe-area-inset-top)) 0 8px}
@@ -492,7 +501,7 @@ html.mm .dayhead h2{display:none}
       <div class="trk" id="trk" hidden><span id="trkt"></span><button type="button" id="trkx">지우기</button></div>
       <div id="herert"></div>
       <div class="routebox" id="routebox" hidden>
-        <div class="rh"><b id="routetxt"></b><button type="button" id="routeclr">닫기</button></div>
+        <div class="rh"><b id="routetxt"></b><button type="button" id="routerun">▶ 경로 미리보기</button><button type="button" id="routeclr">닫기</button></div>
         <div class="rpick"><label>출발<input id="rpa" type="text" autocomplete="off" enterkeyhint="search" placeholder="장소 이름"></label><button type="button" id="rswap" aria-label="출발·도착 바꾸기">⇅</button><label>도착<input id="rpb" type="text" autocomplete="off" enterkeyhint="search" placeholder="장소 이름"></label></div>
         <div class="rsug" id="rsug" hidden></div>
         <div class="m" id="routefrom"></div>
@@ -586,6 +595,7 @@ html.mm .dayhead h2{display:none}
   <em id="zck"></em>
   <button type="button" id="zcx" aria-label="닫기">✕</button>
 </div>
+<div class="svv" id="svv" role="dialog" aria-modal="true" aria-label="거리뷰" hidden><iframe id="svf" title="거리뷰" allowfullscreen></iframe><button type="button" id="svx" aria-label="닫기">✕</button></div>
 <div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="사진 보기" hidden>
   <div class="lbs" id="lbs"></div>
   <div class="lbc"><b id="lbt"></b><span id="lbn"></span><a id="lba" target="_blank" rel="noopener"></a></div>
@@ -864,7 +874,7 @@ const MG = new Map(), NODES = {};
       add(a+'|'+ln, b+'|'+ln, w); add(b+'|'+ln, a+'|'+ln, w); } }
   for(const n of MG.keys()){ const c = n.split('|')[0]; (NODES[c] = NODES[c] || []).push(n); }
   for(const ns of Object.values(NODES)) for(const a of ns) for(const b of ns) if(a !== b) add(a, b, 5);
-  for(const [a, b, w] of [['TST','ETS',6], ['HOK','CEN',7]]) for(const x of NODES[a]) for(const y of NODES[b]){ add(x, y, w); add(y, x, w); }
+  for(const [a, b, w] of [['TST','ETS',6], ['HOK','CEN',7], ['KOW','AUS',9]]) for(const x of NODES[a]) for(const y of NODES[b]){ add(x, y, w); add(y, x, w); }
 })();
 function access(c, p){
   let best = null, bd = 1e9;
@@ -1189,7 +1199,7 @@ function redrawRoute(fitIt){
     opts.forEach((o, n) => { const b = h('button', 'cmpr'); b.type = 'button'; b.setAttribute('aria-pressed', o.mode === leg.mode);
       b.append(h('span', 'k', (legIcon[o.mode] || '') + ' ' + (MODE[o.mode] || '') + (o.mode === 'bus' ? ' ' + o.bus.no : '')), h('span', 't', o.min + '분'), h('span', 'c', o.mode === 'walk' ? '무료' : (o.wk ? `도보 ${o.wk}분 포함 · ` : '') + (costTxt(o, true) || '–')));
       if(!n && opts.length > 1) b.append(h('span', 'tag next', '추천'));
-      b.addEventListener('click', () => { routeCur.mode = o.mode; routeCur.run = Date.now(); redrawRoute(true); }); li.append(b); });
+      b.addEventListener('click', () => { routeCur.mode = o.mode; stopRun(); redrawRoute(true); }); li.append(b); });
     ol.append(li); }
   for(const st of legSteps(leg, from, s)){ const li = h('li', null, st.t); ol.append(li);
     if(st.ph){ const box = h('div', 'sph'); li.append(box); exitPhotos(st.ph).then(list => { if(!list.length){ box.remove(); return; }
@@ -1249,7 +1259,7 @@ function abSet(p, pick){ abFrom = p ? {lat:p.lat, lng:p.lng, name:p.name || p.n 
   document.getElementById('abtxt').textContent = abFrom ? `📍 ${shortName(abFrom.name)} → 도착지?` : '🧭 출발지 누르기';
   if(abFrom) map.closePopup(); }
 function abTo(d){ if(abPick && !abFrom){ abSet(d); return true; } const f = abFrom; if(!f) return false; abSet(null); if(dist(f.lat, f.lng, d.lat, d.lng) < 15) return true;
-  showRoute(d, [f, f.name]); routeCur.run = Date.now(); redrawRoute(true); return true; }
+  showRoute(d, [f, f.name]); return true; } // the run starts once a way to go is picked in the route box
 document.getElementById('abx').addEventListener('click', () => abSet(null));
 document.getElementById('zab').addEventListener('click', () => { if(abPick || abFrom) return abSet(null); stopRun(); abSet(null, true); });
 map.on('click', e => { if(abPick || abFrom) abTo({id:'pt', name:'지정 위치', lat:e.latlng.lat, lng:e.latlng.lng}); });
@@ -2064,7 +2074,7 @@ function noSheets(){ if(wide()) return; try{ closeGi(); closeMemo(); }catch(e){}
 function ovPush(){ if(ovKeep){ ovKeep = false; return; } try{ history.pushState({ov:((history.state && history.state.ov) || 0) + 1}, ''); }catch(e){} }
 function ovPop(){ try{ if(history.state && history.state.ov){ ovSkip++; history.back(); } }catch(e){} }
 let closeMemo = () => {}, askAbout = () => {};
-addEventListener('popstate', () => { if(ovSkip){ ovSkip--; return; } const zc = document.getElementById('zc'); if(!zc.hidden) zc.hidden = true; else if(lbId) closeLb(true); else if(!document.getElementById('memo').hidden) closeMemo(true); else closeGi(true); });
+addEventListener('popstate', () => { if(ovSkip){ ovSkip--; return; } const zc = document.getElementById('zc'); if(!document.getElementById('svv').hidden) closeSv(true); else if(!zc.hidden) zc.hidden = true; else if(lbId) closeLb(true); else if(!document.getElementById('memo').hidden) closeMemo(true); else closeGi(true); });
 // big Chinese name card to show a driver or passer-by
 function showZh(s){ const z = zhOf(s); if(!z) return; document.getElementById('zcs').textContent = '請載我去 · Please take me to'; document.getElementById('zct').textContent = z;
   document.getElementById('zca').textContent = (s.taxi || '').replace(/^目的地：[^，]*，/, ''); document.getElementById('zck').textContent = s.name || s.n || '';
@@ -2084,7 +2094,7 @@ function closeLb(fromBack){ document.getElementById('lb').hidden = true; lbId = 
 lbs.addEventListener('scroll', lbCap, {passive:true});
 lbs.addEventListener('click', e => { if(e.target.tagName === 'IMG'){ const n = PH[lbId].length, w = lbs.clientWidth, i = Math.round(lbs.scrollLeft / w); lbs.scrollTo({left:(e.clientX > innerWidth / 2 ? Math.min(n - 1, i + 1) : Math.max(0, i - 1)) * w, behavior:'smooth'}); } else closeLb(); });
 document.getElementById('lbx').addEventListener('click', () => closeLb());
-document.addEventListener('keydown', e => { if(e.key === 'Escape' && !document.getElementById('zc').hidden){ document.getElementById('zc').hidden = true; ovPop(); } else if(e.key === 'Escape' && !lbId){ if(!document.getElementById('memo').hidden) closeMemo(); else closeGi(); } if(!lbId) return; if(e.key === 'Escape') closeLb();
+document.addEventListener('keydown', e => { if(e.key === 'Escape' && !document.getElementById('svv').hidden){ closeSv(); return; } if(e.key === 'Escape' && !document.getElementById('zc').hidden){ document.getElementById('zc').hidden = true; ovPop(); } else if(e.key === 'Escape' && !lbId){ if(!document.getElementById('memo').hidden) closeMemo(); else closeGi(); } if(!lbId) return; if(e.key === 'Escape') closeLb();
   else if(e.key === 'ArrowRight' || e.key === 'ArrowLeft') lbs.scrollBy({left:(e.key === 'ArrowRight' ? 1 : -1) * lbs.clientWidth, behavior:'smooth'}); });
 ZH.lordstowt = ZH.lordstow; if(PH.lordstow) PH.lordstowt = PH.lordstow.map(x => [x[0], x[1], x[2], 2]);
 const GUIDE = [["📅 여행 4일 휴관·행사", [["11/16 월", "M+ 휴관"], ["11/17 화", "고궁박물관 휴관"], ["11/18 수", "심포니 오브 라이트 마지막 공연 20:00 + 불꽃 · 윈터페스트 개막 · 미도카페 휴무"], ["11/19 목", "홍콩미술관 휴관 · 오스트레일리아 데일리컴퍼니 휴무 · 심포니 오브 라이트 없음 · 마카오 그랑프리 연습일"], ["날씨 평년", "최고 24.5° · 최저 20.3° · 얇은 겉옷"]]], ["🚇 교통·결제", [["옥토퍼스(관광객용)", "HK$39 · 보증금 없음 · 잔액만 환불"], ["아이폰", "'Octopus for Tourists' 앱 · 해외 Visa·Mastercard 충전 (한국 카드 미확인)"], ["A21 버스", "공항→침사추이 이스트 · HK$34.6 · 10~20분 간격 · 60~75분"], ["공항철도", "구룡역 HK$105 · 홍콩역 HK$120 · 약 24분"], ["MTR", "하늘색 개찰구에서 Visa·Mastercard 컨택리스"], ["택시(빨간색)", "기본 2km HK$29 · 이후 200m당 HK$2.1 · 해저터널 HK$25~50 · 짐 1개 HK$6"], ["스타페리", "위층 평일 HK$5 · 주말 HK$6.5"], ["피크트램", "편도 HK$82 · 왕복 HK$116 (자료 엇갈림)"]]], ["⚠️ 현지 규칙", [["MTR 안 음식·음료", "물 포함 금지 · 최고 HK$2,000"], ["쓰레기·침", "HK$3,000"], ["흡연", "금연구역·대중교통 줄에서 HK$3,000"], ["전자담배", "반입 금지 · 공공장소에서 갖고만 있어도 HK$3,000"], ["담배·술 면세", "궐련 19개비 · 술 1L"], ["무단횡단", "최고 HK$2,000"], ["비둘기·원숭이 먹이", "HK$5,000"], ["호텔", "일회용 세면도구·생수 무료 제공 안 함"], ["식당", "봉사료 10% (차찬탱은 없음) · 딤섬집 찻값 1인 HK$3~20 · 합석 기본"], ["택시 결제", "QR·옥토퍼스·카드 중 차마다 다름 · 현금 가능"], ["MTR 막차", "침사추이 → 센트럴 00:54쯤"], ["전압", "220V · G형 3핀"], ["입국", "입국카드 없음 · 무비자 90일 · 자동출입국은 도착 후 현장 등록"], ["마카오", "여권 필수 · 무비자 90일 · 홍콩달러 1:1 통용(거스름돈은 파타카) · 옥토퍼스는 버스에서 안 됨"]]], ["🛍️ 쇼핑 메모", [["세금", "부가세·환급 없음 · 식당은 봉사료 10% 많음"], ["쇼핑몰", "10~11시 개점 · 22시 폐점"], ["결제", "몰·체인 카드 OK · 노포·간식집은 현금·옥토퍼스"], ["비닐봉투", "장당 HK$1 이상"], ["드럭스토어", "백화유 · 타이거밤 · 달리 치약 · 닌지옴 캔디 (매닝스·왓슨스)"], ["과자 선물", "제니 베이커리 쿠키 · 기화병가 펑리수·에그롤 · 이금기 소스"], ["11/18부터", "윈터페스트 할인(알리페이 QR)"]]], ["⛴️ 마카오 가는 법", [["침사추이 페리터미널", "마카오행 없음 (주하이행만)"], ["터보젯", "셩완 → 마카오 외항 · 07:30~22:30 · 약 60분 · 평일 HK$194 · 주말 HK$212 · 야간 HK$242"], ["코타이 워터젯", "셩완 → 타이파 · 07:30~22:30 · 평일 HK$192 · 베네시안 무료 셔틀"], ["원버스", "조던 캔톤로드 505 → 샌즈·런더너·베네시안 · 평일 낮 HK$160 · 저녁·주말 HK$180"], ["대교 셔틀버스", "HK$65 · 24시간 · 홍콩 쪽 터미널까지 1시간 이상"], ["11/19~22", "그랑프리로 외항 터미널 주변 통제 → 타이파행 배·원버스"]]]];
@@ -2245,6 +2255,7 @@ const GUIDE = [["📅 여행 4일 휴관·행사", [["11/16 월", "M+ 휴관"], 
     }catch(e){ msg.textContent = '실패'; } finally{ idle(busy); } });
 }
 document.getElementById('gps').addEventListener('click', toggleGps);
+document.getElementById('routerun').addEventListener('click', () => { if(!routeCur) return; routeCur.run = Date.now(); redrawRoute(true); });
 document.getElementById('routeclr').addEventListener('click', clearRoute);
 document.getElementById('ztoilet').addEventListener('click', toggleToilet);
 document.getElementById('bshare').addEventListener('click', sharePlan);
@@ -2272,18 +2283,33 @@ function towerInfo(nm){ if(!twInfo.has(nm)) twInfo.set(nm, (async () => { const 
     out.ph = out.ph.slice(0, 6);
     if(ko) try{ const k = await getJ('https://ko.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(ko)); out.txt = (k.extract || '').split(/(?<=다\.)\s/).slice(0, 2).join(' '); out.url = ((k.content_urls || {}).mobile || {}).page || ''; }catch(e){}
     return out; })()); return twInfo.get(nm); }
-const svUrl = (lat, lng) => `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`;
+const svSrc = v => `https://www.google.com/maps?layer=c&cbll=${v.lat.toFixed(6)},${v.lng.toFixed(6)}&cbp=12,${Math.round(v.hd)},0,0,${v.up ? -18 : 0}&output=svembed`;
+// where to stand for each building: a named street with Google's own street photos (checked 2026-11-14), and the way to look
+const SVV = {"ICC":[22.303756,114.160394,203],"중국은행타워":[22.279611,114.161737,201],"HSBC":[22.280152,114.159901,285],"센트럴 플라자":[22.280614,114.173451,175],"컨벤션센터":[22.282655,114.173057,175],"더 센터":[22.285128,114.155088,213],"문화센터·시계탑":[22.294511,114.170489,183],"폴리텍대":[22.302733,114.17757,204],"콜리세움":[22.30203,114.182025,183],"과학관":[22.30071,114.177723,320],"역사박물관":[22.302066,114.176806,108],"페닌슐라 호텔":[22.294765,114.172036,321],"1881 헤리티지":[22.295467,114.17043,256],"아이스퀘어":[22.296925,114.171596,86],"청킹맨션":[22.296334,114.1723,86],"구룡공원":[22.299758,114.168974,54],"구룡 모스크":[22.298754,114.172047,266],"미라 플레이스":[22.300517,114.172663,348],"엘리먼츠":[22.304206,114.162452,151],"서구룡 고속철역":[22.30373,114.1641,94],"우주박물관":[22.294609,114.172282,221],"리젠트 호텔":[22.29469,114.173697,171],"샹그릴라":[22.296779,114.17727,317],"랜드마크":[22.281093,114.158786,286],"익스체인지 스퀘어":[22.284238,114.158309,212],"시청":[22.281837,114.161424,15],"퍼시픽 플레이스":[22.278075,114.165282,188],"리포센터":[22.279092,114.163268,39],"홍콩공원":[22.278006,114.160917,138],"골든 보히니아 광장":[22.284299,114.174016,246],"호프웰 센터":[22.274876,114.172084,239],"빅토리아 파크":[22.280727,114.189508,323],"센트럴 마켓":[22.283893,114.154836,75],"센트럴 부두":[22.285766,114.159675,34],"드래곤 센터":[22.330875,114.160099,308],"골든 컴퓨터 아케이드":[22.331871,114.161908,39],"타이파 페리터미널":[22.163018,113.573453,70],"MGM 코타이":[22.145767,113.569032,277],"그랜드 리스보아 팰리스":[22.143287,113.574638,333],"윈 마카오":[22.188271,113.548075,248],"MGM 마카오":[22.185209,113.548584,319],"샌즈 마카오":[22.191795,113.555317,258],"외항 페리터미널":[22.197542,113.557467,178],"피셔맨스 워프":[22.192652,113.555218,83]};
+const svPts = new Map();
+function svView(lat, lng, up){ const k = lat.toFixed(5) + ',' + lng.toFixed(5); if(!svPts.has(k)) svPts.set(k, (async () => {
+    try{ const r = await getJ(`https://routing.openstreetmap.de/routed-car/nearest/v1/driving/${lng},${lat}?number=40`), w = r.waypoints.find(x => x.name && !/Bypass|Tunnel|隧道|繞道|Viaduto|天橋|Flyover/.test(x.name)) || r.waypoints[0], q = w.location, a = {lat:q[1], lng:q[0]};
+      if(dist(a.lat, a.lng, lat, lng) > 6) return {lat:a.lat, lng:a.lng, hd:(Math.atan2((lng - a.lng) * Math.cos(lat * Math.PI / 180), lat - a.lat) * 180 / Math.PI + 360) % 360}; }catch(e){}
+    return {lat, lng, hd:0}; })()); return svPts.get(k).then(v => Object.assign({up}, v)); }
+function openSv(v){ document.getElementById('svf').src = svSrc(v); document.getElementById('svv').hidden = false; document.getElementById('svx').focus(); ovPush(); }
+function closeSv(fromBack){ const b = document.getElementById('svv'); if(b.hidden) return; b.hidden = true; document.getElementById('svf').src = 'about:blank'; if(fromBack !== true) ovPop(); }
+document.getElementById('svx').addEventListener('click', () => closeSv());
+// the 🛣️ button: street view inside the page
+function svBtn(get){ const b = h('button', 'zhb', '🛣️ 거리뷰'); b.type = 'button'; b.addEventListener('click', () => get().then(openSv)); return b; }
+const svOf = t => { const v = SVV[t[2]]; return v ? Promise.resolve({lat:v[0], lng:v[1], hd:v[2], up:true}) : svView(t[0], t[1], true); };
 function flagPop(t){ const p = {id:'pt', name:t[2], lat:t[0], lng:t[1]}; if(abTo(p)) return;
   const box = h('div','pop'), ph = h('div'), o = fromHere(p), lg = legOf(o[0], p);
   box.append(h('b', null, t[2]), ph, h('div','rt1', legShort(lg) + ' · ' + shortName(o[1]) + '에서'));
   const wk = h('div','wk'); box.append(wk);
-  const row = h('div','prow'), go = h('button','ghost','🧭 길찾기'), fb = h('button', null, '📍 출발'), sv = h('a', null, '🛣️ 거리뷰'); go.type = fb.type = 'button';
-  sv.href = svUrl(t[0], t[1]); sv.target = '_blank'; sv.rel = 'noopener'; sv.className = 'zhb';
+  const row = h('div','prow'), go = h('button','ghost','🧭 길찾기'), fb = h('button', null, '📍 출발'), sv = svBtn(() => svOf(t)); go.type = fb.type = 'button';
+  ph.className = 'pph'; const sf = h('figure', 'svp'), fr = h('iframe'); fr.title = t[2] + ' 거리뷰'; fr.tabIndex = -1; sf.append(fr, h('b', null, '🛣️ 거리뷰')); ph.append(sf);
+  const noSv = t[2] === '마카오 공항'; // no street photos around the airport
+  if(noSv) sf.remove(); else svOf(t).then(v => { fr.src = svSrc(v); sf.addEventListener('click', () => openSv(v)); });
   go.addEventListener('click', () => { showRoute(p, fromHere(p)); map.closePopup(); });
   fb.addEventListener('click', () => abSet(p));
-  row.append(go, fb); box.append(row, sv);
+  row.append(go, fb); box.append(row); if(!noSv) box.append(sv);
   const pop = L.popup(popOpt()).setLatLng([t[0], t[1]]).setContent(box).openOn(map);
-  towerInfo(t[2]).then(r => { const id = 'tw:' + t[2]; if(r.ph.length){ PH[id] = r.ph; ph.append(phBox(id, t[2])); }
+  towerInfo(t[2]).then(r => { const id = 'tw:' + t[2]; if(r.ph.length){ PH[id] = r.ph; ph.append(...phBox(id, t[2]).children); }
     if(r.txt){ wk.textContent = r.txt; if(r.url){ const a = h('a', null, ' 위키백과'); a.href = r.url; a.target = '_blank'; a.rel = 'noopener'; wk.append(a); } } else wk.remove();
     if(map.hasLayer(pop)) pop.update(); }); }
 map.on('contextmenu', e => { const p = {id:'pin', n:'지정 위치', sub:'지도에서 고른 곳', c:'search', lat:+e.latlng.lat.toFixed(6), lng:+e.latlng.lng.toFixed(6), stay:30};
@@ -2293,7 +2319,7 @@ map.on('contextmenu', e => { const p = {id:'pin', n:'지정 위치', sub:'지도
   go.addEventListener('click', () => { showRoute({id:'pin', name:'지정 위치', lat:p.lat, lng:p.lng}, fromHere(p)); map.closePopup(); });
   b.addEventListener('click', () => { map.closePopup(); addPlace(Object.assign({}, p, {id:'pin' + Date.now().toString(36)})); });
   const fb = h('button', null, '📍 출발'); fb.type = 'button'; fb.addEventListener('click', () => abSet({lat:p.lat, lng:p.lng, name:'지정 위치'}));
-  const sv = h('a', 'zhb', '🛣️ 거리뷰'); sv.href = svUrl(p.lat, p.lng); sv.target = '_blank'; sv.rel = 'noopener';
+  const sv = svBtn(() => svView(p.lat, p.lng, false));
   row.append(go, fb, b); box.append(row, sv);
   pinPop = L.popup(popOpt()).setLatLng(e.latlng).setContent(box).openOn(map); previewRoute(p); });
 map.on('popupclose', e => { if(e.popup === pinPop){ pinPop = null; if(routeCur && routeCur.preview) clearRoute(); } if(showToilet) setTimeout(() => { if(!document.getElementById('mapwrap').classList.contains('popon')) drawToilets(); }, 0); });

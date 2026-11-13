@@ -781,11 +781,17 @@ function rideDir(r){
   return {up:true, term:b};
 }
 const legCache = new Map();
+const inMacau = p => p.lat < 22.24 && p.lng < 113.62, PIER = {lat:22.288671, lng:114.152437};
+const FERRY = {hk:'07:30 08:30 09:00* 09:30 10:00 10:30 11:30 12:00* 12:30 13:30 14:00 15:00 15:30* 16:00 16:30 17:30 18:30 19:30 20:30 21:30 22:30',
+  mo:'09:00 10:00 10:30* 11:00 11:30 12:30 13:30 14:00* 14:30 15:00 16:00 16:30 17:00* 17:30 18:00 19:00 20:00 21:00 22:00 23:00 23:59'};
+const boats = (fromHk, sat) => FERRY[fromHk ? 'hk' : 'mo'].split(' ').filter(x => sat || !x.endsWith('*')).map(x => toMin(x.replace('*', '')));
 function legOf(a, b){
   if(b.legMin && b.legMin[0] === a.id) return {mode:'given', min:b.legMin[1], d:dist(a.lat,a.lng,b.lat,b.lng)};
   const k = a.lat+','+a.lng+'>'+b.lat+','+b.lng; if(legCache.has(k)) return legCache.get(k);
   const d = dist(a.lat,a.lng,b.lat,b.lng); let r;
   if(d < 30) r = {mode:'same', min:0, d};
+  // shortcut: one fixed crossing (Sheung Wan pier, ~60 min boat + Taipa shuttle); other piers and the bridge bus are not modelled
+  else if(inMacau(a) !== inMacau(b)){ const hk = inMacau(a) ? b : a, pd = dist(hk.lat, hk.lng, PIER.lat, PIER.lng); r = {mode:'boat', min:75 + (pd > 800 ? taxiMin(pd) + 30 : 0), d, pier:pd > 800, fromHk:!inMacau(a)}; }
   else {
     const m = d > 600 ? mtrRoute(a, b) : null, opts = [];
     // walking gets a small bonus, taxi a penalty: prefer walk > MTR > taxi unless clearly faster
@@ -801,7 +807,7 @@ const taxiMin = d => Math.round(5 + Math.min(d, 5000) * 1.3 / 350 + Math.max(0, 
 // red taxi: HK$29 for the first 2 km, then HK$2.1 per 200 m (road distance about 1.3 x straight line); harbour tunnels cost extra
 const taxiFare = (d, cross) => Math.round(29 + Math.max(0, d * (cross ? 1.6 : 1.3) - 2000) / 200 * 2.1); // the way round to a tunnel is longer
 const onIsland = p => p.lat < 22.2925 && p.lng > 114.1 && p.lng < 114.26;
-function legOpts(a, b){ const best = legOf(a, b); if(best.mode === 'same' || best.mode === 'given') return [best];
+function legOpts(a, b){ const best = legOf(a, b); if(best.mode === 'same' || best.mode === 'given' || best.mode === 'boat') return [best];
   const d = best.d, out = [], m = best.mode === 'mtr' ? best.m : d > 600 ? mtrRoute(a, b) : null;
   if(d < 5000) out.push({mode:'walk', min:Math.max(1, Math.round(WALKM(d))), d});
   if(m) out.push({mode:'mtr', min:Math.round(m.min), d, m});
@@ -811,6 +817,7 @@ const optText = (o, a, b) => `${legIcon[o.mode] || ''} ${o.min}분` + (o.mode ==
 function legText(leg){
   if(leg.mode === 'walk') return `🚶 도보 약 ${leg.min}분 · ${fmt(leg.d)}`;
   if(leg.mode === 'taxi') return `🚕 택시 약 ${leg.min}분 · ${fmt(leg.d)}`;
+  if(leg.mode === 'boat') return `⛴️ 배 약 ${leg.min}분 · ${leg.pier ? '셩완 터미널까지 택시 + ' : ''}${leg.fromHk ? '셩완 → 타이파' : '타이파 → 셩완'} 코타이 워터젯`;
   if(leg.mode === 'mtr'){ const r = leg.m.rides;
     return `🚇 ${stKo(r[0].codes[0])} → ` + r.map((x, i) => lineKo(x.line) + ' → ' + stKo(x.codes[x.codes.length-1]) + (i < r.length - 1 ? ' 환승 → ' : '')).join('') + ` · 약 ${leg.min}분`; }
   return '';
@@ -825,6 +832,7 @@ function legSteps(leg){
     S.push({t:`🚶 ${m.to.exit ? m.to.exit+' 출구로 나가서 ' : ''}도보 ${Math.max(1, Math.round(WALKM(m.to.d)))}분 · ${fmt(m.to.d)}`});
     return S; }
   if(leg.mode === 'taxi') return [{t:`🚕 택시 약 ${leg.min}분 · ${fmt(leg.d)}`}];
+  if(leg.mode === 'boat') return [leg.fromHk ? leg.pier && {t:'🚕 셩완 홍콩마카오 페리터미널까지 택시'} : {t:'🚌 타이파 페리터미널까지 셔틀·택시 약 15분'}, {t:`⛴️ 코타이 워터젯 ${leg.fromHk ? '셩완 → 타이파' : '타이파 → 셩완'} 약 60분 · 30분 전 도착 · 여권`}, {t:'🕒 ' + boats(leg.fromHk, false).map(hm).join(' ')}, leg.fromHk ? {t:'🚌 타이파 터미널 → 숙소 무료 셔틀·택시 약 15분'} : leg.pier && {t:'🚕 셩완 터미널 → 다음 장소 택시'}].filter(Boolean);
   if(leg.mode === 'walk') return [{t:`🚶 도보 약 ${leg.min}분 · ${fmt(leg.d)}`}];
   if(leg.mode === 'same') return [{t:'📍 같은 곳'}];
   return [{t:`약 ${leg.min}분`}];
@@ -832,7 +840,8 @@ function legSteps(leg){
 
 let kmbStops = null;
 const rtOpen = new Map();
-const etaTxt = list => list.sort((a,b) => a-b).slice(0,3).map(m => m<=0 ? '곧' : m+'분').join(' · ');
+const etaTxt = list => list.sort((a,b) => a-b).slice(0,3).map(m => m<=0 ? '곧' : m > 60 ? hm(hkMin() + m) : m+'분').join(' · ');
+const enName = (en, tc) => en ? en.toLowerCase().replace(/(^|[\s(\-/])([a-z])/g, (x, p, c) => p + c.toUpperCase()) : tc;
 async function fillRt(o){
   const {lat, lng, el} = o;
   const sts = MTR.map(s => [dist(lat,lng,s[3],s[4]), s]).filter(x => x[0] < 900).sort((a,b) => a[0]-b[0]).slice(0,2);
@@ -857,9 +866,9 @@ async function fillRt(o){
     if(rows.length){ any = true; box.append(h('h4',null,`🚇 ${stKo(s[0])}역 · ${fmt(d)}`), ...rows); }
   }
   if(kmb) for(const {d,x,e} of kmb){
-    const g = {}; for(const t of e){ if(!t.eta) continue; const k = t.route+'|'+t.dest_tc; (g[k] = g[k] || []).push(Math.round((new Date(t.eta) - Date.now())/60000)); }
+    const g = {}; for(const t of e){ if(!t.eta) continue; const k = t.route+'|'+enName(t.dest_en, t.dest_tc); (g[k] = g[k] || []).push(Math.round((new Date(t.eta) - Date.now())/60000)); }
     const ks = Object.keys(g); if(!ks.length) continue; any = true;
-    box.append(h('h4',null,`🚌 ${x.name_tc} · ${fmt(d)}`));
+    box.append(h('h4',null,`🚌 ${enName(x.name_en, x.name_tc)} · ${fmt(d)}`));
     for(const k of ks.slice(0,8)){ const [rn,dest] = k.split('|'), r = h('div','r'); r.append(h('span','rn',rn), h('span','d','→ '+dest), h('span','t',etaTxt(g[k]))); box.append(r); }
   }
   if(!any) box.append(h('div','r','근처(지하철 900m · 버스 350m)에 실시간 정보가 없어요 🥲'));
@@ -906,6 +915,7 @@ function legShapes(leg, a, b){
     for(const r of m.rides){ const pts = r.codes.map(c => [ST[c].lat, ST[c].lng]); S.push({pts, st:'mtr:' + r.line}); }
     S.push({pts:[[A.lat, A.lng], S[1].pts[0]], st:'link'}, {pts:[S[S.length-1].pts[S[S.length-1].pts.length-1], [B.lat, B.lng]], st:'link'});
     S.push({pts:geo('foot', B, b) || st(B, b), st:'walk'}); }
+  else if(leg.mode === 'boat') S.push({pts:st(a, b), st:'link'});
   else if(leg.mode !== 'same') S.push({pts:geo('car', a, b) || st(a, b), st:'car'});
   return S;
 }
@@ -923,7 +933,7 @@ function drawShape(sh, grp, op, big){
 // ---- in-page directions ----
 let routeCur = null;
 function clearRoute(){ routeCur = null; pendingRoute = null; redrawRoute(false); }
-const legIcon = {walk:'🚶', mtr:'🚇', taxi:'🚕', given:'🚌'};
+const legIcon = {walk:'🚶', mtr:'🚇', taxi:'🚕', given:'🚌', boat:'⛴️'};
 const legShort = lg => lg.mode === 'same' ? '바로 옆' : `${legIcon[lg.mode] || ''} 약 ${lg.min}분 · ${fmt(lg.d)}`;
 // tapping a place answers "how far from here": my position, else the selected stop, else the hotel
 function fromHere(p){ return me && nearHK(me) && dist(me.lat, me.lng, p.lat, p.lng) < 60000 ? [me, '내 위치'] : sel && sel.lat && dist(sel.lat, sel.lng, p.lat, p.lng) > 30 ? [sel, sel.name] : [home(), home().name]; }
@@ -1445,14 +1455,18 @@ function schedule(d, rs){
   rs = rs || routeStops(d); const out = new Map(); let t = toMin(d.start || '10:00'), travel = 0, pen = 0;
   const iso = DATES[d.id], w = iso ? DOW[new Date(iso+'T12:00:00+08:00').getUTCDay()] : '';
   rs.forEach((s, i) => { const warn = []; let leg = null;
-    if(i){ leg = legOf(rs[i-1], s); t += leg.min; travel += leg.min; }
+    let boat = null;
+    if(i){ leg = legOf(rs[i-1], s);
+      if(leg.mode === 'boat'){ const ready = t + leg.min - 75, sat = !!iso && new Date(iso+'T12:00:00+08:00').getUTCDay() === 6; boat = boats(leg.fromHk, sat).find(b => b >= ready);
+        const t2 = boat != null ? boat + 75 : t + leg.min; if(boat == null){ warn.push('⚠️ 막배 지남'); pen += 600; } travel += t2 - t; t = t2; }
+      else { t += leg.min; travel += leg.min; } }
     if(s.fixed != null){ if(t < s.fixed) t = s.fixed; else if(t > s.fixed + 10){ warn.push(`⚠️ ${hm(s.fixed)}보다 ${Math.round(t - s.fixed)}분 늦음`); pen += (t - s.fixed) * 3; } }
     const hr = hoursOf(s, t), cl = s.closed || ((/([일월화수목금토])\s*휴/.exec(s.hours || '') || [])[1] || '');
     if(w && cl.includes(w)){ warn.push(`⚠️ ${w}요일 휴무`); pen += 600; }
     else if(hr){ if(t < hr[0] && hr[0] - t <= 60){ pen += hr[0] - t; t = hr[0]; }
       else if(t < hr[0] || t > hr[1] - 30){ warn.push(t < hr[0] ? `⚠️ ${hm(hr[0])} 오픈` : `⚠️ ${hm(hr[1])} 마감`); pen += 240; } }
     if(s.best && s.fixed == null && (t < s.best[0] || t > s.best[1])){ warn.push(`⚠️ 추천 ${hm(s.best[0])}–${hm(s.best[1])}`); pen += Math.min(240, t < s.best[0] ? s.best[0] - t : t - s.best[1]); }
-    const qw = s.wait != null ? s.wait : estWait(s, t, w), stay = (s.stay ?? 45) + qw; out.set(s, {arr:t, dep:t + stay, leg, warn, wait:qw, auto:s.wait == null}); t += stay; });
+    const qw = s.wait != null ? s.wait : estWait(s, t, w), stay = (s.stay ?? 45) + qw; out.set(s, {arr:t, dep:t + stay, leg, warn, wait:qw, auto:s.wait == null, boat}); t += stay; });
   return {out, travel, cost:travel + pen, end:t};
 }
 function perm(a, f){ const c = a.slice(), n = c.length, k = new Array(n).fill(0); f(c); let i = 0;
@@ -1586,7 +1600,7 @@ function drawList(){
   for(const s of day.stops){
     const info = sch.out.get(s), ri = rs.indexOf(s);
     if(s===firstAlt && grp) list.append(h('li','grouphead',grp));
-    if(info && info.leg && info.leg.mode !== 'same'){ const p = rs[ri-1], lg = h('li','leg', info.leg.mode === 'given' ? s.leg : legText(info.leg));
+    if(info && info.leg && info.leg.mode !== 'same'){ const p = rs[ri-1], lg = h('li','leg', info.leg.mode === 'given' ? s.leg : legText(info.leg) + (info.boat != null ? ` · ${hm(info.boat)} 배` : ''));
       lg.tabIndex = 0; lg.setAttribute('role', 'button'); lg.addEventListener('keydown', e => { if(e.key === 'Enter') lg.click(); });
       lg.addEventListener('click', () => { showRoute(s, [p, p.name]); document.getElementById('mapwrap').scrollIntoView({block:'nearest', behavior:'smooth'}); });
       list.append(lg); }
@@ -1775,13 +1789,15 @@ const GUIDE = [["📅 여행 4일 휴관·행사", [["11/16 월", "M+ 휴관"], 
   bt.addEventListener('click', () => box.hidden ? open() : closeMemo());
   document.getElementById('memox').addEventListener('click', () => closeMemo());
   const dayOf = id => DAYS.find(d => d.id === id), homeOf = d => d.id === 'macau' ? MHOTEL : HOTEL;
+  const hotelStop = (o, d) => { const s = {id:'h-' + Date.now().toString(36) + (stopSeq++), name:o.name, sub:o.sub, lat:o.lat, lng:o.lng, stay:0}; if(o === MHOTEL) s.rec = 'wynnpalace'; return s; };
+  const startOf = (d, list) => d.id === 'macau' && list.some(s => s.lat && !inMacau(s)) ? HOTEL : homeOf(d);
   // places the list does not know: English name first (photon), then OSM search
   async function locate(q){ const bb = '&bbox=113.5,22.05,114.45,22.6';
     try{ const r = await getJ('https://photon.komoot.io/api/?limit=1&q=' + encodeURIComponent(q) + bb); const f = r.features[0]; if(f) return {lat:f.geometry.coordinates[1], lng:f.geometry.coordinates[0]}; }catch(e){}
     try{ const r = await getJ('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&viewbox=113.5,22.6,114.45,22.05&bounded=1&q=' + encodeURIComponent(q)); if(r[0]) return {lat:+r[0].lat, lng:+r[0].lon}; }catch(e){}
     return null; }
   async function toStop(d, x){ const t = /^\d{1,2}:\d{2}$/.test(x.time || '') ? toMin(x.time) : null; let s, how;
-    if(x.rec === 'hotel'){ const o = homeOf(d); s = {id:'h-' + Date.now().toString(36) + (stopSeq++), name:o.name, sub:o.sub, lat:o.lat, lng:o.lng, stay:0}; if(d.id === 'macau') s.rec = 'wynnpalace'; how = '🏨'; }
+    if(x.rec === 'hotel' || x.rec === 'hotel_hk'){ s = hotelStop(x.rec === 'hotel_hk' ? HOTEL : homeOf(d)); how = '🏨'; }
     else { const p = x.rec && REC.find(r => r.id === x.rec);
       if(p){ s = mkStop(p); how = '✓'; }
       else if(x.en){ const at = await locate([x.en, x.area].filter(Boolean).join(' ')) || await locate(x.en);
@@ -1798,7 +1814,7 @@ const GUIDE = [["📅 여행 4일 휴관·행사", [["11/16 월", "M+ 휴관"], 
   function apply(replace){ const prev = plan.map(b => { const d = dayOf(b.day); return [d, JSON.stringify(d.stops), d.edited, d.start]; });
     for(const b of plan){ const d = dayOf(b.day), add = b.stops.map(x => x[0]);
       // a replaced day still leaves from the hotel unless the memo says otherwise (day1 starts at the airport)
-      if(replace && d.id !== 'day1' && !(add[0] && isHome(add[0]))){ const o = homeOf(d), s = {id:'h-' + Date.now().toString(36) + (stopSeq++), name:o.name, sub:o.sub, lat:o.lat, lng:o.lng, stay:0}; if(d.id === 'macau') s.rec = 'wynnpalace'; add.unshift(s); }
+      if(replace && d.id !== 'day1' && !(add[0] && isHome(add[0]))) add.unshift(hotelStop(startOf(d, add)));
       d.stops = replace ? add : d.stops.filter(x => !(x.kind === 'plain' && /^tbd/.test(x.id))).concat(add);
       if(replace && /^\d{1,2}:\d{2}$/.test(b.start || '')) d.start = b.start.padStart(5, '0'); d.edited = true; }
     const first = plan[0].day, n = plan.length; plan = null; res.textContent = ''; txt.value = ''; savePlan(); closeMemo(); setDay(first, true);
@@ -1814,7 +1830,8 @@ const GUIDE = [["📅 여행 4일 휴관·행사", [["11/16 월", "M+ 휴관"], 
       const days = (j.days || []).filter(b => dayOf(b.day) && Array.isArray(b.stops) && b.stops.length);
       if(!days.length){ msg.textContent = j.unclear || '찾은 일정 없음'; return; }
       msg.textContent = '위치 찾는 중…';
-      plan = []; for(const b of days){ const d = dayOf(b.day), stops = []; for(const x of b.stops.slice(0, 40)) stops.push(await toStop(d, x)); plan.push({day:b.day, start:b.start, stops}); }
+      plan = []; for(const b of days){ const d = dayOf(b.day), stops = []; for(const x of b.stops.slice(0, 40)) stops.push(await toStop(d, x));
+        if(stops.length > 1 && startOf(d, stops.map(x => x[0])) === HOTEL && stops[0][0].lat === MHOTEL.lat && stops[0][0].lng === MHOTEL.lng && stops.slice(1).some(x => x[0].lat === MHOTEL.lat && x[0].lng === MHOTEL.lng)) stops[0][0] = hotelStop(HOTEL); plan.push({day:b.day, start:b.start, stops}); }
       msg.textContent = j.unclear || ''; show();
     }catch(e){ msg.textContent = '연결 실패'; }
     finally{ go.disabled = false; if(msg.textContent === '정리 중…' || msg.textContent === '위치 찾는 중…') msg.textContent = ''; } });

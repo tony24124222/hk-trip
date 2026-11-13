@@ -1057,15 +1057,15 @@ const INFO = {
  kam:{d:"미쉐린 1스타 거위구이집.", t:"예약 불가 · 입구에서 번호표 · 14~17시가 한산", p:"거위 다리 덮밥 HK$80~180대(자료 엇갈림)"},
  ohw:{d:"프랫 애비뉴의 길거리 간식 가게(카레 어묵·시우마이·튀김).", t:"서서 먹거나 포장 · 야식으로 적당", p:"5종 모둠 HK$20(2022)"},
  north:{d:"베네시안 1층 중국 북방 요리 식당, 오픈 키친 수타면.", t:"누들 바 좌석은 예약 때 요청", p:"1인 MOP200~300 추정"},
- timho:{d:"미쉐린 딤섬집, 차슈 번이 대표."},
+ timho:{d:"차슈 번으로 유명한 딤섬집."},
  tsimchai:{d:"큼직한 새우 완탕·어묵·소고기 토핑 국수."},
  kaukee:{d:"소고기 양지 국수와 카레 양지 국수."},
  lanfong:{d:"스타킹 밀크티 원조, 폭찹 번."},
  taicheong:{d:"쿠키 타르트지 에그타르트."},
  singheung:{d:"노천 다이파이동, 토마토 국물 라면과 레몬 꿀 바삭 번."},
- yatlok:{d:"미쉐린 거위구이, 거위 다리 쌀국수."},
+ yatlok:{d:"미쉐린 가이드에 오른 거위구이집, 거위 다리 쌀국수."},
  maxim:{d:"시티홀 2층 대형 얌차홀, 수레 딤섬."},
- hohung:{d:"완탕면·콘지, 미쉐린 수록."},
+ hohung:{d:"완탕면·콘지 노포."},
  joyhing:{d:"차슈 덮밥 노포."},
  mido:{d:"1950년 개업 옛 차찬탱, 타일·창틀 그대로."},
  fourseasons:{d:"숯불 뚝배기밥(보짜이판)."},
@@ -1236,8 +1236,11 @@ const nmTag = (n, d) => `<span class="nm${d ? ' d' : ''}">${n.replace(/[&<>"]/g,
 // labels/photos of lower-priority markers hide where they would cover a higher one
 let mkList = [], recOpen = null;
 // popups must fit the 300px phone map: scroll inside, and the side buttons step aside while one is open
-const popOpt = () => ({minWidth:200, maxWidth:260, maxHeight:Math.max(160, map.getSize().y - 46), autoPanPadding:[8, 8]});
-map.on('popupopen', () => document.getElementById('mapwrap').classList.add('popon')).on('popupclose', () => document.getElementById('mapwrap').classList.remove('popon'));
+const popOpt = () => ({minWidth:200, maxWidth:260, maxHeight:Math.max(160, map.getSize().y - 46), autoPanPaddingTopLeft:[8, 8 + ins().t], autoPanPaddingBottomRight:[8, 8 + (mm && !wide() ? shH(shState) : 0)]});
+map.on('popupopen', e => { document.getElementById('mapwrap').classList.add('popon');
+  // the map changes height between list and map mode after the popup was bound
+  const mh = Math.max(160, map.getSize().y - 46 - ins().t - (mm && !wide() ? shH(shState) : 0)); if(e.popup.options.maxHeight !== mh){ e.popup.options.maxHeight = mh; e.popup.update(); }
+}).on('popupclose', () => document.getElementById('mapwrap').classList.remove('popon'));
 const tw = n => [...n].reduce((a, c) => a + (/[ㄱ-힝一-鿿]/.test(c) ? 12 : 6.6), 8);
 function declutter(){ if(!map._loaded) return;
   const z = map.getZoom(), boxes = [], hit = b => boxes.some(o => b[0] < o[2] && b[2] > o[0] && b[1] < o[3] && b[3] > o[1]);
@@ -1554,7 +1557,7 @@ function setSheet(st){ const b0 = ins().b; shState = st; const db = ins().b - b0
 function setMM(on){ mm = on; root.classList.toggle('mm', on); const b = document.getElementById('zfull'); b.setAttribute('aria-pressed', on); b.lastElementChild.textContent = on ? '작게' : '크게';
   try{ localStorage.setItem('hk-mm', on ? '1' : ''); }catch(e){}
   if(on) setSheet(wide() ? 'half' : 'peek'); else { root.style.removeProperty('--sh'); delete panel.dataset.st; }
-  scrollTo(0, 0); map.invalidateSize(); if(sel) focus(sel); else if(routeCur) redrawRoute(true); else fit(); }
+  scrollTo(0, 0); map.invalidateSize(); map.closePopup(); drawMap(); if(sel) focus(sel); else if(routeCur) redrawRoute(true); else fit(); }
 document.getElementById('zfull').addEventListener('click', () => setMM(!mm));
 document.getElementById('zhotel').addEventListener('click', () => { const o = originNear(); showRoute({id:'hotel', name:HOTEL.name, lat:HOTEL.lat, lng:HOTEL.lng}, o); });
 document.getElementById('pgo').addEventListener('click', () => { if(sel) routeTo(sel); });

@@ -110,12 +110,22 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .dlab span{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;font:400 15px var(--display);color:var(--lab);letter-spacing:.08em;text-shadow:0 0 2px var(--land),0 0 3px var(--land),0 0 6px var(--land)}
 .dlab.big span{font-size:19px}
 .dlab.sea span{color:var(--sea);font-size:17px;letter-spacing:.4em}
-#map:not(.z-area) .dlab,#map:not(.z-dot) .slab,#map:not(.z-sta) .slab span,#map:not(.z-lm) .lmk,#map:not(.z-lmn) .lmk span{display:none}
+#map:not(.z-area) .dlab,#map:not(.z-dot) .slab,#map:not(.z-sta) .slab span,#map:not(.z-lm) .lmk{display:none}
 .slab i{position:absolute;left:-5px;top:-5px;width:10px;height:10px;box-sizing:border-box;border-radius:50%;background:#fff;border:2.5px solid}
 .slab span{position:absolute;left:8px;top:-9px;white-space:nowrap;font:700 11.5px "Gowun Dodum",sans-serif;color:var(--ink);text-shadow:0 0 2px var(--land),0 0 3px var(--land),0 0 5px var(--land)}
 .lmk b{display:grid;place-items:center;width:38px;height:38px;box-sizing:border-box;border-radius:13px;background:var(--surface);border:2.5px solid var(--accent);font-size:20px;font-weight:400;box-shadow:0 2px 0 var(--accent),0 3px 8px rgba(90,40,60,.25);transform:rotate(-5deg)}
 .lmk.r b{transform:rotate(4deg);border-color:var(--alt);box-shadow:0 2px 0 var(--alt),0 3px 8px rgba(30,80,70,.25)}
-.lmk span{position:absolute;left:50%;top:42px;transform:translateX(-50%);white-space:nowrap;font:400 12.5px var(--display);color:var(--ink);text-shadow:0 0 2px var(--land),0 0 3px var(--land),0 0 6px var(--land)}
+.mk{position:relative}
+.nm,.ph{display:none;position:absolute;left:50%;transform:translateX(-50%);pointer-events:none}
+.nm{top:calc(100% + 2px);white-space:nowrap;font:700 11.5px "Gowun Dodum",sans-serif;color:var(--ink);text-shadow:0 0 2px var(--land),0 0 3px var(--land),0 0 6px var(--land)}
+.nm.d{font:400 13px var(--display)}
+.ph{bottom:calc(100% + 5px);width:64px;height:48px;object-fit:cover;box-sizing:border-box;border-radius:11px;border:2.5px solid #fff;background:var(--line);box-shadow:0 2px 7px rgba(60,30,40,.35);transition:width .2s,height .2s}
+#map.z-big .ph{width:96px;height:72px;border-radius:14px}
+#map.z-dot .nm.d,#map.z-name .nm,#map.z-photo .ph{display:block}
+.leaflet-marker-icon.nolab .nm,.leaflet-marker-icon.nolab .ph{display:none!important}
+.pph{margin:0 0 4px;display:flex;flex-direction:column;gap:2px}
+.pph img{width:100%;height:140px;object-fit:cover;border-radius:12px;background:var(--line)}
+.pph a{font-size:10.5px;color:var(--muted);text-decoration:none}
 .routebox .rh{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .routebox .rh b{font:400 15.5px var(--display);color:#1a73e8}
 .routebox .rh button{flex:0 0 auto;border:2px solid var(--line);background:var(--bg);border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700}
@@ -249,7 +259,8 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
         <span>도착 시간: 도보 거리·MTR 정거장 수 기준 추정</span>
         <span>날씨: 홍콩 천문대 9일 예보 · 지도: OpenFreeMap</span>
         <span>🔀 순서 추천: 호텔·⏰ 고정 일정은 그대로, 그 사이 순서만 변경</span>
-        <span>⏳ 웨이팅: 평소 경향 · 실시간 혼잡도는 Google 지도</span>
+        <span>⏳ 예상 웨이팅: 2023–26 방문 후기의 시간대별 대기 · 실시간 번호표는 OpenRice·The Gulu 앱</span>
+        <span>📷 사진: Wikimedia Commons (사진 누르면 작가·라이선스)</span>
         <span>편집 내용: 이 폰 브라우저에만 저장</span>
       </div>
     </section>
@@ -306,28 +317,28 @@ const DAYS = [
 ];
 const DATES = {day1:'2026-11-16', day2:'2026-11-17', day3:'2026-11-18'};
 const STAY = {apt:30, sci:0, icon1:20, icon2:0, mcot:45, peak:90, esc:30, soho:40, pmq:45, icon2b:90, hkma:60, oms:90, icon3:0, adc:45, north:90};
-const BEST = {esc:[600,1440], hkma:[1020,1140]};
+const BEST = {esc:[600,1410], hkma:[1020,1140]};
 const LEGMIN = {sci:['apt',85], icon1:['sci',5]};
 const CATS = {food:['🍜','맛집'], sight:['🏛️','명소'], hot:['✨','핫플'], photo:['📸','사진'], event:['🎆','이벤트']};
 // coords: OSM (Macau shops approx); hours/closed only where well known
 const REC = [
  {id:'timho', c:'food', n:'팀호완 · 딤섬', sub:'Tim Ho Wan · 홍콩역', lat:22.28449, lng:114.158146, stay:50, wait:'식사 시간 줄 · 번호표'},
- {id:'tsimchai', c:'food', n:'침차이키 · 완탕면', sub:'Tsim Chai Kee · 센트럴', lat:22.282968, lng:114.154481, stay:30, wait:'회전 빠름'},
+ {id:'tsimchai', c:'food', n:'침차이키 · 완탕면', sub:'Tsim Chai Kee · 센트럴', lat:22.282968, lng:114.154481, stay:30, hours:'11:00–21:30', wait:'회전 빠름'},
  {id:'kaukee', c:'food', n:'카우키 · 소고기 안심국수', sub:'Kau Kee · 센트럴', lat:22.284229, lng:114.152537, stay:40, hours:'12:30–22:30', closed:'일', wait:'줄 30분+ 흔함'},
- {id:'lanfong', c:'food', n:'란퐁유엔 · 밀크티', sub:'Lan Fong Yuen · 센트럴', lat:22.28264, lng:114.1538, stay:30, closed:'일', wait:'점심 줄'},
- {id:'taicheong', c:'food', n:'타이청 베이커리 · 에그타르트', sub:'Tai Cheong Bakery · 센트럴', lat:22.282628, lng:114.153578, stay:15, wait:'포장 · 금방'},
- {id:'singheung', c:'food', n:'싱흥유엔 · 토마토 라면', sub:'Sing Heung Yuen · 센트럴', lat:22.284123, lng:114.152536, stay:30, closed:'일', wait:'노천 · 점심 줄'},
- {id:'yatlok', c:'food', n:'얏록 · 거위구이', sub:'Yat Lok · 센트럴', lat:22.282528, lng:114.155321, stay:45, wait:'점심 줄 30분+'},
- {id:'maxim', c:'food', n:'맥심 팰리스 · 딤섬 카트', sub:"Maxim's Palace · 시티홀", lat:22.282614, lng:114.161579, stay:75, best:[600,840], wait:'오픈 전 줄 · 번호표'},
- {id:'hohung', c:'food', n:'호흥키 · 완탕면', sub:'Ho Hung Kee · 코즈웨이베이', lat:22.279721, lng:114.183816, stay:45},
- {id:'joyhing', c:'food', n:'조이힝 · 차슈', sub:'Joy Hing · 완차이', lat:22.27825, lng:114.176653, stay:30, wait:'줄 잦음 · 회전 빠름'},
- {id:'mido', c:'food', n:'미도카페 · 옛날 차찬탱', sub:'Mido Cafe · 야우마테이', lat:22.310226, lng:114.170369, stay:45},
- {id:'fourseasons', c:'food', n:'포시즌 · 뚝배기밥', sub:'Four Seasons Pot Rice · 야우마테이', lat:22.311456, lng:114.17053, stay:60, best:[1020,1260], wait:'저녁 줄 30분+'},
- {id:'onedim', c:'food', n:'원딤섬', sub:'One Dim Sum · 프린스에드워드', lat:22.325491, lng:114.169201, stay:60, wait:'번호표 · 줄 잦음'},
+ {id:'lanfong', c:'food', n:'란퐁유엔 · 밀크티', sub:'Lan Fong Yuen · 센트럴', lat:22.28264, lng:114.1538, stay:30, hours:'07:30–18:00', closed:'일', wait:'점심 줄'},
+ {id:'taicheong', c:'food', n:'타이청 베이커리 · 에그타르트', sub:'Tai Cheong Bakery · 센트럴', lat:22.282628, lng:114.153578, stay:15, hours:'09:30–19:30', wait:'포장 · 금방'},
+ {id:'singheung', c:'food', n:'싱흥유엔 · 토마토 라면', sub:'Sing Heung Yuen · 센트럴', lat:22.284123, lng:114.152536, stay:30, hours:'08:00–15:30', closed:'일', wait:'노천 · 점심 줄'},
+ {id:'yatlok', c:'food', n:'얏록 · 거위구이', sub:'Yat Lok · 센트럴', lat:22.282528, lng:114.155321, stay:45, hours:'10:00–20:30', wait:'점심 줄'},
+ {id:'maxim', c:'food', n:'맥심 팰리스 · 딤섬 카트', sub:"Maxim's Palace · 시티홀", lat:22.282614, lng:114.161579, stay:75, hours:'11:00–15:00 · 저녁 17:30–23:30', best:[660,840], wait:'번호표'},
+ {id:'hohung', c:'food', n:'호흥키 · 완탕면', sub:'Ho Hung Kee · 코즈웨이베이 하이산플레이스 12층', lat:22.279721, lng:114.183816, stay:45, hours:'11:00–22:00'},
+ {id:'joyhing', c:'food', n:'조이힝 · 차슈', sub:'Joy Hing · 완차이', lat:22.27825, lng:114.176653, stay:30, hours:'09:30–22:00', closed:'일', wait:'줄 잦음 · 회전 빠름'},
+ {id:'mido', c:'food', n:'미도카페 · 옛날 차찬탱', sub:'Mido Cafe · 야우마테이', lat:22.310226, lng:114.170369, stay:45, hours:'11:30–19:30', closed:'수'},
+ {id:'fourseasons', c:'food', n:'포시즌 · 뚝배기밥', sub:'Four Seasons Pot Rice · 야우마테이', lat:22.311456, lng:114.17053, stay:75, hours:'18:00–00:30', wait:'저녁 줄'},
+ {id:'onedim', c:'food', n:'원딤섬', sub:'One Dim Sum · 프린스에드워드 · 퉁초이가 209A', lat:22.325491, lng:114.169201, stay:60, hours:'09:30–23:00', wait:'번호표 · 줄 잦음'},
  {id:'kamwah', c:'food', n:'금화빙청 · 파인애플번', sub:'Kam Wah Cafe · 몽콕', lat:22.322299, lng:114.16975, stay:30, wait:'줄 잦음 · 회전 빠름'},
- {id:'wongchikei', c:'food', n:'웡치케이 · 완탕면', sub:'Wong Chi Kei · 마카오 세나도', lat:22.1932, lng:113.5399, stay:40, approx:true},
+ {id:'wongchikei', c:'food', n:'웡치케이 · 완탕면', sub:'Wong Chi Kei · 마카오 세나도', lat:22.1932, lng:113.5399, stay:40, hours:'08:00–23:00', approx:true},
  {id:'margaret', c:'food', n:'마가렛 카페 · 에그타르트', sub:"Margaret's Café e Nata · 마카오", lat:22.1918, lng:113.5416, stay:20, approx:true},
- {id:'lordstow', c:'food', n:'로드스토우 · 에그타르트', sub:"Lord Stow's · 마카오 콜로안", lat:22.1166, lng:113.5615, stay:20, approx:true},
+ {id:'lordstow', c:'food', n:'로드스토우 · 에그타르트', sub:"Lord Stow's · 마카오 콜로안", lat:22.1166, lng:113.5615, stay:20, hours:'07:00–21:00', approx:true},
  {id:'aos', c:'sight', n:'스타의 거리 · 하버 야경', sub:'Avenue of Stars · 침사추이', lat:22.29426, lng:114.174683, stay:40, best:[1110,1350]},
  {id:'ferry', c:'sight', n:'스타페리', sub:'Star Ferry · 침사추이↔센트럴', lat:22.293546, lng:114.168475, stay:30, tip:'약 10분 · 배 위 야경'},
  {id:'st428', c:'sight', n:'스카이테라스 428', sub:'Sky Terrace 428 · 피크 정상', lat:22.271304, lng:114.15016, stay:60, best:[990,1170], tip:'일몰~야경 · 유료'},
@@ -755,32 +766,129 @@ const lab = (cls, html, lat, lng) => L.marker([lat, lng], {pane:'base', interact
   for(const [n, lat, lng, big] of AREAS) lab('dlab' + (big ? ' big' : ''), `<span>${n}</span>`, lat, lng);
   for(const [n, lat, lng] of SEAS) lab('dlab sea', `<span>${n}</span>`, lat, lng);
 })();
+// waits: [days wd|we|all, from, to (min of day), minutes] only where a visit report gives a figure; t = how the queue works
+const Q = {
+ timho:{w:[['all',720,840,25],['all',1080,1200,20]], t:'줄 서며 주문지 작성 · 포장은 10분 내'},
+ tsimchai:{w:[['wd',720,840,20],['we',720,840,25],['all',1080,1200,25]], t:'회전 빠름 · 현금·옥토퍼스'},
+ kaukee:{w:[['all',750,810,30],['all',810,870,15],['all',1080,1200,20]], t:'12:00 줄 서면 오픈 바로 입장 · 일행 다 와야 입장 · 현금만'},
+ lanfong:{w:[['wd',480,600,10],['all',720,840,15]], t:'일행 다 와야 입장 · 1인 HK$40 이상 · 현금'},
+ taicheong:{w:[['all',570,720,5]], t:'포장만 · 늦은 오후 한산'},
+ singheung:{w:[['all',660,720,5],['all',720,810,20]], t:'노천 · 현금만 · 오전 한산'},
+ yatlok:{w:[['all',720,780,10],['all',1050,1110,10]], t:'오픈·오후 한산 · 휴무일 자료 엇갈림(없음·수·일)'},
+ maxim:{w:[['wd',720,810,20],['we',720,840,45]], t:'입구 번호표 · The Gulu 앱 원격 번호표 · 카트는 점심만', app:'The Gulu'},
+ hohung:{t:'식사 시간 피하기'},
+ joyhing:{w:[['wd',720,840,30]], t:'평일 12–14시 붐빔 · 저녁·토요일 한산'},
+ mido:{t:'2층 좌석 · 현금 · 오후 3시대 한산'},
+ fourseasons:{w:[['all',1080,1260,40]], t:'18:00 오픈 직후·21시 이후 한산 · 11월 뚝배기 성수기 · 주문 후 약 20분 조리'},
+ onedim:{t:'문 앞 번호표 · 차례 가까우면 미리 주문 · 하루 종일 줄'},
+ kamwah:{t:'빵은 포장 카운터가 빠름'},
+ margaret:{w:[['all',600,630,10]], t:'10시 전 추천 · 수 휴무 자료 있음 · 현금'},
+ lordstow:{t:'포장만 · 평일 오전·오후 한산'},
+ mcot:{t:'점심이 가장 붐빔'},
+ oms:{t:'카운터·키오스크 번호표 먼저 · 금·주말 저녁 혼잡'},
+ adc:{t:'오픈 직후 대기 없음 · 회전 빠름 · 현금'},
+ yung:{t:'점심 관광객 줄 · 아침 한산'}
+};
+const OR = {singheung:'r-sing-heung-yuen-central-hong-kong-style-r10577', hohung:'r-%E4%BD%95%E6%B4%AA%E8%A8%98-%E9%8A%85%E9%91%BC%E7%81%A3-%E7%B2%B5%E8%8F%9C-%E5%BB%A3%E6%9D%B1-%E7%B2%A5%E5%93%81-r114105',
+  fourseasons:'r-four-seasons-pot-rice-yau-ma-tei-hong-kong-style-r19509', onedim:'r-one-dim-sum-prince-edward-guangdong-dim-sum-r18164'};
+const qOf = s => Q[s.rec || s.id];
+function estWait(s, t, w){ const q = qOf(s); if(!q || !q.w) return 0;
+  const dt = /[토일]/.test(w) ? 'we' : 'wd', m = ((t % 1440) + 1440) % 1440; let r = 0;
+  for(const [d, a, b, n] of q.w) if((d === 'all' || d === dt) && m >= a && m < b) r = Math.max(r, n);
+  return r; }
+const qPeak = q => q && q.w ? Math.max(...q.w.map(x => x[3])) : 0;
+function orLink(id){ if(!OR[id]) return null; const a = h('a', null, 'OpenRice'); a.href = 'https://www.openrice.com/en/hongkong/' + OR[id]; a.target = '_blank'; a.rel = 'noopener'; return a; }
+const PH = {peak:['2/27/CWA_6th_Generation_Peak_Tram.jpg','Samson Ng . D201@EAL','CC BY-SA 4.0'],
+  esc:['f/f8/Central-Mid-Levels_Escalator_and_Walkway_System_2017.jpg','Wpcpey','CC BY-SA 4.0'],
+  pmq:['f/f8/PMQ_Overview_201510.jpg','Wpcpey','CC BY 4.0'],
+  adc:['3/39/Australia_Dairy_Company_outlook.JPG','圍棋一級','CC BY-SA 3.0'],
+  timho:['2/2a/Tim_Ho_Wan_restaurant_at_Sham_Shui_Po_%2820190126130901%29.jpg','N509FZ','CC BY-SA 4.0'],
+  kaukee:['d/d1/Kau_Kee_Restaurant.JPG','','Public domain'],
+  maxim:['b/bc/Hong_Kong_City_Hall_2017.jpg','Wpcpey','CC BY-SA 4.0'],
+  joyhing:['a/a8/HK_Wan_Chai_Stewart_Road_%E5%86%8D%E8%88%88%E7%87%92%E8%87%98%E9%A3%AF%E5%BA%97_BBQ_meat_shop_a.jpg','AlbertBospn','CC BY-SA 3.0'],
+  mido:['2/2e/Mido_Cafe_202011.jpg','Wpcpey','CC BY 4.0'],
+  aos:['0/06/Avenue_of_Stars_201901.jpg','Wpcpey','CC BY-SA 4.0'],
+  ferry:['5/59/Tsim_Sha_Tsui_Ferry_Pier.jpg','Baycrest','CC BY-SA 2.5'],
+  st428:['0/0b/The_Peak_Tower_201108.jpg','WiNG','CC BY 3.0'],
+  temple:['a/a6/GateOfTempleInHongKong.jpg','hkgalbert','CC0'],
+  manmo:['e/ee/Man_Mo_Temple%2C_1847-62%2C_Sheung_Wan%2C_Hong_Kong_%2817%29_%2832748033042%29.jpg','Richard Mortel','CC BY 2.0'],
+  palace:['3/31/Hong_Kong_Palace_Museum_2022.jpg','xiquinhosilva','CC BY 2.0'],
+  wts:['2/2e/HK_WongTaiSinTemple.JPG','Chong Fat','Public domain'],
+  repulse:['d/d4/View_of_Repulse_Bay_from_Sir_Cecil%27s_Ride.jpg','Shanghai88','CC BY-SA 4.0'],
+  buddha:['2/2c/Tian_Tan_Buddha_2023081302.jpg','Huangdan2060','CC BY 4.0'],
+  senado:['f/f7/Centre_of_Makau.jpg','Andrey Surikov','CC BY 2.5'],
+  stpaul:['f/fc/%E5%A4%A7%E4%B8%89%E5%B7%B4%E7%89%8C%E5%9D%8A.jpg','GG001213','CC0'],
+  mtower:['9/9e/Macau_Tower_CE_Centre.jpg','Whhalbert','CC BY-SA 3.0'],
+  ama:['3/39/A_Ma_Temple_200907.jpg','WiNG','CC BY 3.0'],
+  harbourcity:['9/9f/Harbour_City_Overview_2011.jpg','WiNG','CC BY-SA 3.0'],
+  lkf:['4/4b/LKF_Street_View01.jpg','Wiki.lkfa','CC BY-SA 3.0'],
+  taiping:['e/e3/HK_Sheung_Wan_Tai_Ping_Shan_Street_Kwong_Fook_I_Tsz_2.JPG','YauKee1QRW','CC BY-SA 3.0'],
+  ladies:['b/b2/Tung_Choi_Street_201705.JPG','Wpcpey','CC BY-SA 4.0'],
+  stanley:['1/11/Stanley_Market_View1_201007.jpg','WiNG','CC BY-SA 3.0'],
+  cunha:['4/40/Rua_do_Cunha.jpg','Iidxplus','CC BY-SA 3.0'],
+  lugard:['6/65/Lugard_road.jpg','Ngchikit','Public domain'],
+  wheel:['3/3b/Hong_Kong_Observation_Wheel_Sept_2018.jpg','Erc Chw','CC BY-SA 4.0'],
+  monster:['c/c7/Looking_upward_at_the_Yick_Cheong_Building%2C_13_June_2019.jpg','Benh LIEU SONG','CC BY-SA 4.0'],
+  choihung:['4/43/Choi_Hung_Estate_2018.jpg','Wpcpey','CC BY-SA 4.0'],
+  bluehouse:['a/a6/Blue_House%2C_Hong_Kong.jpg','Prosperity Horizons','CC BY-SA 4.0'],
+  nanlian:['2/24/Nan_Lian_Garden_Overview_201807.jpg','Wpcpey','CC BY-SA 4.0'],
+  goldfish:['4/40/Mk_goldfishstreet.jpg','Chong Fat','Public domain'],
+  monte:['a/af/FortalegoDoMonte.jpg','Holly Cheng','CC BY-SA 3.0'],
+  eiffel:['8/8f/The_Parisian_Macao_tower_and_hotel.jpg','Shantham11','CC BY-SA 4.0'],
+  k11:['c/c7/Victoria_Dockside_202007.jpg','Wpcpey','CC BY 4.0']};
+const phId = s => PH[s.rec || s.id] ? (s.rec || s.id) : null;
+const phUrl = (id, w) => `https://upload.wikimedia.org/wikipedia/commons/thumb/${PH[id][0]}/${w}px-${PH[id][0].split('/')[2]}`;
+const phImg = id => id ? `<img class="ph" src="${phUrl(id, 250)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : '';
+function phBox(id){ const f = h('figure','pph'), im = h('img'); im.src = phUrl(id, 500); im.alt = ''; im.loading = 'lazy'; im.addEventListener('error', () => f.remove());
+  const a = h('a', null, '📷 ' + [PH[id][1], PH[id][2]].filter(Boolean).join(' · ')); a.href = 'https://commons.wikimedia.org/wiki/File:' + PH[id][0].split('/')[2]; a.target = '_blank'; a.rel = 'noopener';
+  f.append(im, a); return f; }
+const shortName = n => { n = n.split(' · ')[0].replace(/\s*\(.*?\)\s*/g, '').trim(); return n.length > 14 ? n.slice(0, 13) + '…' : n; };
+const nmTag = (n, d) => `<span class="nm${d ? ' d' : ''}">${n.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c])}</span>`;
+// labels/photos of lower-priority markers hide where they would cover a higher one
+let mkList = [];
+const tw = n => [...n].reduce((a, c) => a + (/[ㄱ-힝一-鿿]/.test(c) ? 12 : 6.6), 8);
+function declutter(){ if(!map._loaded) return;
+  const z = map.getZoom(), boxes = [], hit = b => boxes.some(o => b[0] < o[2] && b[2] > o[0] && b[1] < o[3] && b[3] > o[1]);
+  const [pw, ph] = z >= 17 ? [96, 72] : [64, 48];
+  for(const k of mkList.slice().sort((a, b) => a.pri - b.pri)){ const el = k.m.getElement(); if(!el) continue;
+    const p = map.latLngToLayerPoint(k.m.getLatLng()), r = k.r, ex = [];
+    if(z >= (k.day ? 14 : 15)){ const w = tw(k.name); ex.push([p.x - w/2, p.y + r, p.x + w/2, p.y + r + 17]); }
+    if(z >= 16 && k.ph) ex.push([p.x - pw/2 - 3, p.y - r - ph - 9, p.x + pw/2 + 3, p.y - r]);
+    const ok = !ex.some(hit); el.classList.toggle('nolab', !ok);
+    boxes.push([p.x - r, p.y - r, p.x + r, p.y + r]); if(ok) boxes.push(...ex); }
+}
 const LM = {ferry:'⛴️', aos:'🌃', wheel:'🎡', st428:'🚡', temple:'🏮', ladies:'🛍️', manmo:'🛕', mplus:'🖼️', palace:'🏯', harbourcity:'🛳️', goldfish:'🐠', bluehouse:'🏠', lugard:'🌉'};
 function zoomCls(){ const z = map.getZoom(), c = map.getContainer().classList;
-  c.toggle('z-area', z >= 12 && z < 17); c.toggle('z-dot', z >= 14); c.toggle('z-sta', z >= 15); c.toggle('z-lm', z >= 14); c.toggle('z-lmn', z >= 15); }
+  c.toggle('z-area', z >= 12 && z < 17); c.toggle('z-dot', z >= 14); c.toggle('z-sta', z >= 15); c.toggle('z-lm', z >= 14); c.toggle('z-name', z >= 15); c.toggle('z-photo', z >= 16); c.toggle('z-big', z >= 17); declutter(); }
 map.on('zoomend', zoomCls);
 function drawMap(){
-  layer.clearLayers(); const rs = routeStops(day), nx = nextStop(day);
+  layer.clearLayers(); mkList = []; const rs = routeStops(day), nx = nextStop(day);
   for(let i = 1; i < rs.length; i++){ const a = rs[i-1], b = rs[i];
     for(const sh of legShapes(legOf(a, b), a, b)) drawShape(sh, layer, done[b.id] ? .4 : b.opt ? .7 : 1, false); }
   for(const s of day.stops.filter(x=>x.lat)){ const alt = s.kind==='alt';
     const grp = alt ? [s] : day.stops.filter(o => o.lat===s.lat && o.lng===s.lng && o.kind!=='alt'); if(grp[0]!==s) continue;
     const cls = 'pin' + (alt?' alt':'') + (grp.every(o=>done[o.id])&&!alt?' done':'') + (grp.includes(sel)?' sel':'') + (grp.includes(nx)?' next':'') + (grp.length>1?' multi':'');
-    const m = L.marker([s.lat,s.lng], {icon: L.divIcon({className:'', html:`<div class="${cls}">${s.far ? '✈' : grp.map(o=>label(day,o)).join('·')}</div>`, iconSize:[28,28], iconAnchor:[14,14]}),
+    const pid = s.far || grp.length > 1 ? null : phId(s), nm = s.far ? '' : shortName(grp.map(o => o.name).join(' · '));
+    const m = L.marker([s.lat,s.lng], {icon: L.divIcon({className:'', html:`<div class="${cls} mk">${s.far ? '✈' : grp.map(o=>label(day,o)).join('·')}${nm ? nmTag(nm, 1) : ''}${phImg(pid)}</div>`, iconSize:[28,28], iconAnchor:[14,14]}),
       title:s.name, zIndexOffset: grp.includes(sel)?1000:0}).addTo(layer);
+    if(nm) mkList.push({m, pri:grp.includes(sel) ? 0 : alt ? 20 : 10, day:1, name:nm, ph:!!pid, r:14});
     m.bindTooltip(s.name, {direction:'top', offset:[0,-14]});
     m.on('click', () => select(grp.includes(sel) ? grp[(grp.indexOf(sel)+1)%grp.length] : s, true));
   }
   recLayer.clearLayers();
   const inDay = new Set(day.stops.map(s => s.rec)); let li = 0;
   for(const p of poolFor(day)){ if(inDay.has(p.id) || (!showRec && !LM[p.id])) continue;
-    const icon = LM[p.id] ? L.divIcon({className:'lmk' + (li++ % 2 ? ' r' : ''), html:`<b>${LM[p.id]}</b><span>${p.n.split(' · ')[0]}</span>`, iconSize:[40,40], iconAnchor:[20,20]})
-      : L.divIcon({className:'', html:`<div class="rpin">${CATS[p.c][0]}</div>`, iconSize:[26,26], iconAnchor:[13,13]});
+    const nm = shortName(p.n), pid = PH[p.id] ? p.id : null;
+    const icon = LM[p.id] ? L.divIcon({className:'lmk' + (li++ % 2 ? ' r' : ''), html:`<b>${LM[p.id]}</b>${nmTag(nm)}${phImg(pid)}`, iconSize:[40,40], iconAnchor:[20,20]})
+      : L.divIcon({className:'', html:`<div class="rpin mk">${CATS[p.c][0]}${nmTag(nm)}${phImg(pid)}</div>`, iconSize:[26,26], iconAnchor:[13,13]});
     const m = L.marker([p.lat,p.lng], {icon, title:p.n, zIndexOffset:LM[p.id] ? -400 : -500}).addTo(recLayer);
-    m.bindPopup(() => { const box = h('div','pop'); box.append(h('b',null,p.n), h('div','m',recMeta(p)));
+    mkList.push({m, pri:LM[p.id] ? 30 : p.c === 'food' ? 40 : 50, name:nm, ph:!!pid, r:LM[p.id] ? 20 : 13});
+    m.bindPopup(() => { const box = h('div','pop'); if(pid) box.append(phBox(pid)); box.append(h('b',null,p.n), h('div','m',recMeta(p)));
+      const ol = orLink(p.id); if(ol) box.append(ol);
       const b = h('button',null,'＋ '+day.tab.replace(/^\S+\s/,'')+'에 추가'); b.type = 'button';
-      b.addEventListener('click', () => { map.closePopup(); addPlace(p); }); box.append(b); return box; });
+      b.addEventListener('click', () => { map.closePopup(); addPlace(p); }); box.append(b); return box; }, {minWidth:200, maxWidth:260});
   }
+  declutter();
 }
 function drawMe(){ meLayer.clearLayers(); if(!me) return;
   L.circle([me.lat,me.lng], {radius:me.acc, color:'#1a73e8', weight:1, fillOpacity:.12}).addTo(meLayer);
@@ -803,7 +911,7 @@ function toggleGps(){ const b = document.getElementById('gps');
 function h(tag, cls, text){ const e = document.createElement(tag); if(cls) e.className = cls; if(text!=null) e.textContent = text; return e; }
 const hm = m => { m = ((Math.round(m) % 1440) + 1440) % 1440; return String(Math.floor(m/60)).padStart(2,'0') + ':' + String(m%60).padStart(2,'0'); };
 const toMin = t => { const [a,b] = String(t).split(':').map(Number); return a*60 + (b||0); };
-const recMeta = p => [p.when, p.sub, p.best && `추천 ${hm(p.best[0])}–${hm(p.best[1])}`, p.wait && '⏳ '+p.wait, p.closed && p.closed+' 휴무', p.tip].filter(Boolean).join(' · ');
+const recMeta = p => { const q = Q[p.id], pk = qPeak(q); return [p.when, p.sub, p.hours && '영업 '+p.hours, p.best && `추천 ${hm(p.best[0])}–${hm(p.best[1])}`, (q || p.wait) && '⏳ ' + (pk ? `붐빌 때 약 ${pk}분 · ` : '') + (q ? q.t : p.wait), p.closed && p.closed+' 휴무', p.tip].filter(Boolean).join(' · '); };
 function hoursOf(s){ const m = /(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})/.exec(s.hours || ''); if(!m) return null;
   const o = +m[1]*60 + +m[2]; let c = +m[3]*60 + +m[4]; if(c <= o) c += 1440; return [o, c]; }
 function schedule(d, rs){
@@ -817,7 +925,7 @@ function schedule(d, rs){
     else if(hr){ if(t < hr[0] && hr[0] - t <= 60){ pen += hr[0] - t; t = hr[0]; }
       else if(t < hr[0] || t > hr[1] - 30){ warn.push(t < hr[0] ? `⚠️ ${hm(hr[0])} 오픈` : `⚠️ ${hm(hr[1])} 마감`); pen += 240; } }
     if(s.best && s.fixed == null && (t < s.best[0] || t > s.best[1])){ warn.push(`⚠️ 추천 ${hm(s.best[0])}–${hm(s.best[1])}`); pen += Math.min(240, t < s.best[0] ? s.best[0] - t : t - s.best[1]); }
-    const stay = (s.stay ?? 45) + (s.wait || 0); out.set(s, {arr:t, dep:t + stay, leg, warn}); t += stay; });
+    const qw = s.wait != null ? s.wait : estWait(s, t, w), stay = (s.stay ?? 45) + qw; out.set(s, {arr:t, dep:t + stay, leg, warn, wait:qw, auto:s.wait == null}); t += stay; });
   return {out, travel, cost:travel + pen, end:t};
 }
 function perm(a, f){ const c = a.slice(), n = c.length, k = new Array(n).fill(0); f(c); let i = 0;
@@ -868,7 +976,7 @@ function confirmAlt(s){ passGroup(s); delete s.kind; day.stops.splice(day.stops.
 function changed(){ day.edited = true; savePlan(); render(); }
 function pick(lbl, opts, cur, set){
   const l = h('label', null, lbl+' '), sl = h('select');
-  for(const o of [...new Set([...opts, cur])].sort((a,b) => a-b)){ const op = h('option', null, o ? (o >= 60 ? (o/60)+'시간' : o+'분') : (lbl==='웨이팅' ? '없음' : '들름')); op.value = o; sl.append(op); }
+  for(const o of [...new Set([...opts, cur])].sort((a,b) => a-b)){ const op = h('option', null, o < 0 ? '자동' : o ? (o >= 60 ? (o/60)+'시간' : o+'분') : (lbl==='웨이팅' ? '없음' : '들름')); op.value = o; sl.append(op); }
   sl.value = cur; sl.addEventListener('change', () => { set(+sl.value); changed(); }); l.append(sl); return l;
 }
 function toast(msg, undo){
@@ -937,8 +1045,9 @@ function drawList(){
     if(s.hours) body.append(h('div','hours','영업 '+s.hours));
     if(info) for(const w of info.warn) body.append(h('div','warn',w));
     if(s.best && !(info && info.warn.some(w => w.includes('추천')))) body.append(h('div','tip',`추천 ${hm(s.best[0])}–${hm(s.best[1])}`));
-    if(s.waitTip) body.append(h('div','tip','⏳ '+s.waitTip + (s.wait ? ` · ${s.wait}분 반영` : '')));
-    else if(s.wait) body.append(h('div','tip',`⏳ 웨이팅 ${s.wait}분 반영`));
+    { const q = qOf(s), wt = q ? q.t : s.waitTip, n = info ? info.wait : 0;
+      if(n || wt){ const d = h('div','tip','⏳ ' + [n && `${info.auto ? '예상 ' : ''}웨이팅 ${n}분`, wt].filter(Boolean).join(' · '));
+        const ol = orLink(s.rec || s.id); if(ol){ d.append(' '); d.append(ol); } body.append(d); } }
     if(s.taxi){ const t = h('div','taxi'); t.append(h('div','lbl','택시 기사에게 보여줄 주소'), h('div','addr',s.taxi));
       const cp = h('button',null,'주소 복사'); cp.type='button'; cp.id='copy-'+s.id; cp.style.cssText='font-size:13px;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 10px';
       cp.addEventListener('click', async () => { try{ await navigator.clipboard.writeText(s.taxi); cp.textContent='복사됨'; }catch(e){ cp.textContent='복사 실패 · 길게 눌러 복사'; } });
@@ -955,7 +1064,7 @@ function drawList(){
       const btn = (t, f, cls) => { const b = h('button', cls || null, t); b.type = 'button'; b.addEventListener('click', f); ed.append(b); };
       btn('↑', () => move(s, -1)); btn('↓', () => move(s, 1));
       if(s.kind==='alt') btn('✅ 이걸로', () => confirmAlt(s));
-      if(ri >= 0){ ed.append(pick('머묾', [0,15,30,45,60,90,120,180,240], s.stay ?? 45, v => { s.stay = v; }), pick('웨이팅', [0,10,20,30,45,60,90], s.wait || 0, v => { s.wait = v; }));
+      if(ri >= 0){ ed.append(pick('머묾', [0,15,30,45,60,90,120,180,240], s.stay ?? 45, v => { s.stay = v; }), pick('웨이팅', [-1,0,10,20,30,45,60,90], s.wait ?? -1, v => { if(v < 0) delete s.wait; else s.wait = v; }));
         const lb = h('label', null, '⏰'), ti = h('input'); ti.type = 'time'; ti.value = s.fixed != null ? hm(s.fixed) : '';
         ti.addEventListener('change', () => { if(ti.value) s.fixed = toMin(ti.value); else delete s.fixed; changed(); }); lb.append(ti); ed.append(lb); }
       btn('📝 메모', () => { const v = prompt('메모', s.note || ''); if(v !== null){ s.note = v.trim(); changed(); } });

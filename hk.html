@@ -167,6 +167,10 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .lmk b{display:grid;place-items:center;width:38px;height:38px;box-sizing:border-box;border-radius:13px;background:var(--surface);border:2.5px solid var(--accent);font-size:20px;font-weight:400;box-shadow:0 2px 0 var(--accent),0 3px 8px rgba(90,40,60,.25);transform:rotate(-5deg)}
 .flag,.flag.leaflet-interactive{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;pointer-events:none}
 .flag span{pointer-events:auto;cursor:pointer;background:#3b2a33;color:#fff;font:700 11px/1.3 var(--body);border-radius:7px;padding:2px 7px;white-space:nowrap;box-shadow:0 2px 4px rgba(0,0,0,.3)}
+.emb{display:block;object-fit:contain;background:#fff}
+.rpin .emb{width:20px;height:20px;border-radius:50%}
+.lmk b .emb{width:27px;height:27px;border-radius:8px}
+.flag span .emb{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2.5px;margin:0 4px 0 -2px}
 .flag::after{content:"";width:2px;height:13px;background:#3b2a33;border-radius:0 0 2px 2px}
 #map:not(.z-dot) .flag,.flag.off{display:none}
 .lmk::after{content:"";position:absolute;left:50%;top:38px;width:30px;height:10px;margin-left:-15px;border-radius:50%;background:rgba(40,20,30,.32);filter:blur(2px);z-index:-1}
@@ -1320,7 +1324,11 @@ for(const t of SMOKE) L.marker([t[0], t[1]], {icon:L.divIcon({className:'', html
   .bindPopup(() => { const box = h('div','pop'), bt = h('button', null, '🧭 길찾기'); bt.type = 'button'; bt.addEventListener('click', () => { map.closePopup(); showRoute({id:'smoke', name:t[2], lat:t[0], lng:t[1]}, originNear()); }); box.append(h('b', null, t[2]), bt); return box; }).addTo(smokeLayer);
 // big buildings to get your bearings by: a name flag standing on each, none where a pin already names it (OpenStreetMap, 2026-11-14)
 const TOWERS = [[22.30337,114.16022,"ICC"],[22.27924,114.16158,"중국은행타워"],[22.28025,114.15951,"HSBC"],[22.28016,114.17349,"센트럴 플라자"],[22.28262,114.17306,"컨벤션센터"],[22.28461,114.15472,"더 센터"],[22.29372,114.17045,"문화센터·시계탑"],[22.30267,114.17754,"폴리텍대"],[22.30131,114.18198,"콜리세움"],[22.30093,114.17752,"과학관"],[22.30193,114.17725,"역사박물관"],[22.29506,114.17178,"페닌슐라 호텔"],[22.29535,114.16994,"1881 헤리티지"],[22.29694,114.17185,"아이스퀘어"],[22.29637,114.17284,"청킹맨션"],[22.30053,114.17011,"구룡공원"],[22.29875,114.17199,"구룡 모스크"],[22.30088,114.17258,"미라 플레이스"],[22.30374,114.16273,"엘리먼츠"],[22.30368,114.16492,"서구룡 고속철역"],[22.29416,114.17186,"우주박물관"],[22.29389,114.17383,"리젠트 호텔"],[22.29705,114.177,"샹그릴라"],[22.28122,114.15831,"랜드마크"],[22.28393,114.1581,"익스체인지 스퀘어"],[22.28234,114.16157,"시청"],[22.278,114.16527,"퍼시픽 플레이스"],[22.27935,114.16349,"리포센터"],[22.27741,114.1615,"홍콩공원"],[22.2842,114.17377,"골든 보히니아 광장"],[22.27463,114.17164,"호프웰 센터"],[22.28122,114.18911,"빅토리아 파크"],[22.28397,114.15514,"센트럴 마켓"],[22.28606,114.15989,"센트럴 부두"],[22.3311,114.15979,"드래곤 센터"],[22.33201,114.16203,"골든 컴퓨터 아케이드"],[22.16307,113.57361,"타이파 페리터미널"],[22.14992,113.58936,"마카오 공항"],[22.14588,113.568,"MGM 코타이"],[22.14408,113.5742,"그랜드 리스보아 팰리스"],[22.18802,113.54741,"윈 마카오"],[22.18579,113.54804,"MGM 마카오"],[22.19169,113.55479,"샌즈 마카오"],[22.19746,113.55747,"외항 페리터미널"],[22.19275,113.55603,"피셔맨스 워프"],[22.29764,114.17359,"K11 아트몰"],[22.29755,114.16936,"실버코드"],[22.29991,114.16768,"차이나 홍콩 시티"],[22.29688,114.16923,"T 갤러리아"],[22.27847,114.1847,"리 가든스"],[22.2804,114.18646,"윈저 하우스"],[22.28165,114.18413,"월드 트레이드 센터"],[22.32318,114.17229,"모코"],[22.31611,114.17029,"시노 센터"],[22.30456,114.18905,"왐포아"],[22.30223,114.18341,"포춘 메트로폴리스"],[22.33731,114.17459,"페스티벌 워크"],[22.28327,114.15185,"PMQ"],[22.27792,114.17729,"298 컴퓨터 센터"]];
-const flagMk = TOWERS.map(t => L.marker([t[0], t[1]], {icon:L.divIcon({className:'flag', html:'<span>' + t[2] + '</span>', iconSize:[140,32], iconAnchor:[70,32]}), keyboard:false, zIndexOffset:-150, fname:t[2]}).addTo(map).on('click', () => flagPop(t)));
+// the place's own emblem (its site icon, by domain) instead of the category picture; the picture comes back if the icon does not load
+const EMB = {"harbourcity":"harbourcity.com.hk","langham":"langhamplace.com.hk","timessq":"timessquare.com.hk","sogo":"sogo.com.hk","fashionwalk":"fashionwalk.com.hk","citygate":"citygateoutlets.com.hk","jenny":"jennybakery.com","god":"god.com.hk","galaxy":"galaxymacau.com","cod":"cityofdreamsmacau.com","studiocity":"studiocity-macau.com","grandlisboa":"grandlisboa.com","mplus":"mplus.org.hk","palace":"hkpm.org.hk","ferry":"starferry.com.hk","st428":"thepeak.com.hk","mtower":"macautower.com.mo","mactower":"macautower.com.mo","taikwun":"taikwun.hk","wheel":"hkow.hk","lordstow":"lordstow.com","lordstowt":"lordstow.com","ozone":"ritzcarlton.com"}, FEMB = {"아이스퀘어":"isquare.hk","퍼시픽 플레이스":"pacificplace.com.hk","페스티벌 워크":"festivalwalk.com.hk","모코":"moko.com.hk","페닌슐라 호텔":"peninsula.com","샹그릴라":"shangri-la.com","리젠트 호텔":"regenthotels.com","MGM 코타이":"mgm.mo","MGM 마카오":"mgm.mo"};
+const embImg = (d, fb) => `<img class="emb" src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${d}&size=64" alt="" referrerpolicy="no-referrer" data-f="${fb}" onerror="this.replaceWith(this.dataset.f)">`;
+const emb = (id, fb) => EMB[id] ? embImg(EMB[id], fb) : fb;
+const flagMk = TOWERS.map(t => L.marker([t[0], t[1]], {icon:L.divIcon({className:'flag', html:'<span>' + (FEMB[t[2]] ? embImg(FEMB[t[2]], '') : '') + t[2] + '</span>', iconSize:[140,32], iconAnchor:[70,32]}), keyboard:false, zIndexOffset:-150, fname:t[2]}).addTo(map).on('click', () => flagPop(t)));
 // which way to walk, in words, and a big building near a point to check you are on the right side
 const DIR8 = ['북', '북동', '동', '남동', '남', '남서', '서', '북서'];
 const toward = (a, b) => DIR8[Math.round(((Math.atan2((b.lng - a.lng) * Math.cos(a.lat * Math.PI / 180), b.lat - a.lat) * 180 / Math.PI + 360) % 360) / 45) % 8] + '쪽';
@@ -1691,7 +1699,7 @@ function declutter(){ if(!map._loaded) return;
     el.classList.toggle('nonm', pos < 0); ['lr', 'll', 'lt'].forEach((n, q) => el.classList.toggle(n, pos === q + 1)); }
   for(const {k, el, p} of all){ if(!(pics && k.ph)){ el.classList.toggle('noph', !mapPh); continue; }
     const b = [p.x - pw/2 - 3, p.y - k.r - ph - 9, p.x + pw/2 + 3, p.y - k.r], ok = !hit(b); el.classList.toggle('noph', !ok); if(ok) boxes.push(b); }
-  for(const m of flagMk){ const el = m.getElement(); if(!el) continue; const p = map.latLngToLayerPoint(m.getLatLng()), w = tw(m.options.fname) * .92 + 8, b = [p.x - w/2, p.y - 34, p.x + w/2, p.y - 12];
+  for(const m of flagMk){ const el = m.getElement(); if(!el) continue; const p = map.latLngToLayerPoint(m.getLatLng()), w = tw(m.options.fname) * .92 + 8 + (FEMB[m.options.fname] ? 18 : 0), b = [p.x - w/2, p.y - 34, p.x + w/2, p.y - 12];
     const ok = !hit(b); el.classList.toggle('off', !ok); if(ok) boxes.push(b); }
 }
 const LM = {ferry:'⛴️', aos:'🌃', wheel:'🎡', st428:'🚡', temple:'🏮', ladies:'🛍️', manmo:'🛕', mplus:'🖼️', palace:'🏯', harbourcity:'🛳️', goldfish:'🐠', bluehouse:'🏠', lugard:'🌉'};
@@ -1724,8 +1732,8 @@ function drawMap(){
   const inDay = new Set(day.stops.map(s => s.rec)); let li = 0;
   for(const p of poolFor(day)){ if(inDay.has(p.id) || (!recCats.has(p.c) && !LM[p.id])) continue;
     const nm = shortName(p.n), pid = PH[p.id] ? p.id : null;
-    const icon = LM[p.id] ? L.divIcon({className:'lmk' + (li++ % 2 ? ' r' : ''), html:`<b>${LM[p.id]}</b>${nmTag(nm)}${phImg(pid)}`, iconSize:[40,40], iconAnchor:[20,20]})
-      : L.divIcon({className:'', html:`<div class="rpin mk">${CATS[p.c][0]}${nmTag(nm)}${phImg(pid)}</div>`, iconSize:[26,26], iconAnchor:[13,13]});
+    const icon = LM[p.id] ? L.divIcon({className:'lmk' + (li++ % 2 ? ' r' : ''), html:`<b>${emb(p.id, LM[p.id])}</b>${nmTag(nm)}${phImg(pid)}`, iconSize:[40,40], iconAnchor:[20,20]})
+      : L.divIcon({className:'', html:`<div class="rpin mk">${emb(p.id, CATS[p.c][0])}${nmTag(nm)}${phImg(pid)}</div>`, iconSize:[26,26], iconAnchor:[13,13]});
     const m = L.marker([p.lat,p.lng], {icon, title:p.n, pid:p.id, zIndexOffset:LM[p.id] ? -400 : -500}).addTo(recLayer);
     m.on('popupopen', () => { recOpen = p.id; previewRoute(p); }).on('popupclose', () => { if(recOpen === p.id) recOpen = null; if(routeCur && routeCur.preview) clearRoute(); if(geoDirty && !recOpen){ geoDirty = false; setTimeout(drawMap, 0); } });
     mkList.push({m, pri:LM[p.id] ? 30 : p.c === 'food' ? 40 : 50, name:nm, ph:!!pid, r:LM[p.id] ? 20 : 13});

@@ -803,8 +803,8 @@ async function fillRt(o){
     for(const m of mtr.filter(m => m.s===s && m.k)) for(const dir of ['UP','DOWN']){
       const g = {}; for(const t of (m.k[dir]||[])) (g[t.dest] = g[t.dest] || []).push(+t.ttnt);
       for(const dest in g){ const r = h('div','r'), b = h('span','ln', LINES[m.ln] ? LINES[m.ln][0] : m.ln); b.style.background = LINES[m.ln] ? LINES[m.ln][1] : '#888';
-        r.append(b, h('span','d','→ '+stName(dest)), h('span','t',etaTxt(g[dest]))); rows.push(r); } }
-    if(rows.length){ any = true; box.append(h('h4',null,`🚇 ${s[1]}역 · ${fmt(d)}`), ...rows); }
+        r.append(b, h('span','d','→ '+stKo(dest)), h('span','t',etaTxt(g[dest]))); rows.push(r); } }
+    if(rows.length){ any = true; box.append(h('h4',null,`🚇 ${stKo(s[0])}역 · ${fmt(d)}`), ...rows); }
   }
   if(kmb) for(const {d,x,e} of kmb){
     const g = {}; for(const t of e){ if(!t.eta) continue; const k = t.route+'|'+t.dest_tc; (g[k] = g[k] || []).push(Math.round((new Date(t.eta) - Date.now())/60000)); }
@@ -1288,7 +1288,11 @@ function declutter(){ if(!map._loaded) return;
     boxes.push([p.x - r, p.y - r, p.x + r, p.y + r]); if(ok) boxes.push(...ex); }
 }
 const LM = {ferry:'⛴️', aos:'🌃', wheel:'🎡', st428:'🚡', temple:'🏮', ladies:'🛍️', manmo:'🛕', mplus:'🖼️', palace:'🏯', harbourcity:'🛳️', goldfish:'🐠', bluehouse:'🏠', lugard:'🌉'};
+const staHit = L.layerGroup();
+for(const st of MTR) L.circleMarker([st[3], st[4]], {radius:13, stroke:false, fillOpacity:0, bubblingMouseEvents:false}).addTo(staHit)
+  .on('click', () => { const o = rtOpen.get('_here'), host = document.getElementById('herert'); if(o && (o.lat !== st[3] || o.lng !== st[4])) openRt('_here', o.lat, o.lng, host); if(!rtOpen.has('_here')) openRt('_here', st[3], st[4], host); });
 function zoomCls(){ const z = map.getZoom(), c = map.getContainer().classList;
+  if(z >= 14) staHit.addTo(map); else staHit.remove();
   c.toggle('z-area', z >= 12 && z < 17); c.toggle('z-dot', z >= 14); c.toggle('z-sta', z >= 15); c.toggle('z-lm', z >= 14); c.toggle('z-name', z >= 15); c.toggle('z-photo', z >= 16); c.toggle('z-big', z >= 17); declutter(); }
 map.on('zoomend', zoomCls);
 function drawMap(){
@@ -1678,6 +1682,16 @@ document.getElementById('bopt').addEventListener('click', optimizeDay);
 document.getElementById('badd').addEventListener('click', () => { sheetOpen = !sheetOpen; render(); });
 document.getElementById('breset').addEventListener('click', () => { if(!confirm('이 날 일정을 처음 상태로 되돌릴까요?')) return;
   day.stops = JSON.parse(ORIG[day.id]); day.edited = false; day.newer = false; delete day.base; sel = null; savePlan(); render(); });
+let pinPop = null;
+map.on('contextmenu', e => { const p = {id:'pin', n:'지정 위치', sub:'지도에서 고른 곳', c:'search', lat:+e.latlng.lat.toFixed(6), lng:+e.latlng.lng.toFixed(6), stay:30};
+  const box = h('div','pop'), o = fromHere(p), lg = legOf(o[0], p), others = legOpts(o[0], p).filter(x => x.mode !== lg.mode).map(x => optText(x, o[0], p));
+  box.append(h('b', null, '📍 지정 위치'), h('div','rt1', legShort(lg) + ' · ' + shortName(o[1]) + '에서')); if(others.length) box.append(h('div','m', others.join(' · ')));
+  const row = h('div','prow'), go = h('button','ghost','🧭 길찾기'), b = h('button', null, '＋ ' + day.tab.replace(/^\S+\s/, '') + '에 추가'); go.type = b.type = 'button';
+  go.addEventListener('click', () => { showRoute({id:'pin', name:'지정 위치', lat:p.lat, lng:p.lng}, fromHere(p)); map.closePopup(); });
+  b.addEventListener('click', () => { map.closePopup(); addPlace(Object.assign({}, p, {id:'pin' + Date.now().toString(36)})); });
+  row.append(go, b); box.append(row);
+  pinPop = L.popup(popOpt()).setLatLng(e.latlng).setContent(box).openOn(map); previewRoute(p); });
+map.on('popupclose', e => { if(e.popup === pinPop){ pinPop = null; if(routeCur && routeCur.preview) clearRoute(); } });
 // ⭐ opens a category picker for the recommended places shown on the map
 let recCats = new Set(Object.keys(CATS)); try{ const v = JSON.parse(localStorage.getItem('hk-cats')); if(Array.isArray(v)) recCats = new Set(v.filter(k => CATS[k])); }catch(e){}
 function drawCats(){ const box = document.getElementById('catp'); box.textContent = '';

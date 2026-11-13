@@ -310,6 +310,11 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .mans p:last-of-type{margin-bottom:0}
 .mans .lead{font:400 16.5px/1.5 var(--display)}
 .mans .mact{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+.muse{margin-top:10px;font-size:11.5px;color:var(--muted);text-align:right}
+.mph{display:flex;gap:8px;overflow-x:auto;margin:10px -14px 0;padding:0 14px 4px;scroll-snap-type:x proximity;scrollbar-width:none}
+.mph a{flex:0 0 auto;width:220px;color:var(--muted);text-decoration:none;scroll-snap-align:start}
+.mph img{display:block;width:220px;height:156px;object-fit:cover;border-radius:12px;background:var(--land)}
+.mph small{display:block;margin-top:2px;font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fx input{font-size:16px}
 .fx input[type=text]{flex:1;min-width:90px}
 .spend{list-style:none;margin:0 0 8px;padding:0}
@@ -506,6 +511,7 @@ html.mm .dayhead h2{display:none}
     <div class="cats" id="mq"></div>
     <div class="mrow"><button type="button" class="chip mprim" id="mgo">일정으로 정리</button><span id="mmsg"></span></div>
     <div id="mres"></div>
+    <div class="muse" id="muse"></div>
   </div>
 </div>
 <div class="gi" id="gi" role="dialog" aria-label="여행 정보" hidden>
@@ -1950,6 +1956,8 @@ const GUIDE = [["📅 여행 4일 휴관·행사", [["11/16 월", "M+ 휴관"], 
       if(r.status === 401){ saved = ''; try{ localStorage.removeItem('hk-pass'); }catch(e){} pass.hidden = false; pass.value = ''; pass.focus(); msg.textContent = '암호 틀림'; return null; }
       if(!r.ok){ msg.textContent = ({cap:'오늘 사용량 끝', busy:'잠시 후 다시', key:'키 오류'})[j.error] || '실패'; return null; }
       if(!saved){ saved = pw; pass.hidden = true; try{ localStorage.setItem('hk-pass', pw); }catch(e){} }
+      // list-price running total from the worker; US$ to won through the HK$ peg (7.8)
+      if(j.used && j.used.day && j.used.all){ const w = v => (Math.round(v * fxRate() * 7.8 / 10) * 10).toLocaleString('ko-KR'); document.getElementById('muse').textContent = `오늘 ${j.used.day.n}회 약 ${w(j.used.day.usd)}원 · 누적 ${j.used.all.n}회 약 ${w(j.used.all.usd)}원`; }
       return j;
     }catch(e){ msg.textContent = '연결 실패'; return null; } }
   const idle = busy => { go.disabled = ask.disabled = false; if(msg.textContent === busy || msg.textContent === '위치 찾는 중…') msg.textContent = ''; };
@@ -1967,9 +1975,17 @@ const GUIDE = [["📅 여행 4일 휴관·행사", [["11/16 월", "M+ 휴관"], 
   const planText = () => { const near = me && nearHK(me) ? REC.map(p => [dist(me.lat, me.lng, p.lat, p.lng), p]).sort((x, y) => x[0] - y[0])[0] : null;
     return (DAYS.map(d => { const rs = routeStops(d), sch = schedule(d, rs); return `${d.id} ${DATES[d.id] || ''}: ` + rs.map(x => hm(sch.out.get(x).arr) + ' ' + x.name).join(' → '); }).join('\n')
       + `\n보고 있는 날: ${day.id}` + (near ? `\n지금 위치: ${near[1].n} 근처 (${fmt(near[0])})` : '')).slice(0, 4000); };
+  async function commons(q){ try{ const j = await getJ('https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrnamespace=6&gsrlimit=12&gsrsearch=' + encodeURIComponent(q) + '&prop=imageinfo&iiprop=url%7Cmime%7Cextmetadata&iiurlwidth=480&iiextmetadatafilter=Artist%7CLicenseShortName');
+      return Object.values((j.query || {}).pages || {}).sort((a, b) => a.index - b.index).map(x => { const i = (x.imageinfo || [])[0] || {}, m = i.extmetadata || {};
+        return {mime:i.mime, thumb:i.thumburl, page:i.descriptionurl, title:String(x.title || '').replace(/^File:|\.\w+$/g, ''), credit:[String((m.Artist || {}).value || '').replace(/<[^>]+>/g, '').trim().slice(0, 24), (m.LicenseShortName || {}).value].filter(Boolean).join(' · ')}; })
+        .filter(x => /^image\/(jpeg|png|webp)$/.test(x.mime) && /^https:\/\//.test(x.thumb || '') && /^https:\/\//.test(x.page || '')).slice(0, 8);
+    }catch(e){ return []; } }
   ask.addEventListener('click', async () => { const busy = '찾아보는 중…', q = txt.value.trim();
     try{ const j = await call({mode:'ask', place:ctx ? ctx.text : '', plan:planText(), facts:GUIDE.map(g => g[0] + ': ' + g[1].map(r => r.join(' = ')).join(' / ')).join(String.fromCharCode(10)).slice(0, 6000), places:REC.map(p => [p.id, p.n, [p.sub, p.hours && '영업 ' + p.hours, p.closed && p.closed + ' 휴무'].filter(Boolean).join(' · ')].map(v => String(v).slice(0, 120)))}, busy); if(!j) return;
       const card = h('div', 'mans'); won(String(j.answer || '답 없음').slice(0, 1500)).split(/\n+/).map(x => x.trim()).filter(Boolean).forEach((x, n) => card.append(h('p', n ? null : 'lead', x)));
+      if(typeof j.photo === 'string' && j.photo){ const ph = h('div', 'mph'); card.append(ph);
+        commons(j.photo).then(list => { if(!list.length){ ph.className = 'msrc'; ph.textContent = '사진 못 찾음'; return; }
+          for(const x of list){ const a = h('a'), im = h('img'); a.href = x.page; a.target = '_blank'; a.rel = 'noopener'; im.src = x.thumb; im.alt = x.title; im.loading = 'lazy'; im.addEventListener('error', () => a.remove()); a.append(im, h('small', null, '📷 ' + (x.credit || 'Wikimedia Commons'))); ph.append(a); } }); }
       const src = (Array.isArray(j.src) ? j.src : []).filter(x => x && /^https:\/\//.test(x.u)).slice(0, 3);
       if(src.length){ const sr = h('div', 'msrc'); for(const x of src){ const a = h('a', null, '🔗 ' + (String(x.t || '').slice(0, 28) || '출처')); a.href = x.u; a.target = '_blank'; a.rel = 'noopener'; sr.append(a); } card.append(sr); }
       const recs = (Array.isArray(j.recs) ? j.recs : []).map(id => REC.find(p => p.id === id)).filter(Boolean).slice(0, 4);

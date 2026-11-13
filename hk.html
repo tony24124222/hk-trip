@@ -163,8 +163,8 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .slab i{position:absolute;left:-5px;top:-5px;width:10px;height:10px;box-sizing:border-box;border-radius:50%;background:#fff;border:2.5px solid}
 .slab span{position:absolute;left:8px;top:-9px;white-space:nowrap;font:700 11.5px "Gowun Dodum",sans-serif;color:var(--ink);text-shadow:0 0 2px var(--land),0 0 3px var(--land),0 0 5px var(--land)}
 .lmk b{display:grid;place-items:center;width:38px;height:38px;box-sizing:border-box;border-radius:13px;background:var(--surface);border:2.5px solid var(--accent);font-size:20px;font-weight:400;box-shadow:0 2px 0 var(--accent),0 3px 8px rgba(90,40,60,.25);transform:rotate(-5deg)}
-.flag{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;pointer-events:none}
-.flag span{background:#3b2a33;color:#fff;font:700 11px/1.3 var(--body);border-radius:7px;padding:2px 7px;white-space:nowrap;box-shadow:0 2px 4px rgba(0,0,0,.3)}
+.flag,.flag.leaflet-interactive{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;pointer-events:none}
+.flag span{pointer-events:auto;cursor:pointer;background:#3b2a33;color:#fff;font:700 11px/1.3 var(--body);border-radius:7px;padding:2px 7px;white-space:nowrap;box-shadow:0 2px 4px rgba(0,0,0,.3)}
 .flag::after{content:"";width:2px;height:13px;background:#3b2a33;border-radius:0 0 2px 2px}
 #map:not(.z-dot) .flag,.flag.off{display:none}
 .lmk::after{content:"";position:absolute;left:50%;top:38px;width:30px;height:10px;margin-left:-15px;border-radius:50%;background:rgba(40,20,30,.32);filter:blur(2px);z-index:-1}
@@ -300,10 +300,12 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .pop{display:flex;flex-direction:column;gap:4px;min-width:170px}
 .pop b{font:400 15px var(--display)}
 .pop .d{font-size:13px;line-height:1.45}
+.pop .wk{font-size:12.5px;line-height:1.45;color:var(--muted);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
 .pop .rt1{font:400 14.5px var(--display);color:#1a73e8}
 .pop .prow{display:flex;gap:6px}
 .pop .prow button{flex:1}
 .pop .prow .ghost{background:#1a73e8;color:#fff}
+.pop a.zhb{text-decoration:none;border-radius:999px}
 .pop .zhb{align-self:flex-start;background:none;color:var(--ink);border:2px solid var(--line);padding:3px 10px;font-weight:400;font-size:13.5px}
 .desc{font-size:13.5px;line-height:1.5;margin:3px 0 2px}
 .nowline{list-style:none;display:flex;align-items:center;gap:8px;color:var(--accent);font:400 13px var(--display);font-variant-numeric:tabular-nums}
@@ -1272,7 +1274,7 @@ for(const t of SMOKE) L.marker([t[0], t[1]], {icon:L.divIcon({className:'', html
   .bindPopup(() => { const box = h('div','pop'), bt = h('button', null, '🧭 길찾기'); bt.type = 'button'; bt.addEventListener('click', () => { map.closePopup(); showRoute({id:'smoke', name:t[2], lat:t[0], lng:t[1]}, originNear()); }); box.append(h('b', null, t[2]), bt); return box; }).addTo(smokeLayer);
 // big buildings to get your bearings by: a name flag standing on each, none where a pin already names it (OpenStreetMap, 2026-11-14)
 const TOWERS = [[22.30337,114.16022,"ICC"],[22.27924,114.16158,"중국은행타워"],[22.28025,114.15951,"HSBC"],[22.28016,114.17349,"센트럴 플라자"],[22.28262,114.17306,"컨벤션센터"],[22.28461,114.15472,"더 센터"],[22.29372,114.17045,"문화센터·시계탑"],[22.30267,114.17754,"폴리텍대"],[22.30131,114.18198,"콜리세움"],[22.30093,114.17752,"과학관"],[22.30193,114.17725,"역사박물관"],[22.29506,114.17178,"페닌슐라 호텔"],[22.29535,114.16994,"1881 헤리티지"],[22.29694,114.17185,"아이스퀘어"],[22.29637,114.17284,"청킹맨션"],[22.30053,114.17011,"구룡공원"],[22.29875,114.17199,"구룡 모스크"],[22.30088,114.17258,"미라 플레이스"],[22.30374,114.16273,"엘리먼츠"],[22.30368,114.16492,"서구룡 고속철역"],[22.29416,114.17186,"우주박물관"],[22.29389,114.17383,"리젠트 호텔"],[22.29705,114.177,"샹그릴라"],[22.28122,114.15831,"랜드마크"],[22.28393,114.1581,"익스체인지 스퀘어"],[22.28234,114.16157,"시청"],[22.278,114.16527,"퍼시픽 플레이스"],[22.27935,114.16349,"리포센터"],[22.27741,114.1615,"홍콩공원"],[22.2842,114.17377,"골든 보히니아 광장"],[22.27463,114.17164,"호프웰 센터"],[22.28122,114.18911,"빅토리아 파크"],[22.28397,114.15514,"센트럴 마켓"],[22.28606,114.15989,"센트럴 부두"],[22.3311,114.15979,"드래곤 센터"],[22.33201,114.16203,"골든 컴퓨터 아케이드"],[22.16307,113.57361,"타이파 페리터미널"],[22.14992,113.58936,"마카오 공항"],[22.14588,113.568,"MGM 코타이"],[22.14408,113.5742,"그랜드 리스보아 팰리스"],[22.18802,113.54741,"윈 마카오"],[22.18579,113.54804,"MGM 마카오"],[22.19169,113.55479,"샌즈 마카오"],[22.19746,113.55747,"외항 페리터미널"],[22.19275,113.55603,"피셔맨스 워프"]];
-const flagMk = TOWERS.map(t => L.marker([t[0], t[1]], {icon:L.divIcon({className:'flag', html:'<span>' + t[2] + '</span>', iconSize:[140,32], iconAnchor:[70,32]}), interactive:false, keyboard:false, zIndexOffset:-150, fname:t[2]}).addTo(map));
+const flagMk = TOWERS.map(t => L.marker([t[0], t[1]], {icon:L.divIcon({className:'flag', html:'<span>' + t[2] + '</span>', iconSize:[140,32], iconAnchor:[70,32]}), keyboard:false, zIndexOffset:-150, fname:t[2]}).addTo(map).on('click', () => flagPop(t)));
 // which way to walk, in words, and a big building near a point to check you are on the right side
 const DIR8 = ['북', '북동', '동', '남동', '남', '남서', '서', '북서'];
 const toward = (a, b) => DIR8[Math.round(((Math.atan2((b.lng - a.lng) * Math.cos(a.lat * Math.PI / 180), b.lat - a.lat) * 180 / Math.PI + 360) % 360) / 45) % 8] + '쪽';
@@ -1931,7 +1933,8 @@ function drawList(){
       const rb = h('button','go','🧭 길찾기'); rb.type='button'; rb.addEventListener('click', () => { sel = s; render(); document.getElementById('mapwrap').scrollIntoView({block:'nearest', behavior:'smooth'}); routeTo(s); });
       const open = h('a',null,'Google 지도'); open.href = /^https:\/\//.test(s.link || '') ? s.link : `https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lng}`; open.target='_blank'; open.rel='noopener';
       const rtb = h('button','rtb','🚏 실시간'); rtb.type='button'; rtb.addEventListener('click', () => openRt(s.id, s.lat, s.lng, body));
-      acts.append(rb, open, rtb);
+      const fb = h('button', null, '📍 출발'); fb.type = 'button'; fb.addEventListener('click', () => { abSet(s); document.getElementById('mapwrap').scrollIntoView({block:'nearest', behavior:'smooth'}); });
+      acts.append(rb, fb, open, rtb);
       if(BUS[s.id]){ const bb = h('button', null, '🚌 ' + BUS[s.id][1] + ' ' + BUS[s.id][3]); bb.type = 'button'; bb.setAttribute('aria-pressed', busOpen.has(s.id));
         bb.addEventListener('click', () => { if(busOpen.has(s.id)) busOpen.delete(s.id); else busOpen.add(s.id); render(); }); acts.append(bb); }
       if(zhOf(s)){ const zb = h('button', null, '🀄 한자'); zb.type = 'button'; zb.title = zhOf(s); zb.addEventListener('click', () => showZh(s)); acts.append(zb); }
@@ -1995,6 +1998,7 @@ function stopPop(s){ const box = h('div','pop'), info = schedule(day).out.get(s)
   if(info) box.append(h('div','rt1', hm(info.arr) + (info.dep > info.arr ? '–' + hm(info.dep) : '') + (info.leg && info.leg.mode !== 'same' ? ' · ' + (info.leg.mode === 'given' ? s.leg : legShort(info.leg)) : '')));
   const inf = infoOf(s); if(inf && inf.d) box.append(h('div','d',inf.d)); if(s.note) box.append(h('div','m',s.note)); { const t = kv(placeRows(s, s.rec || s.id)); if(t) box.append(t); }
   const row = h('div','prow'), go = h('button','ghost','🧭 길찾기'); go.type = 'button'; go.addEventListener('click', () => { map.closePopup(); routeTo(s); }); row.append(go);
+  { const f = h('button', null, '📍 출발'); f.type = 'button'; f.addEventListener('click', () => abSet(s)); row.append(f); }
   if(zhOf(s)){ const z = h('button', null, '🀄 한자'); z.type = 'button'; z.addEventListener('click', () => showZh(s)); row.append(z); }
   { const q = h('button', null, '💬 질문'); q.type = 'button'; q.addEventListener('click', () => { map.closePopup(); askAbout(s); }); row.append(q); }
   box.append(row); return box; }
@@ -2245,6 +2249,32 @@ document.getElementById('badd').addEventListener('click', () => { sheetOpen = !s
 document.getElementById('breset').addEventListener('click', () => { if(!confirm('이 날 일정을 처음 상태로 되돌릴까요?')) return;
   day.stops = JSON.parse(ORIG[day.id]); day.edited = false; day.newer = false; delete day.base; sel = null; savePlan(); render(); });
 let pinPop = null;
+const TEN = {"ICC":"International Commerce Centre","중국은행타워":"Bank of China Tower Hong Kong","HSBC":"HSBC Main Building Hong Kong","센트럴 플라자":"Central Plaza Wan Chai","컨벤션센터":"Hong Kong Convention and Exhibition Centre","더 센터":"The Center Hong Kong","문화센터·시계탑":"Tsim Sha Tsui Clock Tower","폴리텍대":"Hong Kong Polytechnic University","콜리세움":"Hong Kong Coliseum","과학관":"Hong Kong Science Museum","역사박물관":"Hong Kong Museum of History","페닌슐라 호텔":"The Peninsula Hong Kong","1881 헤리티지":"1881 Heritage","아이스퀘어":"iSquare Hong Kong","청킹맨션":"Chungking Mansions","구룡공원":"Kowloon Park","구룡 모스크":"Kowloon Mosque","미라 플레이스":"Mira Place","엘리먼츠":"Elements Hong Kong","서구룡 고속철역":"Hong Kong West Kowloon station","우주박물관":"Hong Kong Space Museum","리젠트 호텔":"Regent Hong Kong","샹그릴라":"Kowloon Shangri-La","랜드마크":"The Landmark Hong Kong","익스체인지 스퀘어":"Exchange Square Hong Kong","시청":"Hong Kong City Hall","퍼시픽 플레이스":"Pacific Place Hong Kong","리포센터":"Lippo Centre","홍콩공원":"Hong Kong Park","골든 보히니아 광장":"Golden Bauhinia Square","호프웰 센터":"Hopewell Centre","빅토리아 파크":"Victoria Park Hong Kong","센트럴 마켓":"Central Market Hong Kong","센트럴 부두":"Central Ferry Piers","드래곤 센터":"Dragon Centre Hong Kong","골든 컴퓨터 아케이드":"Golden Computer Arcade","타이파 페리터미널":"Taipa Ferry Terminal","마카오 공항":"Macau International Airport","MGM 코타이":"MGM Cotai","그랜드 리스보아 팰리스":"Grand Lisboa Palace","윈 마카오":"Wynn Macau","MGM 마카오":"MGM Macau","샌즈 마카오":"Sands Macao","외항 페리터미널":"Outer Harbour Ferry Terminal","피셔맨스 워프":"Macau Fisherman's Wharf"};
+// a building flag: the Wikipedia lead photo and Korean summary, more photos from Commons; answers are kept for the session
+const twInfo = new Map();
+const cmPath = u => (/\/wikipedia\/commons\/thumb\/(\w\/\w\w\/[^/]+)\//.exec(u || '') || [])[1];
+function towerInfo(nm){ if(!twInfo.has(nm)) twInfo.set(nm, (async () => { const en = TEN[nm] || nm, out = {txt:'', url:'', ph:[]};
+    const [w, cs] = await Promise.all([getJ('https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&redirects=1&generator=search&gsrlimit=1&gsrsearch=' + encodeURIComponent(en) + '&prop=langlinks%7Cpageimages&lllang=ko&piprop=thumbnail&pithumbsize=500').catch(() => ({})), commons(en)]);
+    const pg = Object.values((w.query || {}).pages || {})[0] || {}, ko = ((pg.langlinks || [])[0] || {})['*'], lead = cmPath((pg.thumbnail || {}).source);
+    if(lead) out.ph.push([lead, '위키백과', '']);
+    for(const x of cs){ const f = cmPath(x.thumb); if(f && f !== lead) out.ph.push([f, x.credit, '']); }
+    out.ph = out.ph.slice(0, 6);
+    if(ko) try{ const k = await getJ('https://ko.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(ko)); out.txt = (k.extract || '').split(/(?<=다\.)\s/).slice(0, 2).join(' '); out.url = ((k.content_urls || {}).mobile || {}).page || ''; }catch(e){}
+    return out; })()); return twInfo.get(nm); }
+const svUrl = (lat, lng) => `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`;
+function flagPop(t){ const p = {id:'pt', name:t[2], lat:t[0], lng:t[1]}; if(abTo(p)) return;
+  const box = h('div','pop'), ph = h('div'), o = fromHere(p), lg = legOf(o[0], p);
+  box.append(h('b', null, t[2]), ph, h('div','rt1', legShort(lg) + ' · ' + shortName(o[1]) + '에서'));
+  const wk = h('div','wk'); box.append(wk);
+  const row = h('div','prow'), go = h('button','ghost','🧭 길찾기'), fb = h('button', null, '📍 출발'), sv = h('a', null, '🛣️ 거리뷰'); go.type = fb.type = 'button';
+  sv.href = svUrl(t[0], t[1]); sv.target = '_blank'; sv.rel = 'noopener'; sv.className = 'zhb';
+  go.addEventListener('click', () => { showRoute(p, fromHere(p)); map.closePopup(); });
+  fb.addEventListener('click', () => abSet(p));
+  row.append(go, fb); box.append(row, sv);
+  const pop = L.popup(popOpt()).setLatLng([t[0], t[1]]).setContent(box).openOn(map);
+  towerInfo(t[2]).then(r => { const id = 'tw:' + t[2]; if(r.ph.length){ PH[id] = r.ph; ph.append(phBox(id, t[2])); }
+    if(r.txt){ wk.textContent = r.txt; if(r.url){ const a = h('a', null, ' 위키백과'); a.href = r.url; a.target = '_blank'; a.rel = 'noopener'; wk.append(a); } } else wk.remove();
+    if(map.hasLayer(pop)) pop.update(); }); }
 map.on('contextmenu', e => { const p = {id:'pin', n:'지정 위치', sub:'지도에서 고른 곳', c:'search', lat:+e.latlng.lat.toFixed(6), lng:+e.latlng.lng.toFixed(6), stay:30};
   const box = h('div','pop'), o = fromHere(p), lg = legOf(o[0], p), others = legOpts(o[0], p, true).filter(x => x.mode !== lg.mode).slice(0, 3).map(x => optText(x));
   box.append(h('b', null, '📍 지정 위치'), h('div','rt1', legShort(lg) + ' · ' + shortName(o[1]) + '에서')); if(others.length) box.append(h('div','m', others.join(' · ')));
@@ -2252,7 +2282,8 @@ map.on('contextmenu', e => { const p = {id:'pin', n:'지정 위치', sub:'지도
   go.addEventListener('click', () => { showRoute({id:'pin', name:'지정 위치', lat:p.lat, lng:p.lng}, fromHere(p)); map.closePopup(); });
   b.addEventListener('click', () => { map.closePopup(); addPlace(Object.assign({}, p, {id:'pin' + Date.now().toString(36)})); });
   const fb = h('button', null, '📍 출발'); fb.type = 'button'; fb.addEventListener('click', () => abSet({lat:p.lat, lng:p.lng, name:'지정 위치'}));
-  row.append(go, fb, b); box.append(row);
+  const sv = h('a', 'zhb', '🛣️ 거리뷰'); sv.href = svUrl(p.lat, p.lng); sv.target = '_blank'; sv.rel = 'noopener';
+  row.append(go, fb, b); box.append(row, sv);
   pinPop = L.popup(popOpt()).setLatLng(e.latlng).setContent(box).openOn(map); previewRoute(p); });
 map.on('popupclose', e => { if(e.popup === pinPop){ pinPop = null; if(routeCur && routeCur.preview) clearRoute(); } if(showToilet) setTimeout(() => { if(!document.getElementById('mapwrap').classList.contains('popon')) drawToilets(); }, 0); });
 // ⭐ opens a category picker for the recommended places shown on the map

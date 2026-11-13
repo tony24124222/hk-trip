@@ -999,7 +999,7 @@ const wide = () => innerWidth >= 820;
 const peekSel = () => sel && sel.lat && sel.kind !== 'plain';
 const shH = st => st === 'peek' ? 64 + sab + (peekSel() ? 46 : 0) : st === 'half' ? Math.round(innerHeight * .5) : innerHeight - 64;
 const ins = () => !mm ? {t:0, l:0, b:0, r:0} : wide() ? {t:56, l:456, b:0, r:0} : {t:56, l:0, b:Math.min(shH(shState), innerHeight * .55), r:0};
-const fitOpt = (pad, o, extraB) => { const i = ins(); return Object.assign({paddingTopLeft:[pad + i.l, pad + i.t], paddingBottomRight:[pad + i.r + (mm ? 44 : 0), pad + i.b + (extraB || 0)]}, o); };
+const fitOpt = (pad, o, extraB) => { const i = ins(); return Object.assign({paddingTopLeft:[pad + i.l + 30, pad + i.t], paddingBottomRight:[pad + i.r + 30, pad + i.b + (extraB || 0)]}, o); };
 function centerOn(lat, lng, z){ const i = ins(), dx = (i.l - i.r) / 2, dy = (i.t - i.b) / 2;
   map.setView(dx || dy ? map.unproject(map.project([lat, lng], z).subtract([dx, dy]), z) : [lat, lng], z); }
 function fit(){ const pts = mapStops(day).map(s => [s.lat,s.lng]); if(!pts.length){ const c = day.id === 'macau' ? MACAU : HOTEL; map.invalidateSize(); centerOn(c.lat, c.lng, 14); return; }
@@ -1495,7 +1495,12 @@ function drawEvents(){
     const r = h('div','evt'); r.append(h('span',null,'🎆'), h('b',null,e.n), h('span','m',e.when+' · '+e.sub));
     if(e.lat){ const has = day.stops.some(s => s.rec===e.id), b = h('button','chip', has ? '일정에 있음' : '＋ 일정에 추가'); b.type = 'button'; b.disabled = has; b.addEventListener('click', () => addPlace(e)); r.append(b); }
     if(e.src){ const a = h('a',null,'출처'); a.href = e.src; a.target = '_blank'; a.rel = 'noopener'; r.append(a); }
+    if(e.lat){ r.style.cursor = 'pointer'; r.addEventListener('click', ev => { if(ev.target.closest('a,button')) return; centerOn(e.lat, e.lng, 16); document.getElementById('mapwrap').scrollIntoView({block:'nearest', behavior:'smooth'});
+      const mk = recLayer.getLayers().find(x => x.options.pid === e.id); if(mk) setTimeout(() => mk.openPopup(), 60); }); }
     box.append(r); }
+  if(day.stops.some(x => x.kind === 'plain' && /^tbd/.test(x.id)) || day.id === 'macau') for(const c of COURSES.filter(c => c.only === day.id && !c.ids.every(id => day.stops.some(x => x.rec === id)))){
+    const r = h('div','evt'), b = h('button','chip','＋ 일정에 넣기'); b.type = 'button'; b.addEventListener('click', () => addCourse(c));
+    r.append(h('span', null, c.e), h('b', null, c.n), h('span','m', `${c.ids.length}곳 · 약 ${c.min >= 60 ? (c.min / 60) + '시간' : c.min + '분'}`), b); box.append(r); }
 }
 function drawList(){
   const list = document.getElementById('list'); list.textContent = '';

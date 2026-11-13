@@ -1581,7 +1581,15 @@ function render(){ const nm = !!day.nomap;
   document.getElementById('mapwrap').hidden = nm; const nb = document.getElementById('nomap'); nb.hidden = !nm; nb.textContent = day.nomap || '';
   if(!nm) drawMap(); drawList(); drawEvents(); drawSheet();
   document.getElementById('bedit').setAttribute('aria-pressed', editMode); document.getElementById('breset').hidden = !editMode; }
-function select(s, scroll){ sel = s; if(mm && !wide() && shState === 'full') setSheet('half'); focus(s); render();
+function stopPop(s){ const box = h('div','pop'), info = schedule(day).out.get(s), pid = phId(s); if(pid) box.append(phBox(pid, s.name));
+  box.append(h('b', null, s.name));
+  if(info) box.append(h('div','rt1', hm(info.arr) + (info.dep > info.arr ? '–' + hm(info.dep) : '') + (info.leg && info.leg.mode !== 'same' ? ' · ' + (info.leg.mode === 'given' ? s.leg : legShort(info.leg)) : '')));
+  const inf = infoOf(s); if(inf && inf.d) box.append(h('div','d',inf.d)); if(s.note) box.append(h('div','m',s.note));
+  const row = h('div','prow'), go = h('button','ghost','🧭 길찾기'); go.type = 'button'; go.addEventListener('click', () => { map.closePopup(); routeTo(s); }); row.append(go);
+  if(zhOf(s)){ const z = h('button', null, '🀄 한자'); z.type = 'button'; z.addEventListener('click', () => showZh(s)); row.append(z); }
+  box.append(row); return box; }
+function select(s, scroll){ sel = s; if(mm && !wide() && shState === 'full') setSheet('half'); if(!(scroll && !mm)) focus(s); render();
+  if(scroll && !mm && s.lat) L.popup(Object.assign(popOpt(), {offset:[0, -12]})).setLatLng([s.lat, s.lng]).setContent(stopPop(s)).openOn(map);
   if(scroll){ const li = document.getElementById('stop-'+s.id); if(li) li.scrollIntoView({block:'nearest', behavior:'smooth'}); } }
 function setDay(id, push){ day = DAYS.find(d=>d.id===id) || DAYS[0]; sel = null; recOpen = null; map.closePopup();
   { const t = document.getElementById('toast'); if(t) t.hidden = true; } // its undo would act on the day being left

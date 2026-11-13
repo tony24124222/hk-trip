@@ -620,7 +620,7 @@ function originFor(s){
   const rs = routeStops(day), i = rs.indexOf(s);
   return i > 0 ? [rs[i-1], rs[i-1].name] : [HOTEL, HOTEL.name];
 }
-function showRoute(s, o, alts){ const [from, lbl] = o || originFor(s); routeCur = {s, from:{lat:from.lat, lng:from.lng}, lbl, alts}; redrawRoute(true); }
+function showRoute(s, o, alts){ const [from, lbl] = o || originFor(s); routeCur = {s, from:{lat:from.lat, lng:from.lng}, lbl, alts, nt:{}}; redrawRoute(true); }
 // shortcut: route is drawn from where you are when tapped; tap again to refresh as you walk
 function routeTo(s){
   showRoute(s);
@@ -638,17 +638,19 @@ function redrawRoute(fitIt){
   document.getElementById('routetxt').textContent = `🧭 ${s.name}까지 약 ${leg.min}분`;
   document.getElementById('routefrom').textContent = '출발: ' + lbl;
   const ol = document.getElementById('routesteps'); ol.textContent = '';
-  for(const st of legSteps(leg)){ const li = h('li', null, st.t); ol.append(li); if(st.line && fitIt) nextTrain(st, li); else if(st.line && st.nt) li.append(st.nt.cloneNode(true)); }
+  for(const st of legSteps(leg)){ const li = h('li', null, st.t); ol.append(li); if(!st.line) continue;
+    const k = st.line + st.sta + st.up, nt = routeCur.nt[k];
+    if(nt) li.append(h('span', 'nt', ' · 다음 열차 ' + nt)); else if(nt === undefined){ routeCur.nt[k] = null; nextTrain(st, k, routeCur); } }
   if(alts && alts.length > 1){ const li = h('li', 'alts');
     alts.forEach(([d, t], i) => { const b = h('button', 'chip', `🚻 ${i + 1} · ${fmt(d)}`); b.type = 'button'; b.setAttribute('aria-pressed', t[0] === s.lat && t[1] === s.lng);
       b.addEventListener('click', () => showRoute(toiletObj(t), [routeCur.from, routeCur.lbl], alts)); li.append(b); });
     ol.append(li); }
   if(fitIt){ const pts = shapes.flatMap(x => x.pts); pts.push([from.lat, from.lng]); map.fitBounds(pts, {padding:[30,30], maxZoom:17, animate:false}); }
 }
-async function nextTrain(st, li){
+async function nextTrain(st, k, rc){
   try{ const r = await getJ(`https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=${st.line}&sta=${st.sta}`);
-    const k = r.data && r.data[st.line + '-' + st.sta], arr = k && k[st.up ? 'UP' : 'DOWN']; if(!arr || !arr.length) return;
-    st.nt = h('span', 'nt', ' · 다음 열차 ' + etaTxt(arr.map(t => +t.ttnt))); if(li.isConnected) li.append(st.nt.cloneNode(true));
+    const d = r.data && r.data[st.line + '-' + st.sta], arr = d && d[st.up ? 'UP' : 'DOWN']; if(!arr || !arr.length) return;
+    rc.nt[k] = etaTxt(arr.map(t => +t.ttnt)); if(routeCur === rc) redrawRoute(false);
   }catch(e){}
 }
 

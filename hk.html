@@ -332,6 +332,7 @@ html.mm .popin{max-height:40vh}
 .kv .gpr{margin-top:0}
 .gpr{flex-wrap:wrap;row-gap:2px}
 .gpl{color:var(--accent);font-weight:600;flex-basis:100%}
+.gpn{font:inherit;font-size:11px;line-height:1;padding:3px 7px;border:1px solid var(--line);border-radius:8px;background:none;color:var(--accent);cursor:pointer}
 .edit{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;padding-top:8px;border-top:2px dashed var(--line);cursor:default}
 .edit button,.edit select,.edit input{font:inherit;font-size:13px;border:2px solid var(--line);background:var(--bg);border-radius:10px;padding:4px 8px;color:inherit}
 .edit label{font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:4px}
@@ -1717,11 +1718,14 @@ function gmUrl(o){ const lat = o.lat, lng = o.lng, gid = GMID[o.rec || o.id]; if
   const en = GMQ[o.id] || [(o.sub || '').split(' · ')[0], (o.name || o.n || '').replace(/\s*\(.*\)$/, '')].find(x => /^[A-Za-z][A-Za-z0-9 '&+.\u2013-]{2,}$/.test(x));
   // searched around the spot itself, so a chain opens the branch that is there
   return en ? `https://www.google.com/maps/search/${encodeURIComponent(en)}/@${lat},${lng},18z` : `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`; }
-// live crowding read by the home PC every 30 minutes; shown while under 75 minutes old
-let BUSY = {};
-function gpLive(k){ const v = BUSY.p && BUSY.p[k]; if(!v || Date.now() - BUSY.at > 75 * 60e3) return null; const [now, us] = v, d = us == null ? 0 : now - us;
-  const t = h('b', 'gpl', '지금 ' + now + '%' + (us == null ? '' : ' · ' + (d >= 15 ? '평소보다 붐빔' : d <= -15 ? '평소보다 한산' : '평소 수준')));
-  t.title = new Date(BUSY.at).toTimeString().slice(0, 5) + ' 기준' + (us == null ? '' : ' · 평소 ' + us + '%'); return t; }
+// 지금: live crowding read on tap by the home PC (signed-in browser) through the trip worker; a reading is reused for 15 minutes
+const LIVE = {};
+function liveTag(j){ const v = j.v, d = v && v[1] != null ? v[0] - v[1] : 0;
+  const t = h('b', 'gpl', !v ? '실시간 없음' : '지금 ' + v[0] + '%' + (v[1] == null ? '' : ' · ' + (d >= 15 ? '평소보다 붐빔' : d <= -15 ? '평소보다 한산' : '평소 수준')));
+  t.title = new Date(j.at).toTimeString().slice(0, 5) + ' 기준' + (v && v[1] != null ? ' · 평소 ' + v[1] + '%' : ''); return t; }
+function busyBtn(o){ const k = o.rec || o.id, u = gmUrl(o); if(!/^https:\/\/(maps\.google\.com\/\?cid=\d+|www\.google\.com\/maps\/search\/)/.test(u)) return null;
+  if(LIVE[k] && Date.now() - LIVE[k].at < 15 * 60e3) return liveTag(LIVE[k]);
+  const b = h('button', 'gpn', '지금'); b.type = 'button'; b.addEventListener('click', e => { e.stopPropagation(); busyNow(k, u, b); }); return b; }
 function gmLink(o){ const a = h('a', null, 'Google 지도 ↗'); a.href = gmUrl(o); a.target = '_blank'; a.rel = 'noopener'; return a; }
 function orLink(id){ if(!OR[id]) return null; const a = h('a', null, 'OpenRice ↗'); a.href = 'https://www.openrice.com/en/hongkong/' + OR[id]; a.target = '_blank'; a.rel = 'noopener'; return a; }
 const PH = {wynnpalace:[["9/90/Wynn_Palace_2019.jpg", "OJ-JP", "CC BY-SA 4.0"], ["6/69/Wynn_Palace_Night_2016.jpg", "Doraemon.tvb", "CC BY-SA 3.0"], ["9/9c/Wynn_Palace_Cable_car_17-01-2023%282%29.jpg", "LN9267", "CC BY-SA 4.0"]], peak:[["2/27/CWA_6th_Generation_Peak_Tram.jpg", "Samson Ng . D201@EAL", "CC BY-SA 4.0"], ["4/4f/The_Peak_Tram%2C_Hong_Kong_%28Ank_Kumar%29_03.jpg", "Ank Kumar", "CC BY-SA 4.0"], ["5/55/Peak_Tram_at_night.jpg", "Ubahnverleih", "CC0"]],
@@ -1969,9 +1973,9 @@ const toMin = t => { const [a,b] = String(t).split(':').map(Number); return a*60
 function kv(rows){ const dl = h('dl','kv'); for(const [k, v] of rows) if(v){ const dd = h('dd'); dd.append(v); dl.append(h('dt', null, k), dd); } return dl.children.length ? dl : null; }
 const placeRows = (p, id) => { const q = Q[id], pk = qPeak(q), inf = INFO[id] || {}, wt = q ? q.t : typeof p.wait === 'string' ? p.wait : p.waitTip;
   const g = GP[id], dw = dayDow(day);
-  return [['📍 위치', p.sub], ['🗓️ 일정', p.when], ['🕒 영업', [p.hours || gpHours(g, dw), p.closed && p.closed + ' 휴무'].filter(Boolean).join(' · ')], ['👥 혼잡', gpPop(g, dw, id)], ['💰 가격', inf.p && won(inf.p)],
+  return [['📍 위치', p.sub], ['🗓️ 일정', p.when], ['🕒 영업', [p.hours || gpHours(g, dw), p.closed && p.closed + ' 휴무'].filter(Boolean).join(' · ')], ['👥 혼잡', gpPop(g, dw, p, id)], ['💰 가격', inf.p && won(inf.p)],
     ['⏳ 웨이팅', [pk && `붐빌 때 약 ${pk}분`, wt].filter(Boolean).join(' · ')], ['⭐ 추천', p.best && `${hm(p.best[0])}–${hm(p.best[1])}`], ['💡 팁', [inf.t, p.tip].filter(Boolean).join(' · ')]]; };
-const gpPop = (g, dw, id) => { const r = gpRow(g, dw, null), lv = r && gpLive(id); if(lv) r.append(lv); return r; };
+const gpPop = (g, dw, p, id) => { const r = gpRow(g, dw, null), b = r && busyBtn(Object.assign({}, p, {id, rec: p.rec || id})); if(b) r.append(b); return r; };
 const recMeta = p => { const q = Q[p.id], pk = qPeak(q), inf = INFO[p.id]; return [p.when, p.sub, p.hours && '영업 '+p.hours, inf && inf.p && '💰 '+won(inf.p), p.best && `추천 ${hm(p.best[0])}–${hm(p.best[1])}`, (q || p.wait) && '⏳ ' + (pk ? `붐빌 때 약 ${pk}분 · ` : '') + (q ? q.t : p.wait), p.closed && p.closed+' 휴무', p.tip].filter(Boolean).join(' · '); };
 function hoursOf(s, t){ const all = [], re = /(저녁\s*)?(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})/g; let m;
   while((m = re.exec(s.hours || ''))){ if(all.length && !m[1]) continue; const o = +m[2]*60 + +m[3]; let c = +m[4]*60 + +m[5]; if(c <= o) c += 1440; all.push([o, c]); }
@@ -2156,7 +2160,7 @@ function drawList(){
     if(s.hours){ const on = DATES[day.id] === hkIso() ? openNow(s, DOW[hkNow().getUTCDay()]) : ''; body.append(h('div','hours','영업 '+s.hours + (on ? ' · ' + on : ''))); }
     { const g = GP[s.rec || s.id], dw = dayDow(day);
       if(g && !s.hours && gpHours(g, dw)) body.append(h('div','hours','영업 ' + gpHours(g, dw)));
-      const r = gpRow(g, dw, info && [Math.floor(info.arr / 60) % 24, Math.floor((Math.max(info.arr, info.dep - 1)) / 60) % 24]); if(r){ const lv = gpLive(s.rec || s.id); if(lv) r.append(lv); body.append(r); } }
+      const r = gpRow(g, dw, info && [Math.floor(info.arr / 60) % 24, Math.floor((Math.max(info.arr, info.dep - 1)) / 60) % 24]); if(r){ const b = busyBtn(s); if(b) r.append(b); body.append(r); } }
     if(inf && inf.p) body.append(h('div','hours','💰 '+won(inf.p)));
     if(inf && inf.t) body.append(h('div','tip','💡 '+inf.t));
     if(info) for(const w of info.warn) body.append(h('div','warn',w));
@@ -2293,7 +2297,7 @@ function tidy(){ if(wide()) return; map.closePopup(); const c = document.getElem
 function noSheets(){ if(wide()) return; try{ closeGi(); closeMemo(); }catch(e){} }
 function ovPush(){ if(ovKeep){ ovKeep = false; return; } try{ history.pushState({ov:((history.state && history.state.ov) || 0) + 1}, ''); }catch(e){} }
 function ovPop(){ try{ if(history.state && history.state.ov){ ovSkip++; history.back(); } }catch(e){} }
-let closeMemo = () => {}, askAbout = () => {};
+let closeMemo = () => {}, askAbout = () => {}, busyNow = () => {};
 addEventListener('popstate', () => { if(ovSkip){ ovSkip--; return; } const zc = document.getElementById('zc'); if(!document.getElementById('svv').hidden) closeSv(true); else if(!zc.hidden) zc.hidden = true; else if(lbId) closeLb(true); else if(!document.getElementById('memo').hidden) closeMemo(true); else closeGi(true); });
 // big Chinese name card to show a driver or passer-by
 function showZh(s){ const z = zhOf(s); if(!z) return; document.getElementById('zcs').textContent = '請載我去 · Please take me to'; document.getElementById('zct').textContent = z;
@@ -2441,12 +2445,15 @@ function gval(v){ const dd = h('dd'), parts = won(v).split(' · '); if(parts.len
     if(box.hidden){ tidy(); if(!document.getElementById('gi').hidden){ closeGi(true); ovKeep = true; } box.hidden = false; ovPush(); }
     bt.setAttribute('aria-expanded', m === 'memo'); za.setAttribute('aria-expanded', m === 'ask'); if(!pass.hidden) pass.focus(); else if(m === 'memo') txt.focus(); };
   askAbout = s => open(placeCtx(s));
-  const busyLoad = async () => { if(!saved || document.hidden) return; const t0 = Date.now();
-    try{ const r = await fetch(MEMO_URL, {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({pass:saved, mode:'busyget'})}), j = await r.json().catch(() => ({}));
-      sylog('busy', {st:r.status, ms:Date.now() - t0, n:j.p ? Object.keys(j.p).length : 0, age:j.at ? Math.round((Date.now() - j.at) / 60e3) : null});
-      if(r.ok && j.at && j.at !== BUSY.at){ BUSY = j; drawList(); } }
-    catch(e){ sylog('busy', {err:String(e).slice(0, 80), ms:Date.now() - t0}); } };
-  busyLoad(); setInterval(busyLoad, 10 * 60e3); document.addEventListener('visibilitychange', busyLoad);
+  busyNow = async (k, u, b) => { if(!saved){ open(); return; } b.disabled = true; b.textContent = '…'; const t0 = Date.now(); let j = {}, st = 0;
+    try{ for(let i = 0; i < 16; i++){ const r = await fetch(MEMO_URL, {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({pass:saved, mode:'busyask', k, u})});
+        st = r.status; j = await r.json().catch(() => ({}));
+        if(st === 401){ saved = ''; try{ localStorage.removeItem('hk-pass'); }catch(e){} b.disabled = false; b.textContent = '지금'; open(); return; }
+        if(!r.ok || !j.pending || Date.now() - (j.seen || 0) > 40e3) break; await new Promise(f => setTimeout(f, 3000)); } }
+    catch(e){ j = {err: String(e).slice(0, 80)}; }
+    sylog('busy', {k, st, ms:Date.now() - t0, pending:!!j.pending, pcAgo:j.seen ? Math.round((Date.now() - j.seen) / 1e3) : null, live:!!j.v, err:j.error || j.err || null});
+    if(j.at && !j.pending){ LIVE[k] = j; b.replaceWith(liveTag(j)); return; }
+    b.disabled = false; b.textContent = j.pending ? (Date.now() - (j.seen || 0) > 40e3 ? 'PC 꺼짐' : '지연') : '실패'; };
   closeMemo = fromBack => { if(box.hidden) return; box.hidden = true; bt.setAttribute('aria-expanded', false); za.setAttribute('aria-expanded', false); if(fromBack !== true) ovPop(); };
   bt.addEventListener('click', () => box.hidden || mode !== 'memo' ? open(null, 'memo') : closeMemo());
   za.addEventListener('click', () => box.hidden || mode !== 'ask' || ctx ? open() : closeMemo());

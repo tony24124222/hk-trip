@@ -330,8 +330,6 @@ html.mm .popin{max-height:40vh}
 .gpc i.on{opacity:1}
 .gpc i.on{background:var(--accent)}
 .kv .gpr{margin-top:0}
-.gpn{font:inherit;font-size:11px;line-height:1;padding:3px 7px;border:1px solid var(--line);border-radius:8px;background:none;color:var(--accent);cursor:pointer}
-.gpl{color:var(--accent);font-weight:600}
 .edit{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;padding-top:8px;border-top:2px dashed var(--line);cursor:default}
 .edit button,.edit select,.edit input{font:inherit;font-size:13px;border:2px solid var(--line);background:var(--bg);border-radius:10px;padding:4px 8px;color:inherit}
 .edit label{font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:4px}
@@ -1717,10 +1715,6 @@ function gmUrl(o){ const lat = o.lat, lng = o.lng, gid = GMID[o.rec || o.id]; if
   const en = GMQ[o.id] || [(o.sub || '').split(' · ')[0], (o.name || o.n || '').replace(/\s*\(.*\)$/, '')].find(x => /^[A-Za-z][A-Za-z0-9 '&+.\u2013-]{2,}$/.test(x));
   // searched around the spot itself, so a chain opens the branch that is there
   return en ? `https://www.google.com/maps/search/${encodeURIComponent(en)}/@${lat},${lng},18z` : `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`; }
-// 지금 button: live crowding through the trip worker; cid when known, else the same search gmUrl opens
-function busyBtn(o){ const u = gmUrl(o), m = /[?&]cid=(\d+)/.exec(u), x = /\/maps\/search\/([^/?]+)\/(@[-\d.]+,[-\d.]+,\d+z)/.exec(u);
-  const q = m ? {cid: m[1]} : x ? {q: decodeURIComponent(x[1]), ll: x[2]} : null; if(!q) return null;
-  const b = h('button', 'gpn', '지금'); b.type = 'button'; b.addEventListener('click', e => { e.stopPropagation(); busyNow(q, b); }); return b; }
 function gmLink(o){ const a = h('a', null, 'Google 지도 ↗'); a.href = gmUrl(o); a.target = '_blank'; a.rel = 'noopener'; return a; }
 function orLink(id){ if(!OR[id]) return null; const a = h('a', null, 'OpenRice ↗'); a.href = 'https://www.openrice.com/en/hongkong/' + OR[id]; a.target = '_blank'; a.rel = 'noopener'; return a; }
 const PH = {wynnpalace:[["9/90/Wynn_Palace_2019.jpg", "OJ-JP", "CC BY-SA 4.0"], ["6/69/Wynn_Palace_Night_2016.jpg", "Doraemon.tvb", "CC BY-SA 3.0"], ["9/9c/Wynn_Palace_Cable_car_17-01-2023%282%29.jpg", "LN9267", "CC BY-SA 4.0"]], peak:[["2/27/CWA_6th_Generation_Peak_Tram.jpg", "Samson Ng . D201@EAL", "CC BY-SA 4.0"], ["4/4f/The_Peak_Tram%2C_Hong_Kong_%28Ank_Kumar%29_03.jpg", "Ank Kumar", "CC BY-SA 4.0"], ["5/55/Peak_Tram_at_night.jpg", "Ubahnverleih", "CC0"]],
@@ -1968,9 +1962,8 @@ const toMin = t => { const [a,b] = String(t).split(':').map(Number); return a*60
 function kv(rows){ const dl = h('dl','kv'); for(const [k, v] of rows) if(v){ const dd = h('dd'); dd.append(v); dl.append(h('dt', null, k), dd); } return dl.children.length ? dl : null; }
 const placeRows = (p, id) => { const q = Q[id], pk = qPeak(q), inf = INFO[id] || {}, wt = q ? q.t : typeof p.wait === 'string' ? p.wait : p.waitTip;
   const g = GP[id], dw = dayDow(day);
-  return [['📍 위치', p.sub], ['🗓️ 일정', p.when], ['🕒 영업', [p.hours || gpHours(g, dw), p.closed && p.closed + ' 휴무'].filter(Boolean).join(' · ')], ['👥 혼잡', gpBusy(g, dw, p, id)], ['💰 가격', inf.p && won(inf.p)],
+  return [['📍 위치', p.sub], ['🗓️ 일정', p.when], ['🕒 영업', [p.hours || gpHours(g, dw), p.closed && p.closed + ' 휴무'].filter(Boolean).join(' · ')], ['👥 혼잡', gpRow(g, dw, null)], ['💰 가격', inf.p && won(inf.p)],
     ['⏳ 웨이팅', [pk && `붐빌 때 약 ${pk}분`, wt].filter(Boolean).join(' · ')], ['⭐ 추천', p.best && `${hm(p.best[0])}–${hm(p.best[1])}`], ['💡 팁', [inf.t, p.tip].filter(Boolean).join(' · ')]]; };
-const gpBusy = (g, dw, p, id) => { const r = gpRow(g, dw, null); if(r){ const b = busyBtn(Object.assign({id}, p)); if(b) r.append(b); } return r; };
 const recMeta = p => { const q = Q[p.id], pk = qPeak(q), inf = INFO[p.id]; return [p.when, p.sub, p.hours && '영업 '+p.hours, inf && inf.p && '💰 '+won(inf.p), p.best && `추천 ${hm(p.best[0])}–${hm(p.best[1])}`, (q || p.wait) && '⏳ ' + (pk ? `붐빌 때 약 ${pk}분 · ` : '') + (q ? q.t : p.wait), p.closed && p.closed+' 휴무', p.tip].filter(Boolean).join(' · '); };
 function hoursOf(s, t){ const all = [], re = /(저녁\s*)?(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})/g; let m;
   while((m = re.exec(s.hours || ''))){ if(all.length && !m[1]) continue; const o = +m[2]*60 + +m[3]; let c = +m[4]*60 + +m[5]; if(c <= o) c += 1440; all.push([o, c]); }
@@ -2155,7 +2148,7 @@ function drawList(){
     if(s.hours){ const on = DATES[day.id] === hkIso() ? openNow(s, DOW[hkNow().getUTCDay()]) : ''; body.append(h('div','hours','영업 '+s.hours + (on ? ' · ' + on : ''))); }
     { const g = GP[s.rec || s.id], dw = dayDow(day);
       if(g && !s.hours && gpHours(g, dw)) body.append(h('div','hours','영업 ' + gpHours(g, dw)));
-      const r = gpRow(g, dw, info && [Math.floor(info.arr / 60) % 24, Math.floor((Math.max(info.arr, info.dep - 1)) / 60) % 24]); if(r){ const b = busyBtn(s); if(b) r.append(b); body.append(r); } }
+      const r = gpRow(g, dw, info && [Math.floor(info.arr / 60) % 24, Math.floor((Math.max(info.arr, info.dep - 1)) / 60) % 24]); if(r) body.append(r); }
     if(inf && inf.p) body.append(h('div','hours','💰 '+won(inf.p)));
     if(inf && inf.t) body.append(h('div','tip','💡 '+inf.t));
     if(info) for(const w of info.warn) body.append(h('div','warn',w));
@@ -2292,7 +2285,7 @@ function tidy(){ if(wide()) return; map.closePopup(); const c = document.getElem
 function noSheets(){ if(wide()) return; try{ closeGi(); closeMemo(); }catch(e){} }
 function ovPush(){ if(ovKeep){ ovKeep = false; return; } try{ history.pushState({ov:((history.state && history.state.ov) || 0) + 1}, ''); }catch(e){} }
 function ovPop(){ try{ if(history.state && history.state.ov){ ovSkip++; history.back(); } }catch(e){} }
-let closeMemo = () => {}, askAbout = () => {}, busyNow = () => {};
+let closeMemo = () => {}, askAbout = () => {};
 addEventListener('popstate', () => { if(ovSkip){ ovSkip--; return; } const zc = document.getElementById('zc'); if(!document.getElementById('svv').hidden) closeSv(true); else if(!zc.hidden) zc.hidden = true; else if(lbId) closeLb(true); else if(!document.getElementById('memo').hidden) closeMemo(true); else closeGi(true); });
 // big Chinese name card to show a driver or passer-by
 function showZh(s){ const z = zhOf(s); if(!z) return; document.getElementById('zcs').textContent = '請載我去 · Please take me to'; document.getElementById('zct').textContent = z;
@@ -2440,14 +2433,6 @@ function gval(v){ const dd = h('dd'), parts = won(v).split(' · '); if(parts.len
     if(box.hidden){ tidy(); if(!document.getElementById('gi').hidden){ closeGi(true); ovKeep = true; } box.hidden = false; ovPush(); }
     bt.setAttribute('aria-expanded', m === 'memo'); za.setAttribute('aria-expanded', m === 'ask'); if(!pass.hidden) pass.focus(); else if(m === 'memo') txt.focus(); };
   askAbout = s => open(placeCtx(s));
-  busyNow = async (q, b) => { if(!saved){ open(); return; } b.disabled = true; b.textContent = '…'; const t0 = Date.now();
-    try{ const r = await fetch(MEMO_URL, {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({pass:saved, mode:'busy', ...q})}), j = await r.json().catch(() => ({}));
-      sylog('busy', {st:r.status, ms:Date.now() - t0, by:q.cid ? 'cid' : 'q', err:j.error || null, live:!!j.live, now:j.now ?? null, cached:!!j.cached, dbg:j.dbg || null});
-      if(r.status === 401){ saved = ''; try{ localStorage.removeItem('hk-pass'); }catch(e){} b.disabled = false; b.textContent = '지금'; open(); return; }
-      if(!r.ok){ b.disabled = false; b.textContent = ({cap:'한도 끝', key:'키 없음'})[j.error] || '실패'; return; }
-      const t = h('b', 'gpl', [j.live, j.now != null && j.now + '%'].filter(Boolean).join(' ') || '실시간 없음');
-      t.title = new Date(j.at || Date.now()).toTimeString().slice(0, 5) + ' 기준'; b.replaceWith(t); }
-    catch(e){ sylog('busy', {err:String(e).slice(0, 80), ms:Date.now() - t0}); b.disabled = false; b.textContent = '실패'; } };
   closeMemo = fromBack => { if(box.hidden) return; box.hidden = true; bt.setAttribute('aria-expanded', false); za.setAttribute('aria-expanded', false); if(fromBack !== true) ovPop(); };
   bt.addEventListener('click', () => box.hidden || mode !== 'memo' ? open(null, 'memo') : closeMemo());
   za.addEventListener('click', () => box.hidden || mode !== 'ask' || ctx ? open() : closeMemo());

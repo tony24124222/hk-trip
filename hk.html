@@ -2265,6 +2265,8 @@ for(const d of DAYS){ const b = h('button','tab',d.tab); b.type='button'; b.id='
 // bottom safe-area height, read once from CSS
 const sab = (() => { const d = h('div'); d.style.cssText = 'position:fixed;visibility:hidden;padding-bottom:env(safe-area-inset-bottom)'; document.body.append(d); const v = parseFloat(getComputedStyle(d).paddingBottom) || 0; d.remove(); return v; })();
 const root = document.documentElement, panel = document.getElementById('panel'), grip = document.getElementById('grip');
+// the sheet itself never scrolls: a card brought into view inside it used to push the handle and title up out of sight
+document.getElementById('panel').addEventListener('scroll', e => { if(e.target.scrollTop) e.target.scrollTop = 0; });
 function setSheet(st){ const b0 = ins().b; shState = st; const db = ins().b - b0; if(db && map._loaded) map.panBy([0, db / 2], {animate:true, duration:.28}); // keep what was centred above the sheet centred
   root.style.setProperty('--sh', shH(st) + 'px'); panel.dataset.st = st; grip.setAttribute('aria-expanded', st !== 'peek'); }
 function setMM(on){ mm = on; root.classList.toggle('mm', on); document.getElementById('nlist').setAttribute('aria-pressed', !on); document.getElementById('nmap').setAttribute('aria-pressed', on);

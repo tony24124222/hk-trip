@@ -440,6 +440,10 @@ html.mm .popin{max-height:40vh}
 .pack{list-style:none;margin:0 0 12px;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;font-size:14px}
 .pack label{display:flex;align-items:center;gap:6px}
 .pack input{width:18px;height:18px;accent-color:var(--accent)}
+.offl{display:flex;align-items:center;gap:10px;padding:8px 0 12px;font-size:14px}
+.offl button{border:2px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:6px 14px;font:400 14px var(--display)}
+.offl button:disabled{opacity:.5}
+.offl small{color:var(--muted)}
 .bkp{grid-template-columns:1fr}
 .bkp li{display:flex;flex-wrap:wrap;align-items:center;gap:2px 8px;padding:6px 0;border-top:1px dashed var(--line)}
 .bkp li:first-child{border-top:0}
@@ -2304,6 +2308,29 @@ function gval(v){ const dd = h('dd'), parts = won(v).split(' · '); if(parts.len
     for(const [k, v, tel] of [['경찰·구급·소방', '999', '999'], ['주홍콩 총영사관', '2529 4141 · 애드미럴티 Far East Finance Centre 5층', '+85225294141'], ['영사콜센터', '+82-2-3210-0404 · 24시간', '+82232100404']]){
       const dd = h('dd'), a = h('a', null, v); a.href = 'tel:' + tel; dd.append(a); dl.append(h('dt', null, k), dd); }
     d.append(dl); g.append(d); }
+  // offline map: tiles to z14 (the style draws closer zooms from them), latin glyphs (Hangul and Chinese are drawn with the phone's own font), icons
+  { const d = h('div','gd'), box = h('div','offl'), b = h('button', null, '📥 지도 저장'), st = h('small'); d.dataset.t = '📶 오프라인 지도'; b.type = 'button';
+    const show = () => { let v = null; try{ v = JSON.parse(localStorage.getItem('hk-off')); }catch(e){} st.textContent = v ? `저장됨 ${v.d} · ${v.n}개` + (v.f ? ` · 실패 ${v.f}` : '') : '저장 안 됨'; };
+    b.addEventListener('click', async () => { if(b.disabled) return;
+      if(!navigator.serviceWorker || !navigator.serviceWorker.controller){ toast('새로고침 후 다시'); return; }
+      if(!styleJson){ toast('지도 불러오는 중'); return; }
+      b.disabled = true; const t0 = Date.now();
+      try{ try{ if(navigator.storage && navigator.storage.persist) await navigator.storage.persist(); }catch(e){}
+        const tj = await (await fetch('https://tiles.openfreemap.org/planet')).json(), tpl = tj.tiles[0], sj = JSON.parse(styleJson), urls = [];
+        const tx = (lng, z) => Math.floor((lng + 180) / 360 * 2 ** z), ty = (lat, z) => { const r = lat * Math.PI / 180; return Math.floor((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * 2 ** z); };
+        for(const [w, so, e, n] of [[113.83, 22.15, 114.32, 22.45], [113.52, 22.10, 113.61, 22.22]]) for(let z = 10; z <= Math.min(14, tj.maxzoom || 14); z++)
+          for(let x = tx(w, z); x <= tx(e, z); x++) for(let y = ty(n, z); y <= ty(so, z); y++) urls.push(tpl.replace('{z}', z).replace('{x}', x).replace('{y}', y));
+        const stacks = new Set(); for(const l of sj.layers){ const f = l.layout && l.layout['text-font']; if(Array.isArray(f) && f.every(x => typeof x === 'string')) stacks.add(f.join(',')); }
+        if(sj.glyphs) for(const f of stacks) for(const r of ['0-255', '256-511', '8192-8447']) urls.push(sj.glyphs.replace('{fontstack}', encodeURIComponent(f)).replace('{range}', r));
+        for(const sp of [].concat(sj.sprite || []).map(x => typeof x === 'string' ? x : x.url)) for(const e of ['.json', '.png', '@2x.json', '@2x.png']) urls.push(sp + e);
+        let done = 0, fail = 0, i = 0;
+        const one = async () => { while(i < urls.length){ const u = urls[i++]; try{ const r = await fetch(u); if(!r.ok && r.status !== 204) fail++; }catch(e){ fail++; } done++; if(done % 10 === 0) st.textContent = `저장 중 ${done}/${urls.length}`; } };
+        await Promise.all([one(), one(), one(), one(), one(), one()]);
+        try{ localStorage.setItem('hk-off', JSON.stringify({d:new Date().toLocaleDateString('ko-KR', {month:'numeric', day:'numeric'}), n:urls.length - fail, f:fail, s:Math.round((Date.now() - t0) / 1000)})); }catch(e){}
+        toast(fail ? `저장됨 · 실패 ${fail}` : '지도 저장됨');
+      }catch(e){ toast('저장 실패'); }
+      b.disabled = false; show(); });
+    show(); box.append(b, st); d.append(box); g.append(d); }
   // packing list, ticks kept on this phone
   { const d = h('div','gd'), ul = h('ul','pack'); d.dataset.t = '🎒 준비물'; let st = {}; try{ st = JSON.parse(localStorage.getItem('hk-pack') || '{}') || {}; }catch(e){}
     for(const t of ['여권', '옥토퍼스 카드 또는 앱', '영국식 3핀 어댑터 (G형 · 220V)', '현금 HK$ (노포·간식집)', '해외 결제 카드', 'eSIM·로밍', '보조배터리', '얇은 겉옷', '접이식 우산', '편한 신발']){

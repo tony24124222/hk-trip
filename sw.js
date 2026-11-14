@@ -1,5 +1,5 @@
 // offline help for the trip page: the page itself network-first, libraries/tiles/photos cache-first
-const V = 'hk-shell-v5', T = 'hk-tiles-v1', MAX = 1800;
+const V = 'hk-shell-v5', T = 'hk-tiles-v1', MAX = 3000; // the saved Hong Kong + Macau set is about 550 tiles
 // the libraries are requested before this worker controls the first visit, so fetch them here as well
 const SHELL = ['./', './hk.html', './phone.html', './toilets.json', './icon-192.png', './banner.jpg', './walk.png',
   './ride-mtr.png', './ride-taxi.png', './ride-bus.png', './ride-tram.png', './ride-ferry.png',

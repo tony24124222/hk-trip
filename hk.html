@@ -1975,7 +1975,8 @@ const placeRows = (p, id) => { const q = Q[id], pk = qPeak(q), inf = INFO[id] ||
   const g = GP[id], dw = dayDow(day);
   return [['📍 위치', p.sub], ['🗓️ 일정', p.when], ['🕒 영업', [p.hours || gpHours(g, dw), p.closed && p.closed + ' 휴무'].filter(Boolean).join(' · ')], ['👥 혼잡', gpPop(g, dw, p, id)], ['💰 가격', inf.p && won(inf.p)],
     ['⏳ 웨이팅', [pk && `붐빌 때 약 ${pk}분`, wt].filter(Boolean).join(' · ')], ['⭐ 추천', p.best && `${hm(p.best[0])}–${hm(p.best[1])}`], ['💡 팁', [inf.t, p.tip].filter(Boolean).join(' · ')]]; };
-const gpPop = (g, dw, p, id) => { const r = gpRow(g, dw, null), b = r && busyBtn(Object.assign({}, p, {id, rec: p.rec || id})); if(b) r.append(b); return r; };
+// a place's popup reads live crowding as it opens
+const gpPop = (g, dw, p, id) => { const r = gpRow(g, dw, null), b = r && busyBtn(Object.assign({}, p, {id, rec: p.rec || id})); if(b){ r.append(b); if(b.tagName === 'BUTTON' && lsg('hk-pass')) setTimeout(() => b.isConnected && b.click(), 300); } return r; };
 const recMeta = p => { const q = Q[p.id], pk = qPeak(q), inf = INFO[p.id]; return [p.when, p.sub, p.hours && '영업 '+p.hours, inf && inf.p && '💰 '+won(inf.p), p.best && `추천 ${hm(p.best[0])}–${hm(p.best[1])}`, (q || p.wait) && '⏳ ' + (pk ? `붐빌 때 약 ${pk}분 · ` : '') + (q ? q.t : p.wait), p.closed && p.closed+' 휴무', p.tip].filter(Boolean).join(' · '); };
 function hoursOf(s, t){ const all = [], re = /(저녁\s*)?(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})/g; let m;
   while((m = re.exec(s.hours || ''))){ if(all.length && !m[1]) continue; const o = +m[2]*60 + +m[3]; let c = +m[4]*60 + +m[5]; if(c <= o) c += 1440; all.push([o, c]); }

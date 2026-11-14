@@ -452,6 +452,7 @@ html.mm .popin{max-height:40vh}
 .bkp li:has(input:checked) a.bk{display:none}
 a.bk{font-size:12px;font-family:var(--display);text-decoration:none;color:#fff;background:#1a73e8;border-radius:999px;padding:2px 10px;white-space:nowrap}
 .bkp a.bk{margin-left:auto}
+.plinks{display:flex;gap:12px;margin:2px 0 4px}
 .bkl{font-size:13px;margin-top:4px;color:var(--muted)}
 .bkl.due{color:var(--ink);font-family:var(--display)}
 .fx{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:0 0 12px;font-size:15px}
@@ -1687,6 +1688,14 @@ function estWait(s, t, w){ const q = qOf(s); if(!q || !q.w) return 0;
   for(const [d, a, b, n] of q.w) if((d === 'all' || d === dt) && m >= a && m < b) r = Math.max(r, n);
   return r; }
 const qPeak = q => q && q.w ? Math.max(...q.w.map(x => x[3])) : 0;
+// Google Maps place ids, for names that open a list of branches
+const GMID = {mcot:'3134634912512399542', peak:'12462645267000750374', pmq:'6676989976376565510', wynnpalace:'10396965417350891806', taipa5:'9242853960974550973', timho:'10886404586109723191', tsimchai:'8380974872586493257', lanfong:'4563698427115015587', taicheong:'2510587266977636889', maxim:'10505549194571598418', joyhing:'17016054847556962134', onedim:'4795447438211965162', lordstow:'3610059212574732446', ferry:'16372217752150918290', manmo:'4197219338150500650', mplus:'4123777351284749212', wts:'3859961019732326862', repulse:'13292409157537355630', buddha:'5552907718704361584', ladies:'18255385939667396015', cunha:'10391189267319925716', wheel:'5468245673994485481', monster:'11782631859400842717', choihung:'14580433881822332189', nanlian:'10350864721513336207', goldfish:'5954362366497162843', eiffel:'1106715818930724883', jenny:'7135615998599013343', god:'6159591174170134271', donki:'16927189705482628380', hysan:'5388703072687130441', sogo:'10628107508132381519', fashionwalk:'5974260354613881843', ifc:'17410334831482957688', bakehouse:'17323484142116167352', hashtagb:'17292767995524334225', cheunghing:'8159380231779556721', kaikai:'17210595777300436244', feijie:'18281040563633956922', kungwo:'17593128379089612879', luklam:'15413487766595037888', leekeung:'4996915274882530367', makman:'223003035127073132', linheung:'9471305677011510430', hingkee:'10920363922297046171', ozone:'17213747488993797918', londoner:'7465253122926234584', cod:'2883592380298135732', lordstowt:'15560514411312147240', taipahouses:'2631763933058871441'};
+const GMQ = {mplus:'M+', pmq:'PMQ', shw5:'Shun Tak Centre', north:'North Venetian Macao', artpark:'Art Park West Kowloon', timessq:'Times Square Causeway Bay', dins:'Hong Kong Convention and Exhibition Centre'};
+function gmUrl(o){ const lat = o.lat, lng = o.lng, gid = GMID[o.rec || o.id]; if(gid) return 'https://maps.google.com/?cid=' + gid; if(o.name === HOTEL.name) o = HOTEL; else if(o.name === MHOTEL.name) o = MHOTEL;
+  const en = GMQ[o.id] || [(o.sub || '').split(' · ')[0], (o.name || o.n || '').replace(/\s*\(.*\)$/, '')].find(x => /^[A-Za-z][A-Za-z0-9 '&+.\u2013-]{2,}$/.test(x));
+  // searched around the spot itself, so a chain opens the branch that is there
+  return en ? `https://www.google.com/maps/search/${encodeURIComponent(en)}/@${lat},${lng},18z` : `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`; }
+function gmLink(o){ const a = h('a', null, 'Google 지도 ↗'); a.href = gmUrl(o); a.target = '_blank'; a.rel = 'noopener'; return a; }
 function orLink(id){ if(!OR[id]) return null; const a = h('a', null, 'OpenRice ↗'); a.href = 'https://www.openrice.com/en/hongkong/' + OR[id]; a.target = '_blank'; a.rel = 'noopener'; return a; }
 const PH = {wynnpalace:[["9/90/Wynn_Palace_2019.jpg", "OJ-JP", "CC BY-SA 4.0"], ["6/69/Wynn_Palace_Night_2016.jpg", "Doraemon.tvb", "CC BY-SA 3.0"], ["9/9c/Wynn_Palace_Cable_car_17-01-2023%282%29.jpg", "LN9267", "CC BY-SA 4.0"]], peak:[["2/27/CWA_6th_Generation_Peak_Tram.jpg", "Samson Ng . D201@EAL", "CC BY-SA 4.0"], ["4/4f/The_Peak_Tram%2C_Hong_Kong_%28Ank_Kumar%29_03.jpg", "Ank Kumar", "CC BY-SA 4.0"], ["5/55/Peak_Tram_at_night.jpg", "Ubahnverleih", "CC0"]],
   esc:[["f/f8/Central-Mid-Levels_Escalator_and_Walkway_System_2017.jpg", "Wpcpey", "CC BY-SA 4.0"], ["2/2e/Mid-Levels_Escalator%2C_Hong_Kong_%282042642893%29.jpg", "Rob Young", "CC BY 2.0"], ["5/51/HK_Central_Cochrane_Street_Central-Mid-Levels_escalators_Upsidedown.JPG", "WingLuk", "CC BY-SA 3.0"]],
@@ -1874,7 +1883,7 @@ function drawMap(){
     m.on('popupopen', () => { recOpen = p.id; previewRoute(p); }).on('popupclose', () => { if(recOpen === p.id) recOpen = null; if(routeCur && routeCur.preview) clearRoute(); if(geoDirty && !recOpen){ geoDirty = false; setTimeout(drawMap, 0); } });
     mkList.push({m, pri:LM[p.id] ? 30 : p.c === 'food' ? 40 : 50, name:nm, ph:!!pid, r:LM[p.id] ? 20 : 13});
     m.bindPopup(() => { const box = h('div','pop'); if(pid) box.append(phBox(pid, p.n)); box.append(h('b',null,p.n)); const o = fromHere(p); { const lg = legOf(o[0], p), others = legOpts(o[0], p, true).filter(x => x.mode !== lg.mode).slice(0, 3).map(x => optText(x)); box.append(h('div','rt1', legShort(lg) + ' · ' + shortName(o[1]) + '에서')); if(others.length) box.append(h('div','m', others.join(' · '))); } const inf = INFO[p.id]; if(inf && inf.d) box.append(h('div','d',inf.d)); { const t = kv(placeRows(p, p.id)); if(t) box.append(t); }
-      const ol = orLink(p.id); if(ol) box.append(ol);
+      { const ln = h('div', 'plinks'), ol = orLink(p.id); ln.append(gmLink({id:p.id, n:p.n, sub:p.sub, lat:p.lat, lng:p.lng})); if(ol) ln.append(ol); box.append(ln); }
       if(ZH[p.id]){ const zb = h('button', 'zhb', '🀄 ' + ZH[p.id]); zb.type = 'button'; zb.addEventListener('click', () => showZh({rec:p.id, name:p.n})); box.append(zb); }
       const row = h('div','prow'), go = h('button','ghost','🧭 길찾기'), b = h('button',null,'＋ '+day.tab.replace(/^\S+\s/,'')); go.type = b.type = 'button';
       go.addEventListener('click', () => { showRoute({id:'rec-' + p.id, name:p.n, lat:p.lat, lng:p.lng}, fromHere(p)); map.closePopup(); });
@@ -2129,7 +2138,7 @@ function drawList(){
       t.append(cp); body.append(t); }
     if(s.lat){ const acts = h('div','acts');
       const rb = h('button','go','🧭 길찾기'); rb.type='button'; rb.addEventListener('click', () => { sel = s; render(); document.getElementById('mapwrap').scrollIntoView({block:'nearest', behavior:'smooth'}); routeTo(s); });
-      const open = h('a',null,'Google 지도 ↗'); open.href = /^https:\/\//.test(s.link || '') ? s.link : `https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lng}`; open.target='_blank'; open.rel='noopener';
+      const open = h('a',null,'Google 지도 ↗'); open.href = /^https:\/\//.test(s.link || '') ? s.link : gmUrl(s); open.target='_blank'; open.rel='noopener';
       const rtb = h('button','rtb','🚏 실시간'); rtb.type='button'; rtb.addEventListener('click', () => openRt(s.id, s.lat, s.lng, body));
       const fb = h('button', null, '📍 출발'); fb.type = 'button'; fb.addEventListener('click', () => { abSet(s); document.getElementById('mapwrap').scrollIntoView({block:'nearest', behavior:'smooth'}); });
       const eb = h('button', null, '🏁 도착'); eb.type = 'button'; eb.addEventListener('click', () => { abEnd(s); document.getElementById('mapwrap').scrollIntoView({block:'nearest', behavior:'smooth'}); });

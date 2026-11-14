@@ -848,6 +848,11 @@ for(const d of DAYS){
   ORIG[d.id] = JSON.stringify(d.stops);
   const p = plan[d.id] || {}; d.start = p.start || '10:00'; if(Array.isArray(p.stops)){ d.stops = p.stops; d.edited = true; d.base = p.base || hsh(ORIG[d.id]); d.newer = d.base !== hsh(ORIG[d.id]); }
 }
+function applyPlan(){ let p = {}; try{ p = JSON.parse(localStorage.getItem(PKEY) || '{}') || {}; }catch(e){}
+  for(const d of DAYS){ const q = p[d.id] || {}; d.start = q.start || '10:00';
+    if(Array.isArray(q.stops)){ d.stops = q.stops; d.edited = true; d.base = q.base || hsh(ORIG[d.id]); d.newer = d.base !== hsh(ORIG[d.id]); }
+    else if(d.edited){ d.stops = JSON.parse(ORIG[d.id]); d.edited = false; d.base = undefined; d.newer = false; } }
+  sel = null; }
 function savePlan(){ const o = {}; for(const d of DAYS){ o[d.id] = {start:d.start}; if(d.edited){ o[d.id].stops = d.stops; o[d.id].base = d.base || (d.base = hsh(ORIG[d.id])); } }
   try{ localStorage.setItem(PKEY, JSON.stringify(o)); }catch(e){} }
 
@@ -2271,7 +2276,7 @@ document.getElementById('lbx').addEventListener('click', () => closeLb());
 document.addEventListener('keydown', e => { if(e.key === 'Escape' && !document.getElementById('svv').hidden){ closeSv(); return; } if(e.key === 'Escape' && !document.getElementById('zc').hidden){ document.getElementById('zc').hidden = true; ovPop(); } else if(e.key === 'Escape' && !lbId){ if(!document.getElementById('memo').hidden) closeMemo(); else closeGi(); } if(!lbId) return; if(e.key === 'Escape') closeLb();
   else if(e.key === 'ArrowRight' || e.key === 'ArrowLeft') lbs.scrollBy({left:(e.key === 'ArrowRight' ? 1 : -1) * lbs.clientWidth, behavior:'smooth'}); });
 ZH.lordstowt = ZH.lordstow; if(PH.lordstow) PH.lordstowt = PH.lordstow.map(x => [x[0], x[1], x[2], 2]);
-// bookings: key, name, by when, detail, link; ticks kept on this phone
+// bookings: key, name, by when, detail, link; ticks shared through 함께 보기
 const BOOK = [['esim', 'eSIM', '출국 전', '', ''], ['peak', '피크트램 왕복', '17일', '', ''],
   ['cruise', '윙안 호 유람선', '17일 오후', '19:10 침사추이 출발 · 1인 11,461원', 'https://kr.trip.com/things-to-do/detail/54091322/'],
   ['ferry', '코타이 워터젯 셩완 → 타이파', '19일 배 · 18일까지 예약', '스탠다드 · 최소 2장 · 1인 26,437원', 'https://kr.trip.com/things-to-do/detail/78383314/'],
@@ -2292,7 +2297,7 @@ function gval(v){ const dd = h('dd'), parts = won(v).split(' · '); if(parts.len
 { const g = document.getElementById('guide');
   { const d = h('div','gd'), ul = h('ul','pack bkp'); d.dataset.t = '🎫 예약'; const st = bookSt();
     for(const [k, n, when, det, u] of BOOK){ const li = h('li'), lb = h('label'), cb = h('input'); cb.type = 'checkbox'; cb.checked = !!st[k];
-      cb.addEventListener('change', () => { st[k] = cb.checked; try{ localStorage.setItem('hk-book', JSON.stringify(st)); }catch(e){} render(); });
+      cb.dataset.k = k; cb.addEventListener('change', () => { const o = bookSt(); o[k] = cb.checked; try{ localStorage.setItem('hk-book', JSON.stringify(o)); }catch(e){} render(); });
       lb.append(cb, ' ' + n); li.append(lb); if(u) li.append(bookA(u)); li.append(h('small', null, [when, det].filter(Boolean).join(' · '))); ul.append(li); }
     d.append(ul); g.append(d); }
   for(const [t, rows] of GUIDE){ const d = h('div','gd'), dl = h('dl'); d.dataset.t = t;
@@ -2308,6 +2313,7 @@ function gval(v){ const dd = h('dd'), parts = won(v).split(' · '); if(parts.len
     for(const [k, v, tel] of [['경찰·구급·소방', '999', '999'], ['주홍콩 총영사관', '2529 4141 · 애드미럴티 Far East Finance Centre 5층', '+85225294141'], ['영사콜센터', '+82-2-3210-0404 · 24시간', '+82232100404']]){
       const dd = h('dd'), a = h('a', null, v); a.href = 'tel:' + tel; dd.append(a); dl.append(h('dt', null, k), dd); }
     d.append(dl); g.append(d); }
+  { const d = h('div','gd'); d.dataset.t = '🔗 함께 보기'; d.id = 'sybox'; g.append(d); }
   // offline map: tiles to z14 (the style draws closer zooms from them), latin glyphs (Hangul and Chinese are drawn with the phone's own font), icons
   { const d = h('div','gd'), box = h('div','offl'), b = h('button', null, '📥 지도 저장'), st = h('small'); d.dataset.t = '📶 오프라인 지도'; b.type = 'button';
     const show = () => { let v = null; try{ v = JSON.parse(localStorage.getItem('hk-off')); }catch(e){} st.textContent = v ? `저장됨 ${v.d} · ${v.n}개` + (v.f ? ` · 실패 ${v.f}` : '') : '저장 안 됨'; };
@@ -2345,18 +2351,19 @@ function gval(v){ const dd = h('dd'), parts = won(v).split(' · '); if(parts.len
     inp.addEventListener('input', draw); box.append('HK$ ', inp, ' ', out, note); d.append(box); g.append(d); draw();
     d.onshow = () => { if(d.dataset.got) return; d.dataset.got = 1;
       getJ('https://api.frankfurter.dev/v1/latest?base=HKD&symbols=KRW').then(j => { if(j && j.rates && j.rates.KRW > 50 && typeof j.date === 'string'){ fx = {r:j.rates.KRW, d:j.date}; try{ localStorage.setItem('hk-fx', JSON.stringify(fx)); }catch(e){} draw(); } }).catch(() => {}); }; }
-  // spending log: stays on this phone
+  // spending log, shared through 함께 보기
   { const d = h('div','gd'), box = h('div','fx'), amt = h('input'), what = h('input'), add = h('button','chip','추가'), ul = h('ul','spend'), sum = h('b','spsum'); d.dataset.t = '💸 지출';
-    let rows = []; try{ const v = JSON.parse(localStorage.getItem('hk-spend')); if(Array.isArray(v)) rows = v.filter(x => x && typeof x.a === 'number' && typeof x.t === 'string' && typeof x.d === 'string'); }catch(e){}
+    const rd = () => { try{ const v = JSON.parse(localStorage.getItem('hk-spend')); if(Array.isArray(v)) return v.filter(x => x && typeof x.a === 'number' && typeof x.t === 'string' && typeof x.d === 'string'); }catch(e){} return []; };
+    let rows = rd();
     amt.type = 'number'; amt.inputMode = 'decimal'; amt.min = 0; amt.placeholder = 'HK$'; amt.setAttribute('aria-label', '금액 홍콩달러'); what.type = 'text'; what.placeholder = '내용'; what.maxLength = 30; what.setAttribute('aria-label', '내용'); add.type = 'button';
     const rate = fxRate;
     const keep = () => { try{ localStorage.setItem('hk-spend', JSON.stringify(rows)); }catch(e){} };
-    const draw = () => { ul.textContent = ''; let tot = 0; rows.forEach((x, i) => { tot += x.a; const li = h('li'), del = h('button', null, '✕'); del.type = 'button'; del.setAttribute('aria-label', x.t + ' 삭제');
+    const draw = () => { rows = rd(); ul.textContent = ''; let tot = 0; rows.forEach((x, i) => { tot += x.a; const li = h('li'), del = h('button', null, '✕'); del.type = 'button'; del.setAttribute('aria-label', x.t + ' 삭제');
         del.addEventListener('click', () => { rows.splice(i, 1); keep(); draw(); }); li.append(h('span','t', x.d), h('span', null, x.t), h('b', null, 'HK$' + x.a.toLocaleString('ko-KR')), del); ul.append(li); });
       sum.textContent = rows.length ? `합계 HK$${tot.toLocaleString('ko-KR')} ≈ ${Math.round(tot * rate()).toLocaleString('ko-KR')}원` : ''; };
     const push = () => { const v = +amt.value; if(!(v > 0)) return amt.focus(); rows.push({d:hkIso().slice(5).replace('-', '/'), t:what.value.trim() || '지출', a:Math.round(v * 10) / 10}); amt.value = what.value = ''; keep(); draw(); amt.focus(); };
     add.addEventListener('click', push); for(const i of [amt, what]) i.addEventListener('keydown', e => { if(e.key === 'Enter') push(); });
-    box.append(amt, what, add); d.append(box, ul, sum); g.append(d); draw(); d.onshow = draw; }
+    box.append(amt, what, add); d.append(box, ul, sum); g.append(d); draw(); d.onshow = draw; spendDraw = draw; }
   const gi = document.getElementById('gi'), gib = document.getElementById('gib'), tabs = document.getElementById('gitabs'), zi = document.getElementById('zinfo'), ft = document.getElementById('foot');
   ft.dataset.t = '📎 표시·출처'; const secs = [...g.children, ft]; g.textContent = ''; let cur = 0;
   const show = i => { cur = i; secs.forEach((d, k) => { d.hidden = k !== i; }); [...tabs.children].forEach((b, k) => b.setAttribute('aria-pressed', k === i)); gib.scrollTop = 0;
@@ -2371,6 +2378,7 @@ function gval(v){ const dd = h('dd'), parts = won(v).split(' · '); if(parts.len
   let saved = ''; try{ saved = localStorage.getItem('hk-pass') || ''; }catch(e){}
   let plan = null, ctx = null, mode = 'ask', key = 'ask|'; const stored = () => { try{ return localStorage.getItem('hk-memo') || ''; }catch(e){ return ''; } };
   txt.addEventListener('input', () => { if(mode === 'memo') try{ localStorage.setItem('hk-memo', txt.value.slice(0, 4000)); }catch(e){} });
+  memoPull = () => { if(mode === 'memo' && document.activeElement !== txt) txt.value = stored(); };
   txt.addEventListener('keydown', e => { if(mode === 'ask' && e.key === 'Enter' && !e.shiftKey && !e.isComposing){ e.preventDefault(); ask.click(); } });
   const cx = document.getElementById('mctx'), mq = document.getElementById('mq');
   const QS = {eat:['오늘 열어?', '지금 웨이팅', '추천 메뉴', '가는 길 막혀?'], see:['오늘 열어?', '지금 붐벼?', '볼거리·꿀팁', '가는 길 막혀?'], any:['지금 근처 맛집', '비 오면 어디?', '오늘 일정 무리 없어?', '지금 차 막혀?']};
@@ -2571,6 +2579,82 @@ document.getElementById('q').addEventListener('input', () => {
 });
 window.addEventListener('resize', () => { if(mm) setSheet(shState); map.invalidateSize(); });
 if(window.ResizeObserver) new ResizeObserver(() => { if(!mm) document.documentElement.style.setProperty('--mbh', document.querySelector('.mapbox').offsetHeight + 'px'); }).observe(document.querySelector('.mapbox'));
+// ---- 함께 보기: plan, ticks, bookings, spending and memo shared by the two phones (Firebase Realtime Database over REST; the code in the link is the only key)
+var memoPull, spendDraw;
+const SY = {plan:PKEY, done:'hk-done', book:'hk-book', spend:'hk-spend', memo:'hk-memo'}, FBU = 'https://hktrip-ae1ae-default-rtdb.asia-southeast1.firebasedatabase.app/t/';
+const lsg = k => { try{ return localStorage.getItem(k); }catch(e){ return null; } }, lss = (k, v) => { try{ if(v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); }catch(e){} };
+// the record for the 기록 button: key names, sizes, timings and statuses only, never the stored values or the code
+const syLog = [], sylog = (ev, o) => { syLog.push(Object.assign({t:new Date().toTimeString().slice(0, 8), ev}, o)); if(syLog.length > 300) syLog.shift(); };
+let syCode = lsg('hk-sync') || '', syEs = null, syState = '', syReady = false, syBase = {}, syAt = {}, syBusy = {}, syWait = {};
+try{ syBase = JSON.parse(lsg('hk-sync-b')) || {}; }catch(e){ syBase = {}; }
+const syKeep = () => lss('hk-sync-b', JSON.stringify(syBase));
+const syDev = lsg('hk-dev') || (() => { const v = Math.random().toString(36).slice(2, 10); lss('hk-dev', v); return v; })();
+{ const m = /[#&]s=([a-z0-9]{20,40})/.exec(location.hash);
+  if(m){ if(m[1] !== syCode){ syCode = m[1]; lss('hk-sync', syCode); syBase = {}; syKeep(); sylog('join', {}); } history.replaceState(null, '', location.pathname + location.search); } }
+const isObj = x => !!x && typeof x === 'object' && !Array.isArray(x);
+// three-way merge: what this phone changed since the last sync wins field by field (list items by their JSON), the rest comes from the other phone; null for plain text
+function syMerge(base, mine, theirs){ let b, m, t; try{ b = JSON.parse(base); }catch(e){} try{ m = JSON.parse(mine); }catch(e){} try{ t = JSON.parse(theirs); }catch(e){}
+  if(isObj(m) && isObj(t)){ const bo = isObj(b) ? b : {}, out = Object.assign({}, t);
+    for(const k of new Set([...Object.keys(m), ...Object.keys(bo)])) if(JSON.stringify(m[k]) !== JSON.stringify(bo[k])){ if(k in m) out[k] = m[k]; else delete out[k]; }
+    return JSON.stringify(out); }
+  if(Array.isArray(m) && Array.isArray(t)){ const js = x => JSON.stringify(x), bs = new Set((Array.isArray(b) ? b : []).map(js)), ms = new Set(m.map(js)), ts = new Set(t.map(js));
+    const out = t.filter(x => !(bs.has(js(x)) && !ms.has(js(x)))); for(const x of m) if(!bs.has(js(x)) && !ts.has(js(x))) out.push(x); return JSON.stringify(out); }
+  return null; }
+function syApply(name){ try{
+    if(name === 'done'){ try{ done = JSON.parse(lsg('hk-done') || '{}') || {}; }catch(e){ done = {}; } }
+    if(name === 'plan') applyPlan();
+    if(name === 'book') for(const cb of document.querySelectorAll('.bkp input')) cb.checked = !!bookSt()[cb.dataset.k];
+    if(name === 'spend' && spendDraw) spendDraw();
+    if(name === 'memo' && memoPull) memoPull();
+    if(name !== 'memo' && name !== 'spend') render(); }
+  catch(err){ sylog('apply-fail', {k:name, err:String(err).slice(0, 80)}); } }
+function syRecv(name, e){ const k = SY[name]; if(!k || !e || typeof e.v !== 'string') return;
+  if(name === 'plan' && editMode){ syWait.plan = e; return; } // not under the hands of someone editing the day
+  const theirs = e.v, mine = lsg(k), base = syBase[name];
+  if(mine === theirs){ syBase[name] = theirs; syKeep(); return; }
+  let out = theirs;
+  if(mine != null && mine !== base){ const mg = syMerge(base, mine, theirs); out = mg != null ? mg : (syAt[name] || 0) > (e.t || 0) ? mine : theirs; }
+  syBase[name] = theirs; syKeep(); // a merged copy differs from it, so the next tick sends that up
+  if(out !== mine){ lss(k, out); syApply(name); }
+  sylog('recv', {k:name, len:theirs.length, merged:out !== theirs}); }
+function syOpen(){ if(syEs){ syEs.close(); syEs = null; } syReady = false; syState = '';
+  if(!syCode || !window.EventSource){ syShow(); return; }
+  const es = syEs = new EventSource(FBU + syCode + '.json'), t0 = Date.now(); sylog('open', {online:navigator.onLine});
+  const on = ev => { let d; try{ d = JSON.parse(ev.data); }catch(e){ return; } if(!d) return; const p = String(d.path || '/').split('/').filter(Boolean);
+    if(!p.length){ const all = d.data || {}; for(const name of Object.keys(SY)) if(all[name]) syRecv(name, all[name]);
+      if(ev.type === 'put' && !syReady){ syReady = true; sylog('ready', {ms:Date.now() - t0, keys:Object.keys(all).length}); } }
+    else if(SY[p[0]]){ if(p.length === 1) syRecv(p[0], d.data); else fetch(FBU + syCode + '/' + p[0] + '.json').then(r => r.json()).then(x => syRecv(p[0], x)).catch(() => {}); }
+    syState = 'on'; syShow(); };
+  es.addEventListener('put', on); es.addEventListener('patch', on);
+  es.addEventListener('cancel', () => { sylog('cancel', {}); syState = 'deny'; syShow(); es.close(); });
+  es.onerror = () => { if(syState !== 'off') sylog('error', {online:navigator.onLine, rs:es.readyState}); syState = 'off'; syShow(); }; }
+async function syTick(){ if(!syCode) return;
+  if(syWait.plan && !editMode){ const e = syWait.plan; delete syWait.plan; syRecv('plan', e); }
+  if(!syReady) return; // a phone joining merges with what is there before sending anything
+  for(const [name, k] of Object.entries(SY)){ const cur = lsg(k); if(cur == null || cur === syBase[name] || syBusy[name]) continue;
+    if(!syAt[name]) syAt[name] = Date.now();
+    syBusy[name] = true; const t0 = Date.now();
+    try{ const r = await fetch(FBU + syCode + '/' + name + '.json', {method:'PUT', body:JSON.stringify({v:cur, t:Date.now(), by:syDev})});
+      sylog('push', {k:name, status:r.status, ms:Date.now() - t0, len:cur.length});
+      if(r.ok){ syBase[name] = cur; syKeep(); delete syAt[name]; } }
+    catch(e){ sylog('push-fail', {k:name, err:String(e && e.message || e).slice(0, 60)}); }
+    finally{ syBusy[name] = false; } }
+  syShow(); }
+function syShow(){ const d = document.getElementById('sybox'); if(!d) return; d.textContent = ''; const row = h('div', 'offl');
+  const btn = (t, f, r) => { const b = h('button', null, t); b.type = 'button'; b.addEventListener('click', f); (r || row).append(b); return b; };
+  if(!syCode){ btn('🔗 코드 만들기', () => { syCode = Array.from(crypto.getRandomValues(new Uint8Array(18)), x => (x % 36).toString(36)).join('') + Date.now().toString(36).slice(-4);
+      lss('hk-sync', syCode); syBase = {}; syKeep(); sylog('new', {}); syOpen(); }); row.append(h('small', null, '연결 안 됨')); d.append(row); return; }
+  const wait = Object.entries(SY).filter(([n, k]) => { const c = lsg(k); return c != null && c !== syBase[n]; }).length;
+  btn('링크 복사', async () => { const u = location.origin + location.pathname + '#s=' + syCode; try{ await navigator.clipboard.writeText(u); toast('링크 복사됨'); }catch(e){ prompt('링크', u); } });
+  row.append(h('small', null, syState === 'on' ? (wait ? `보내는 중 ${wait}` : '연결됨') : syState === 'deny' ? '연결 거부' : syState === 'off' ? '오프라인' + (wait ? ` · 대기 ${wait}` : '') : '연결 중'));
+  const r2 = h('div', 'offl');
+  btn('기록', async () => { try{ await navigator.clipboard.writeText(syLog.map(x => JSON.stringify(x)).join('\n')); toast('기록 복사됨'); }catch(e){ toast('복사 실패'); } }, r2);
+  btn('연결 끊기', () => { if(!confirm('이 폰 연결 끊기')) return; syCode = ''; lss('hk-sync', null); syBase = {}; syKeep(); sylog('leave', {}); syOpen(); }, r2);
+  d.append(row, r2); }
+setInterval(syTick, 2000);
+document.addEventListener('visibilitychange', () => { if(document.visibilityState !== 'visible' || !syCode) return; if(!syEs || syEs.readyState === 2) syOpen(); syTick(); });
+window.addEventListener('online', () => { if(syCode) syOpen(); });
+syOpen();
 if('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js', {updateViaCache:'none'}).catch(() => {});
 window.addEventListener('hashchange', () => { if(/^#plan=/.test(location.hash)) importPlan().then(() => setDay('day1', false)); else setDay(location.hash.slice(1), false); });
 const today = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10), todayId = (Object.entries(DATES).find(([, v]) => v === today) || [])[0]; // Hong Kong date

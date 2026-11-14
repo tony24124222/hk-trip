@@ -990,7 +990,7 @@ function legOpts(a, b, all){ const d = dist(a.lat,a.lng,b.lat,b.lng);
   const out = [], cross = !inMacau(a) && onIsland(a) !== onIsland(b), m = d > 600 ? mtrRoute(a, b) : null;
   if(d < 5000) out.push({mode:'walk', min:Math.max(1, Math.round(WALKM(d))), d, cost:0});
   if(m){ const f = fareOf(m); out.push({mode:'mtr', min:Math.round(m.min), d, m, wk:Math.round(WALKM(m.from.d) + WALKM(m.to.d)), cost:f == null ? null : Math.round(f * 20) / 10}); }
-  if(d > 700 || !out.length) out.push({mode:'taxi', min:taxiMin(d), d, cross, cost:taxiFare(d, cross) + (cross ? 35 : 0)});
+  if(d > (all ? 200 : 700) || !out.length) out.push({mode:'taxi', min:taxiMin(d), d, cross, cost:taxiFare(d, cross) + (cross ? 35 : 0)});
   if(cross){ const k = onIsland(a) ? b : a, i = onIsland(a) ? a : b, dk = dist(k.lat, k.lng, SFP[0].lat, SFP[0].lng), di = dist(i.lat, i.lng, SFP[1].lat, SFP[1].lng);
     if(dk < 1500 && di < 1500) out.push({mode:'sf', min:Math.round(WALKM(dk) + WALKM(di)) + 16, wk:Math.round(WALKM(dk) + WALKM(di)), d, cost:10, fromK:k === a, wa:Math.round(WALKM(k === a ? dk : di)), wb:Math.round(WALKM(k === a ? di : dk))}); }
   if(all && d > 500) out.push(...busOpts(a, b));

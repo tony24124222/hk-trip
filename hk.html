@@ -2193,7 +2193,7 @@ function stopPop(s){ const box = h('div','pop'), info = schedule(day).out.get(s)
   { const q = h('button', null, '💬 질문'); q.type = 'button'; q.addEventListener('click', () => { map.closePopup(); askAbout(s); }); row.append(q); }
   box.append(row); return box; }
 function select(s, scroll){ sel = s; noSheets(); if(mm && !wide() && shState === 'full') setSheet('half'); if(!(scroll && !mm)) focus(s); render();
-  if(scroll && (!mm || !wide()) && s.lat) L.popup(Object.assign(popOpt(), {offset:[0, -44]})).setLatLng([s.lat, s.lng]).setContent(stopPop(s)).openOn(map);
+  if(scroll && mm !== wide() && s.lat) L.popup(Object.assign(popOpt(), {offset:[0, -44]})).setLatLng([s.lat, s.lng]).setContent(stopPop(s)).openOn(map);
   if(scroll){ const li = document.getElementById('stop-'+s.id); if(li) li.scrollIntoView({block:'nearest', behavior:'smooth'}); } }
 function setDay(id, push){ const was = day; day = DAYS.find(d=>d.id===id) || DAYS[0]; sel = null; recOpen = null; map.closePopup(); if(routeCur && was !== day) clearRoute();
   { const t = document.getElementById('toast'); if(t && t.dataset.undo) t.hidden = true; } // its undo would act on the day being left

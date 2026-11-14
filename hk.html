@@ -2264,7 +2264,7 @@ ZH.lordstowt = ZH.lordstow; if(PH.lordstow) PH.lordstowt = PH.lordstow.map(x => 
 // bookings: key, name, by when, detail, link; ticks kept on this phone
 const BOOK = [['esim', 'eSIM', '출국 전', '', ''], ['peak', '피크트램 왕복', '17일', '', ''],
   ['cruise', '윙안 호 유람선', '17일 오후', '19:10 침사추이 출발 · 1인 11,461원', 'https://kr.trip.com/things-to-do/detail/54091322/'],
-  ['ferry', '코타이 워터젯 셩완 → 타이파', '18일까지', '스탠다드 · 최소 2장 · 1인 26,437원', 'https://kr.trip.com/things-to-do/detail/78383314/'],
+  ['ferry', '코타이 워터젯 셩완 → 타이파', '19일 배 · 18일까지 예약', '스탠다드 · 최소 2장 · 1인 26,437원', 'https://kr.trip.com/things-to-do/detail/78383314/'],
   ['ferry2', '돌아오는 페리 타이파 → 셩완', '나오기 전날까지', '시내로 돌아올 때만', 'https://kr.trip.com/things-to-do/detail/78383314/']];
 const bookSt = () => { let st = null; try{ st = JSON.parse(localStorage.getItem('hk-book')); }catch(e){} return st || {esim:true, peak:true}; };
 const bookA = u => { const a = h('a', 'bk', '예약 ↗'); a.href = u; a.target = '_blank'; a.rel = 'noopener'; return a; };

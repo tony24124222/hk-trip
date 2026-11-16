@@ -88,7 +88,7 @@ button,a,summary,label,select{touch-action:manipulation;-webkit-tap-highlight-co
 .navdir i{display:block;width:0;height:0;border:6px solid transparent;border-top:0;border-bottom:10px solid #fff;filter:drop-shadow(0 0 1px #0b3d91)}
 .navend{white-space:nowrap;font:400 12px var(--display);color:#fff;background:#1a73e8;border:2px solid #fff;border-radius:999px;padding:2px 8px;box-shadow:0 2px 6px rgba(0,0,0,.35);transform:translate(-50%,-100%);display:inline-block}
 html.naving .zoom,html.naving .lay,html.naving .catp,html.naving .abbar{margin-top:56px}
-html.naving .routebox{display:none}
+html.naving .routebox,html.running .routebox{display:none}
 .abbar span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .abbar button{flex:0 0 auto;width:26px;height:26px;border:0;border-radius:50%;background:rgba(255,255,255,.25);color:#fff;font-size:13px}
 .zoom,.lay{position:absolute;top:var(--ctop);display:flex;flex-direction:column;gap:6px;z-index:500;transition:opacity .15s}
@@ -1220,7 +1220,7 @@ function clearRoute(){ routeCur = null; pendingRoute = null; stopRun(); redrawRo
 let runRaf = 0, runT = 0; const runLayer = L.layerGroup().addTo(map);
 const RIDE = {mtr:['ride-mtr.png', 57], taxi:['ride-taxi.png', 71], bus:['ride-bus.png', 48], tram:['ride-tram.png', 42], ferry:['ride-ferry.png', 56]};
 let runTok = 0;
-function stopRun(){ runTok++; cancelAnimationFrame(runRaf); clearTimeout(runT); runRaf = runT = 0; runLayer.clearLayers(); }
+function stopRun(){ runTok++; cancelAnimationFrame(runRaf); clearTimeout(runT); runRaf = runT = 0; runLayer.clearLayers(); document.documentElement.classList.remove('running'); }
 function runRoute(shapes, leg){ stopRun(); if(matchMedia('(prefers-reduced-motion: reduce)').matches) return; const tok = runTok;
   for(const k in RIDE) new Image().src = RIDE[k][0];
   // legShapes lists a train trip as walk, rides, exit links, walk; the run goes in travel order
@@ -1234,6 +1234,8 @@ function runRoute(shapes, leg){ stopRun(); if(matchMedia('(prefers-reduced-motio
     g.ms = g.kind === 'walk' ? Math.min(4500, Math.max(1200, 600 + g.len * 4)) : Math.min(5000, Math.max(2000, 1200 + g.len * .4)); }
   const run = segs.filter(g => g.len > 5); if(!run.length || run.reduce((a, g) => a + g.len, 0) < 30) return;
   const sc = Math.min(1, 18000 / run.reduce((a, g) => a + g.ms, 0)); for(const g of run) g.ms *= sc;
+  // the directions box covers the map on a phone; it steps aside while the couple runs
+  document.documentElement.classList.add('running');
   const trail = L.polyline([run[0].pts[0]], {color:'#ff6f91', weight:7, opacity:.95, interactive:false, pane:'route'}).addTo(runLayer), done = [run[0].pts[0]],
     mk = L.marker(run[0].pts[0], {icon:L.divIcon({className:'', html:'<div class="run"><div class="rk"></div><b class="rb" hidden></b></div>', iconSize:[84,84], iconAnchor:[42,58]}), interactive:false, zIndexOffset:3000}).addTo(runLayer),
     el = mk.getElement().firstChild, body = el.firstChild, bub = el.lastChild;

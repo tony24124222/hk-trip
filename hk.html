@@ -330,6 +330,7 @@ html.mm .popin{max-height:40vh}
 .gpc i{width:4px;background:var(--muted);opacity:.35;border-radius:1px 1px 0 0}
 .gpc i.on{opacity:1}
 .gpc i.on{background:var(--accent)}
+.gpc i.lv{opacity:1;background:#ff6f91}
 .kv .gpr{margin-top:0}
 .gpr{flex-wrap:wrap;row-gap:2px}
 .gpl{color:var(--accent);font-weight:600;flex-basis:100%}
@@ -1706,8 +1707,8 @@ function gpHours(g, dw){ const x = g && g[2] ? g[2].split('|') : []; return x.le
 const gpWord = v => v >= 9 ? '매우 붐빔' : v >= 7 ? '붐빔' : v >= 4 ? '보통' : '한산';
 // bars for one day, hours hr[0]..hr[1] lit; no hr names the busiest hour instead
 function gpRow(g, dw, hr){ if(!g) return null; const w = h('div', 'gpr'), t = [], ds = g[3] ? g[3].split(',')[dw] : null;
-  if(ds){ const h0 = parseInt(ds[0], 36), c = h('span', 'gpc'); let top = -1, tv = 0, at = 0;
-    [...ds.slice(1)].forEach((ch, i) => { const v = parseInt(ch, 36), hh = (h0 + i) % 24, b = h('i'); b.style.height = (v ? 3 + v * 1.4 : 1) + 'px';
+  if(ds){ const h0 = parseInt(ds[0], 36), c = h('span', 'gpc'); c.dataset.dw = dw; let top = -1, tv = 0, at = 0;
+    [...ds.slice(1)].forEach((ch, i) => { const v = parseInt(ch, 36), hh = (h0 + i) % 24, b = h('i'); b.dataset.h = hh; b.style.height = (v ? 3 + v * 1.4 : 1) + 'px';
       if(hr && (hr[0] <= hr[1] ? hh >= hr[0] && hh <= hr[1] : hh >= hr[0] || hh <= hr[1])){ b.className = 'on'; at = Math.max(at, v); } if(v > tv){ tv = v; top = hh; } c.append(b); });
     w.append(c); if(hr && at) t.push((hr[0] === hr[1] ? hr[0] : hr[0] + '–' + hr[1]) + '시 ' + gpWord(at)); else if(!hr && top >= 0) t.push(top + '시 최고'); }
   else if(ds === '') t.push('휴무');
@@ -1723,7 +1724,11 @@ function gmUrl(o){ const lat = o.lat, lng = o.lng, gid = GMID[o.rec || o.id]; if
 const LIVE = {};
 function liveTag(j){ const v = j.v, d = v && v[1] != null ? v[0] - v[1] : 0;
   const t = h('b', 'gpl', !v ? '실시간 없음' : '지금 ' + v[0] + '%' + (v[1] == null ? '' : ' · ' + (d >= 15 ? '평소보다 붐빔' : d <= -15 ? '평소보다 한산' : '평소 수준')));
-  t.title = new Date(j.at).toTimeString().slice(0, 5) + ' 기준' + (v && v[1] != null ? ' · 평소 ' + v[1] + '%' : ''); return t; }
+  t.title = new Date(j.at).toTimeString().slice(0, 5) + ' 기준' + (v && v[1] != null ? ' · 평소 ' + v[1] + '%' : '');
+  // the reading also goes into this hour's bar, when the bars shown are today's
+  if(v) requestAnimationFrame(() => { const n = hkNow(), c = t.parentNode && t.parentNode.querySelector('.gpc'); if(!c || +c.dataset.dw !== n.getUTCDay()) return;
+    const b = c.querySelector('i[data-h="' + n.getUTCHours() + '"]'); if(b){ b.className = 'lv'; b.style.height = Math.max(3, 3 + v[0] * .14) + 'px'; } });
+  return t; }
 function busyBtn(o){ const k = o.rec || o.id, u = gmUrl(o); if(!/^https:\/\/(maps\.google\.com\/\?cid=\d+|www\.google\.com\/maps\/search\/)/.test(u)) return null;
   if(LIVE[k] && Date.now() - LIVE[k].at < 15 * 60e3) return liveTag(LIVE[k]);
   const b = h('button', 'gpn', '지금'); b.type = 'button'; b.addEventListener('click', e => { e.stopPropagation(); busyNow(k, u, b); }); return b; }

@@ -690,7 +690,7 @@ html.mm .dayhead h2{display:none}
 const HOTEL = {name:'호텔 아이콘', sub:'Hotel ICON', lat:22.3007586, lng:114.1796973}, MHOTEL = {name:'윈 팰리스', sub:'Wynn Palace', lat:22.148099, lng:113.571403};
 const home = () => day.id === 'macau' ? MHOTEL : HOTEL, isHome = s => [HOTEL, MHOTEL].some(o => s.lat === o.lat && s.lng === o.lng);
 const DAYS = [
- {id:'day1', tab:'✈️ Day 1', date:'16일', title:'도착 → 체크인 → 저녁', stops:[
+ {id:'day1', start0:'18:00', tab:'✈️ Day 1', date:'16일', title:'도착 → 체크인 → 저녁', stops:[
   {id:'apt', far:true, name:'홍콩 국제공항', sub:'Hong Kong International Airport', lat:22.3137, lng:113.9309,
    note:'출국장 세븐일레븐에서 옥토퍼스카드 구매 (adult octopus HK$200)'},
   {id:'sci', leg:'A21 버스 · Hung Hom 방향 · 79~90분', name:'Hong Kong Science Museum 정류장', sub:'하차', lat:22.301088, lng:114.176539,
@@ -851,16 +851,18 @@ const POOL = REC.concat(EVENTS.filter(e => e.lat));
 const poolFor = d => POOL.filter(p => p.c !== 'event' || (DATES[d.id] && p.from <= DATES[d.id] && DATES[d.id] <= p.to));
 const DOW = '일월화수목금토', PKEY = 'hk-plan-v1', ORIG = {};
 const hsh = t => { let x = 5381; for(let i = 0; i < t.length; i++) x = (Math.imul(x, 33) ^ t.charCodeAt(i)) >>> 0; return x.toString(36); };
+// shortcut: a saved 10:00 on a day with its own default is the old global default, not a choice; drop this after the trip
+const dstart = (d, v) => v && !(d.start0 && v === '10:00') ? v : d.start0 || '10:00';
 let plan = {}; try{ plan = JSON.parse(localStorage.getItem(PKEY)||'{}') || {}; }catch(e){ plan = {}; }
 for(const d of DAYS){
   let prev = null;
   for(const s of d.stops){ if(STAY[s.id]!=null) s.stay = STAY[s.id]; if(BEST[s.id]) s.best = BEST[s.id]; if(LEGMIN[s.id]) s.legMin = LEGMIN[s.id];
     if(s.leg && prev) s.legPrev = prev.id; if(s.kind!=='alt' && s.kind!=='plain') prev = s; }
   ORIG[d.id] = JSON.stringify(d.stops);
-  const p = plan[d.id] || {}; d.start = p.start || '10:00'; if(Array.isArray(p.stops)){ d.stops = p.stops; d.edited = true; d.base = p.base || hsh(ORIG[d.id]); d.newer = d.base !== hsh(ORIG[d.id]); }
+  const p = plan[d.id] || {}; d.start = dstart(d, p.start); if(Array.isArray(p.stops)){ d.stops = p.stops; d.edited = true; d.base = p.base || hsh(ORIG[d.id]); d.newer = d.base !== hsh(ORIG[d.id]); }
 }
 function applyPlan(){ let p = {}; try{ p = JSON.parse(localStorage.getItem(PKEY) || '{}') || {}; }catch(e){}
-  for(const d of DAYS){ const q = p[d.id] || {}; d.start = q.start || '10:00';
+  for(const d of DAYS){ const q = p[d.id] || {}; d.start = dstart(d, q.start);
     if(Array.isArray(q.stops)){ d.stops = q.stops; d.edited = true; d.base = q.base || hsh(ORIG[d.id]); d.newer = d.base !== hsh(ORIG[d.id]); }
     else if(d.edited){ d.stops = JSON.parse(ORIG[d.id]); d.edited = false; d.base = undefined; d.newer = false; } }
   sel = null; }

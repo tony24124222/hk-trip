@@ -2620,7 +2620,7 @@ document.getElementById('routeclr').addEventListener('click', () => { clearRoute
 document.getElementById('ztoilet').addEventListener('click', toggleToilet);
 document.getElementById('bshare').addEventListener('click', sharePlan);
 map.on('moveend', () => { if(showToilet && !document.getElementById('mapwrap').classList.contains('popon')) drawToilets(); });
-map.on('click', () => { if(mm && sel && shState === 'peek'){ sel = null; render(); } });
+map.on('click', () => { if(mm && !wide() && shState !== 'peek'){ setSheet('peek'); return; } if(mm && sel && shState === 'peek'){ sel = null; render(); } });
 document.getElementById('zrt').addEventListener('click', () => { const c = me || (map._loaded ? viewCenter() : HOTEL); openRt('_here', c.lat, c.lng, document.getElementById('herert')); });
 document.getElementById('zfit').addEventListener('click', () => { sel = null; recOpen = null; map.closePopup(); fit(); render(); });
 document.getElementById('reset').addEventListener('click', () => { for(const s of day.stops) delete done[s.id]; save(); render(); });

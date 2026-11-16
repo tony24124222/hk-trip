@@ -2615,7 +2615,7 @@ function gval(v){ const dd = h('dd'), parts = won(v).split(' · '); if(parts.len
     try{ const r = await fetch(MEMO_URL, {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({pass:pw, memo:memo.slice(0, 4000), ...extra})});
       const j = await r.json().catch(() => ({}));
       if(r.status === 401){ saved = ''; try{ localStorage.removeItem('hk-pass'); }catch(e){} pass.hidden = false; pass.value = ''; pass.focus(); msg.textContent = '암호 틀림'; return null; }
-      if(!r.ok){ msg.textContent = ({cap:'오늘 사용량 끝', busy:'잠시 후 다시', key:'키 오류'})[j.error] || '실패'; return null; }
+      if(!r.ok){ msg.textContent = ({cap:'오늘 사용량 끝', busy:'잠시 후 다시', key:'키 오류'})[j.error] || ['실패', r.status, j.error, j.status].filter(Boolean).join(' · '); return null; }
       if(!saved){ saved = pw; pass.hidden = true; try{ localStorage.setItem('hk-pass', pw); }catch(e){} }
       // list-price running total from the worker; US$ to won through the HK$ peg (7.8)
       if(j.used && j.used.day && j.used.all){ const w = v => (Math.round(v * fxRate() * 7.8 / 10) * 10).toLocaleString('ko-KR'); document.getElementById('muse').textContent = `오늘 ${j.used.day.n}회 약 ${w(j.used.day.usd)}원 · 누적 ${j.used.all.n}회 약 ${w(j.used.all.usd)}원`; }
@@ -2631,7 +2631,7 @@ function gval(v){ const dd = h('dd'), parts = won(v).split(' · '); if(parts.len
         if(stops.length > 1 && startOf(d, stops.map(x => x[0])) === HOTEL && stops[0][0].lat === MHOTEL.lat && stops[0][0].lng === MHOTEL.lng && stops.slice(1).some(x => x[0].lat === MHOTEL.lat && x[0].lng === MHOTEL.lng)) stops[0][0] = hotelStop(HOTEL);
         plan.push({day:b.day, start:b.start, stops}); }
       msg.textContent = j.unclear || ''; show();
-    }catch(e){ msg.textContent = '실패'; } finally{ idle(busy); } });
+    }catch(e){ msg.textContent = '실패 · ' + String(e && e.message || e).slice(0, 60); } finally{ idle(busy); } });
   // a question about the trip: the answer knows the plan, the place list and where they stand
   const planText = () => { const near = me && nearHK(me) ? REC.map(p => [dist(me.lat, me.lng, p.lat, p.lng), p]).sort((x, y) => x[0] - y[0])[0] : null;
     return (DAYS.map(d => { const rs = routeStops(d), sch = schedule(d, rs); return `${d.id} ${DATES[d.id] || ''}: ` + rs.map(x => hm(sch.out.get(x).arr) + ' ' + x.name).join(' → '); }).join('\n')
@@ -2648,7 +2648,7 @@ function gval(v){ const dd = h('dd'), parts = won(v).split(' · '); if(parts.len
       if(recs.length){ const row = h('div', 'mact'); for(const p of recs){ const b = h('button', 'chip', '＋ ' + shortName(p.n)); b.type = 'button'; b.disabled = day.stops.some(x => x.rec === p.id);
           b.addEventListener('click', () => { closeMemo(); addPlace(p); }); row.append(b); } card.append(row); }
       res.append(h('div', 'mqq', q), card); txt.value = ''; card.scrollIntoView({block:'nearest', behavior:'smooth'});
-    }catch(e){ msg.textContent = '실패'; } finally{ idle(busy); } });
+    }catch(e){ msg.textContent = '실패 · ' + String(e && e.message || e).slice(0, 60); } finally{ idle(busy); } });
 }
 document.getElementById('gps').addEventListener('click', toggleGps);
 document.getElementById('routenav').addEventListener('click', navStart);

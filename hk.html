@@ -526,6 +526,7 @@ html.mm .pbody{transition:opacity .22s ease-out}
 .v3d{position:fixed;inset:0;z-index:3000;background:var(--bg);animation:popup .32s cubic-bezier(.32,.72,0,1)}
 .v3d[hidden]{display:none}
 #v3dmap{position:absolute;inset:0}
+#v3dmap canvas{image-rendering:pixelated}
 #v3dx{position:absolute;top:calc(12px + env(safe-area-inset-top));right:12px;width:44px;height:44px;border-radius:50%;border:2px solid var(--line);background:var(--surface);color:var(--ink);font-size:18px;box-shadow:0 4px 12px rgba(60,30,40,.2)}
 .v3d small{position:absolute;right:8px;bottom:calc(6px + env(safe-area-inset-bottom));font-size:10px;color:var(--muted);background:var(--surface);padding:1px 6px;border-radius:6px;opacity:.85}
 .m3{display:flex;flex-direction:column;align-items:center;font:400 12px var(--display);color:var(--ink);pointer-events:none}
@@ -2198,10 +2199,19 @@ let hcLock = 0;
 let g3 = null;
 function open3d(){ if(!styleJson || !window.maplibregl){ toast('3D 지도 불러오는 중'); return; }
   const st = restyle(JSON.parse(styleJson)), src = (st.layers.find(l => l['source-layer'] === 'building') || {}).source || 'openmaptiles';
+  // game-map look: plain bright ground, blue water, green parks, grey roads, buildings in a few block colours
+  for(const l of st.layers){ const p = l.paint = l.paint || {}, id = l.id;
+    if(l.type === 'background') p['background-color'] = '#e7dfc6';
+    else if(l.type === 'fill' && /water/.test(id)) p['fill-color'] = '#4aa3df';
+    else if(l.type === 'fill' && /park|grass|wood|forest|scrub|landcover|pitch|cemetery/.test(id)){ p['fill-color'] = '#7cc46a'; p['fill-opacity'] = 1; }
+    else if(l.type === 'fill' && /building/.test(id)) p['fill-opacity'] = 0;
+    else if(l.type === 'line' && /water_edge/.test(id)) p['line-color'] = '#2f7fbf';
+    else if(l.type === 'line' && /casing/.test(id)) p['line-color'] = '#55575e';
+    else if(l.type === 'line' && /highway|road|bridge|tunnel|street|path|motorway|trunk|primary|secondary|tertiary|minor|service/.test(id)) p['line-color'] = /path|pedestrian/.test(id) ? '#d8d2bf' : '#777a83'; }
   st.layers.push({id:'b3d', type:'fill-extrusion', source:src, 'source-layer':'building', minzoom:13,
-    paint:{'fill-extrusion-color':PAL.bldg, 'fill-extrusion-height':['coalesce', ['get', 'render_height'], 8], 'fill-extrusion-base':['coalesce', ['get', 'render_min_height'], 0], 'fill-extrusion-opacity':.92, 'fill-extrusion-vertical-gradient':true}});
+    paint:{'fill-extrusion-color':['match', ['%', ['round', ['*', ['coalesce', ['get', 'render_height'], 8], 3]], 7], 0, '#d9c7a7', 1, '#a9c6e0', 2, '#c97b63', 3, '#efe9da', 4, '#9cbf9e', 5, '#d9a865', '#b8b3ac'], 'fill-extrusion-height':['coalesce', ['get', 'render_height'], 8], 'fill-extrusion-base':['coalesce', ['get', 'render_min_height'], 0], 'fill-extrusion-opacity':1, 'fill-extrusion-vertical-gradient':true}});
   document.getElementById('v3d').hidden = false; const nx = nextStop(day), c = sel && sel.lat ? sel : nx && nx.lat && !nx.far ? nx : home();
-  g3 = new maplibregl.Map({container:'v3dmap', style:st, center:[c.lng, c.lat], zoom:Math.max(16, map.getZoom()), pitch:60, bearing:-20, maxPitch:75, attributionControl:false,
+  g3 = new maplibregl.Map({container:'v3dmap', style:st, center:[c.lng, c.lat], zoom:Math.max(16, map.getZoom()), pitch:55, bearing:-45, maxPitch:75, attributionControl:false, pixelRatio:.5, antialias:false,
     localIdeographFontFamily:"'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif"});
   for(const s of day.stops.filter(x => x.lat && !x.far && x.kind !== 'plain')){ const e = h('div', 'm3' + (s.kind === 'alt' ? ' alt' : '')); e.append(h('b', null, label(day, s)), h('span', null, s.name));
     new maplibregl.Marker({element:e, anchor:'bottom'}).setLngLat([s.lng, s.lat]).addTo(g3); }

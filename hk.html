@@ -84,7 +84,7 @@ button,a,summary,label,select{touch-action:manipulation;-webkit-tap-highlight-co
 .nvt{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:1px}
 #navt{font:400 16px/1.25 var(--display);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #navs{font-size:12px;opacity:.92;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.navbar button{flex:0 0 auto;height:30px;min-width:30px;border:0;border-radius:999px;background:rgba(255,255,255,.24);color:#fff;font:400 12px var(--display);padding:0 8px}
+.navbar button{flex:0 0 auto;height:36px;min-width:36px;border:0;border-radius:999px;background:rgba(255,255,255,.24);color:#fff;font:400 12px var(--display);padding:0 8px}
 .navdir i{display:block;width:0;height:0;border:6px solid transparent;border-top:0;border-bottom:10px solid #fff;filter:drop-shadow(0 0 1px #0b3d91)}
 .navend{white-space:nowrap;font:400 12px var(--display);color:#fff;background:#1a73e8;border:2px solid #fff;border-radius:999px;padding:2px 8px;box-shadow:0 2px 6px rgba(0,0,0,.35);transform:translate(-50%,-100%);display:inline-block}
 html.naving .zoom,html.naving .lay,html.naving .catp,html.naving .abbar{margin-top:56px}
@@ -1366,8 +1366,10 @@ function navStart(){ if(!routeCur) return; if(nav) navEnd();
   document.getElementById('navbar').hidden = false; document.documentElement.classList.add('naving');
   navBar(to.name, '위치 찾는 중…'); nlog('start', {fin:!!to.fin, mode:leg.mode, gps:watchId !== null, fix:!!me, compass:meHead != null}); navWake(); stopRun(); map.on('dragstart', navDrag);
   if(me){ startCompass(); navRoute(); } else if(watchId === null) toggleGps(); }
-function navEnd(msg){ if(!nav) return; nlog('end', {msg:msg || ''}); if(nav.wake) nav.wake.release().catch(() => {}); nav = null; navLayer.clearLayers(); map.off('dragstart', navDrag);
-  document.getElementById('navbar').hidden = true; document.documentElement.classList.remove('naving'); if(msg) toast(msg); }
+function navEnd(msg){ document.getElementById('navbar').hidden = true; document.documentElement.classList.remove('naving'); if(!nav) return;
+  const w = nav.wake; nav = null; nlog('end', {msg:msg || ''});
+  // the bar is already gone, so nothing below can leave it stuck on screen
+  try{ if(w) w.release().catch(() => {}); }catch(e){} try{ navLayer.clearLayers(); map.off('dragstart', navDrag); }catch(e){ nlog('end-err', {err:String(e && e.message || e).slice(0, 60)}); } if(msg) toast(msg); }
 async function navRoute(){ const n = nav; if(!n || n.busy || !me) return;
   if(dist(me.lat, me.lng, n.to.lat, n.to.lng) > 30000){ nlog('far', {}); navEnd('너무 멀어서 불가'); return; }
   n.busy = true; n.re = Date.now(); const t0 = Date.now();

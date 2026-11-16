@@ -693,9 +693,7 @@ const DAYS = [
  {id:'day1', start0:'18:00', tab:'✈️ Day 1', date:'16일', title:'도착 → 체크인 → 저녁', stops:[
   {id:'apt', far:true, name:'홍콩 국제공항', sub:'Hong Kong International Airport', lat:22.3137, lng:113.9309,
    note:'출국장 세븐일레븐에서 옥토퍼스카드 구매 (adult octopus HK$200)'},
-  {id:'sci', leg:'A21 버스 · Hung Hom 방향 · 79~90분', name:'Hong Kong Science Museum 정류장', sub:'하차', lat:22.301088, lng:114.176539,
-   note:'여기서 내려 호텔까지 걸어서 5분'},
-  {id:'icon1', leg:'도보 5분', name:HOTEL.name, sub:HOTEL.sub, lat:HOTEL.lat, lng:HOTEL.lng, note:'짐 두고 저녁 먹으러 나가기'},
+  {id:'icon1', leg:'택시 약 45분 · 공항 택시 승강장 빨간 택시', name:HOTEL.name, sub:HOTEL.sub, lat:HOTEL.lat, lng:HOTEL.lng, note:'짐 두고 저녁 먹으러 나가기'},
   {id:'yung', kind:'alt', group:'저녁 후보 (하나 고르기)', name:"Yung's Tangerine Peel Roast Goose", sub:'완차이', lat:22.2783091, lng:114.1729673,
    note:'거위구이, 차슈, 로스트포크', hours:'07:00–22:00', link:'https://maps.app.goo.gl/HTi2dXH5ahQXSZTdA?g_st=ic'},
   {id:'kam', kind:'alt', name:"Kam's Roast Goose", sub:'완차이', lat:22.277642, lng:114.175305,
@@ -742,7 +740,7 @@ const DAYS = [
 const DATES = {day1:'2026-11-16', day2:'2026-11-17', day3:'2026-11-18', macau:'2026-11-19', day5:'2026-11-20'};
 const STAY = {apt:30, sci:0, icon1:20, icon2:0, mcot:45, peak:90, esc:30, soho:40, pmq:45, icon2b:90, hkma:60, oms:90, icon3:0, adc:45, north:90, wynn:0};
 const BEST = {esc:[600,1410], hkma:[1020,1140]};
-const LEGMIN = {sci:['apt',85], icon1:['sci',5]};
+const LEGMIN = {icon1:['apt',45]};
 const CATS = {food:['🍜','맛집'], sweet:['🍡','간식·디저트'], shop:['🛍️','쇼핑'], sight:['🏛️','명소'], hot:['✨','핫플'], bar:['🍸','바·전망'], go:['⛴️','마카오행'], photo:['📸','사진'], event:['🎆','이벤트']};
 // coords: OSM (Macau shops approx); hours/closed only where well known
 const REC = [

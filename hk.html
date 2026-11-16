@@ -176,6 +176,15 @@ ol.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .popin .prow{position:sticky;bottom:0;background:var(--surface);padding:6px 0 4px}
 .popin .pph i{right:auto;left:6px}
 html.mm .popin{max-height:40vh}
+@media (max-width:819px){
+ /* a place card open on the map: the cards below step aside and the place card gets their room */
+ html.mm:has(#popdock:not([hidden])) #panel{transform:translateY(calc(100% + 24px));pointer-events:none}
+ html.mm:has(#popdock:not([hidden])) .mapinfo{bottom:calc(var(--nav) + 10px);z-index:1001;max-height:calc(100% - var(--nav) - 90px)}
+ html.mm:has(#popdock:not([hidden])) .popin{max-height:calc(100vh - var(--nav) - 200px);max-height:calc(100dvh - var(--nav) - 200px)}
+ html.mm .popdock:not([hidden]){animation:popup .32s cubic-bezier(.32,.72,0,1)}
+}
+@keyframes popup{from{opacity:0;transform:translateY(24px)}}
+@media (prefers-reduced-motion:reduce){ html.mm .popdock:not([hidden]){animation:none} }
 #popx{position:absolute;z-index:1;top:6px;right:6px;width:32px;height:32px;border:0;border-radius:50%;background:var(--surface);color:var(--muted);font-size:14px;box-shadow:0 1px 4px rgba(0,0,0,.25)}
 .map.dk .leaflet-popup{display:none}
 #map.routing .leaflet-overlay-pane{opacity:.3}

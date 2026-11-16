@@ -523,16 +523,6 @@ html.mm .pbody{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;p
 html.mm #panel[data-st="peek"] .pbody{visibility:hidden;opacity:0;transition:opacity .12s ease-out,visibility 0s .12s}
 html.mm .pbody{transition:opacity .22s ease-out}
 .hcards{display:none}
-.v3d{position:fixed;inset:0;z-index:3000;background:var(--bg);animation:popup .32s cubic-bezier(.32,.72,0,1)}
-.v3d[hidden]{display:none}
-#v3dmap{position:absolute;inset:0}
-#v3dmap canvas{image-rendering:pixelated}
-#v3dx{position:absolute;top:calc(12px + env(safe-area-inset-top));right:12px;width:44px;height:44px;border-radius:50%;border:2px solid var(--line);background:var(--surface);color:var(--ink);font-size:18px;box-shadow:0 4px 12px rgba(60,30,40,.2)}
-.v3d small{position:absolute;right:8px;bottom:calc(6px + env(safe-area-inset-bottom));font-size:10px;color:var(--muted);background:var(--surface);padding:1px 6px;border-radius:6px;opacity:.85}
-.m3{display:flex;flex-direction:column;align-items:center;font:400 12px var(--display);color:var(--ink);pointer-events:none}
-.m3 b{width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;border:3px solid #fff;display:grid;place-items:center;font-weight:400;font-size:14px;box-shadow:0 3px 8px rgba(60,30,40,.35)}
-.m3.alt b{background:var(--alt)}
-.m3 span{margin-top:2px;padding:1px 6px;border-radius:8px;background:var(--surface);white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis}
 /* swapping between the cards, the detail list and the directions: each slides in from where it lives */
 html.mm .hcards{transition:opacity .22s ease-out,transform .32s cubic-bezier(.32,.72,0,1)}
 html.mm .routebox{transition:opacity .2s ease-out,transform .32s cubic-bezier(.32,.72,0,1)}
@@ -625,7 +615,6 @@ html.mm .dayhead .chip{display:none}
           <button type="button" id="gps" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4"/></svg><span>내 위치</span></button>
           <button type="button" id="zfit"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="6" r="2.2"/><path d="M8 17c5 0 3-10 8-10" stroke-dasharray="2.5 2.5"/></svg><span>전체</span></button>
           <button type="button" id="zhotel"><b>🏨</b><span>호텔로</span></button>
-          <button type="button" id="z3d"><b>🏙️</b><span>3D</span></button>
         </div>
         <div class="catp" id="catp" hidden></div>
         <div class="lay">
@@ -652,7 +641,6 @@ html.mm .dayhead .chip{display:none}
       </div>
       <div class="progress"><span id="prog"></span><span class="pst"><button type="button" class="pstep" data-d="-1" aria-label="이전 장소">‹</button><button type="button" class="pstep" data-d="1" aria-label="다음 장소">›</button></span><button type="button" id="reset">이 날 체크 지우기</button></div>
     </div>
-    <div class="v3d" id="v3d" hidden><div id="v3dmap"></div><button type="button" id="v3dx" aria-label="3D 닫기">✕</button><small>OpenFreeMap © OpenMapTiles © OpenStreetMap</small></div>
     <section id="panel">
       <button type="button" class="grip" id="grip" aria-label="일정 펼치기·접기" aria-expanded="false"><i></i><span id="gripsum"></span></button>
       <div class="hcards" id="hcards"></div>
@@ -2195,34 +2183,6 @@ function drawEvents(){
 }
 // map view on a phone: the day as a row of cards; swiping one into the middle selects it and moves the map
 let hcLock = 0;
-// 3D: its own tilted map; the Leaflet map stays flat because its pins cannot follow a tilt
-let g3 = null;
-function open3d(){ if(!styleJson || !window.maplibregl){ toast('3D 지도 불러오는 중'); return; }
-  const st = restyle(JSON.parse(styleJson)), src = (st.layers.find(l => l['source-layer'] === 'building') || {}).source || 'openmaptiles';
-  // game-map look: plain bright ground, blue water, green parks, grey roads, buildings in a few block colours
-  for(const l of st.layers){ const p = l.paint = l.paint || {}, id = l.id;
-    if(l.type === 'background') p['background-color'] = '#e7dfc6';
-    else if(l.type === 'fill' && /water/.test(id)) p['fill-color'] = '#4aa3df';
-    else if(l.type === 'fill' && /park|grass|wood|forest|scrub|landcover|pitch|cemetery/.test(id)){ p['fill-color'] = '#7cc46a'; p['fill-opacity'] = 1; }
-    else if(l.type === 'fill' && /building/.test(id)) p['fill-opacity'] = 0;
-    else if(l.type === 'line' && /water_edge/.test(id)) p['line-color'] = '#2f7fbf';
-    else if(l.type === 'line' && /casing/.test(id)) p['line-color'] = '#55575e';
-    else if(l.type === 'line' && /highway|road|bridge|tunnel|street|path|motorway|trunk|primary|secondary|tertiary|minor|service/.test(id)) p['line-color'] = /path|pedestrian/.test(id) ? '#d8d2bf' : '#777a83'; }
-  st.layers.push({id:'b3d', type:'fill-extrusion', source:src, 'source-layer':'building', minzoom:13,
-    paint:{'fill-extrusion-pattern':['match', ['%', ['round', ['*', ['coalesce', ['get', 'render_height'], 8], 3]], 7], 0, 'w0', 1, 'w1', 2, 'w2', 3, 'w3', 4, 'w4', 5, 'w5', 'w6'], 'fill-extrusion-height':['coalesce', ['get', 'render_height'], 8], 'fill-extrusion-base':['coalesce', ['get', 'render_min_height'], 0], 'fill-extrusion-opacity':1, 'fill-extrusion-vertical-gradient':true}});
-  document.getElementById('v3d').hidden = false; const nx = nextStop(day), c = sel && sel.lat ? sel : nx && nx.lat && !nx.far ? nx : home();
-  g3 = new maplibregl.Map({container:'v3dmap', style:st, center:[c.lng, c.lat], zoom:Math.max(16, map.getZoom()), pitch:55, bearing:-45, maxPitch:75, attributionControl:false, pixelRatio:.5, antialias:false,
-    localIdeographFontFamily:"'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif"});
-  // wall tiles: a block colour with a grid of dark windows, drawn once per colour
-  const WALL = ['#d9c7a7', '#a9c6e0', '#c97b63', '#efe9da', '#9cbf9e', '#d9a865', '#b8b3ac'];
-  g3.on('styleimagemissing', e => { const i = /^w(\d)$/.exec(e.id); if(!i || g3.hasImage(e.id)) return; const cv = document.createElement('canvas'); cv.width = cv.height = 16; const x = cv.getContext('2d');
-    x.fillStyle = WALL[+i[1]]; x.fillRect(0, 0, 16, 16); x.fillStyle = 'rgba(40,52,70,.55)'; for(const [a, b] of [[2, 3], [9, 3], [2, 10], [9, 10]]) x.fillRect(a, b, 5, 4);
-    g3.addImage(e.id, x.getImageData(0, 0, 16, 16)); });
-  for(const s of day.stops.filter(x => x.lat && !x.far && x.kind !== 'plain')){ const e = h('div', 'm3' + (s.kind === 'alt' ? ' alt' : '')); e.append(h('b', null, label(day, s)), h('span', null, s.name));
-    new maplibregl.Marker({element:e, anchor:'bottom'}).setLngLat([s.lng, s.lat]).addTo(g3); }
-  sylog('3d', {z:Math.round(map.getZoom()), sel:!!sel}); }
-document.getElementById('z3d').addEventListener('click', open3d);
-document.getElementById('v3dx').addEventListener('click', () => { if(g3){ g3.remove(); g3 = null; } document.getElementById('v3d').hidden = true; });
 function drawCards(sch, nx){ const box = document.getElementById('hcards'); box.textContent = ''; if(!mm || wide() || day.nomap) return;
   const list = day.stops.filter(x => x.lat && x.kind !== 'plain'); let cur = null;
   for(const s of list){ const gi = sch.out.get(s), c = h('div', 'hc' + (s === sel ? ' on' : '') + (done[s.id] ? ' dn' : '')); c.dataset.id = s.id;

@@ -1565,7 +1565,7 @@ let mm = false, shState = 'peek';
 const wide = () => innerWidth >= 820;
 const peekSel = () => sel && sel.lat && sel.kind !== 'plain';
 const hcOn = () => mm && !wide() && !!document.getElementById('hcards').firstChild;
-const NAVH = 54, shH = st => st === 'peek' ? (hcOn() ? 146 : 64 + (peekSel() ? 46 : 0)) : st === 'half' ? Math.round((innerHeight - NAVH - sab) * .42) : innerHeight - 64 - NAVH - sab;
+const NAVH = 54, shH = st => st === 'peek' ? (hcOn() ? 146 : 64 + (peekSel() ? 46 : 0)) : st === 'half' ? Math.round((innerHeight - NAVH - sab) * .64) : innerHeight - 64 - NAVH - sab;
 const ins = () => !mm ? {t:0, l:0, b:0, r:0} : wide() ? {t:56, l:456, b:0, r:0} : {t:56, l:0, b:Math.min(shH(shState), innerHeight * .55), r:0};
 const fitOpt = (pad, o, extraB) => { const i = ins(); return Object.assign({paddingTopLeft:[pad + i.l + 30, pad + i.t], paddingBottomRight:[pad + i.r + 30, pad + i.b + (extraB || 0)]}, o); };
 function centerOn(lat, lng, z){ const i = ins(), dx = (i.l - i.r) / 2, dy = (i.t - i.b) / 2;

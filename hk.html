@@ -512,6 +512,15 @@ html.mm .grip{display:flex;flex-direction:column;align-items:center;gap:7px;widt
 html.mm .pbody{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:2px 14px 28px}
 html.mm #panel[data-st="peek"] .pbody{visibility:hidden}
 .hcards{display:none}
+.routebox .rmore{display:none}
+@media (max-width:819px){
+ /* directions take the cards' place at the bottom; the steps open on demand */
+ html.mm.rt #panel{visibility:hidden}
+ html.mm.rt .mapinfo{bottom:calc(var(--nav) + 10px);z-index:1001}
+ html.mm .routebox .rmore{display:block;list-style:none;text-align:center;margin-top:6px}
+ html.mm .routebox .rmore button{border:0;background:none;font:400 13px var(--display);color:var(--muted);padding:4px 10px}
+ html.mm .routebox:not(.open) .rpick,html.mm .routebox:not(.open) #routefrom,html.mm .routebox:not(.open) #routesteps>li:not(.cmp):not(.rmore):not(.alts){display:none}
+}
 @media (max-width:819px){
  html.mm #panel[data-st="peek"] .hcards{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;padding:0 16px 10px;scrollbar-width:none;flex:0 0 auto;overscroll-behavior-x:contain}
  html.mm #panel[data-st="peek"] .hcards::-webkit-scrollbar{display:none}
@@ -1365,7 +1374,7 @@ function routeTo(s){
 }
 function redrawRoute(fitIt){
   routeLayer.clearLayers(); const box = document.getElementById('routebox');
-  map.getContainer().classList.toggle('routing', !!routeCur);
+  map.getContainer().classList.toggle('routing', !!routeCur); document.documentElement.classList.toggle('rt', !!routeCur);
   if(!routeCur){ box.hidden = true; return; }
   const {s, from, lbl, alts} = routeCur, opts = legOpts(from, s, true), leg = opts.find(o => o.mode === routeCur.mode) || opts.find(o => o.mode === legOf(from, s).mode) || opts[0], shapes = legShapes(leg, from, s, true);
   for(const sh of shapes) drawShape(sh, routeLayer, 1, true);
@@ -1393,6 +1402,8 @@ function redrawRoute(fitIt){
     if(!st.line) continue;
     const k = st.line + st.sta + st.up, nt = routeCur.nt[k];
     if(nt) li.append(h('span', 'nt', ' · 다음 열차 ' + nt)); else if(nt === undefined){ routeCur.nt[k] = null; nextTrain(st, k, routeCur); } }
+  { const li = h('li', 'rmore'), b = h('button', null, routeCur.open ? '접기 ▴' : '단계 보기 ▾'); b.type = 'button';
+    b.addEventListener('click', () => { routeCur.open = !routeCur.open; redrawRoute(true); }); li.append(b); ol.append(li); box.classList.toggle('open', !!routeCur.open); }
   if(alts && alts.length > 1){ const li = h('li', 'alts');
     alts.forEach(([d, t], i) => { const b = h('button', 'chip', `🚻 ${i + 1} · ${fmt(d)}`); b.type = 'button'; b.setAttribute('aria-pressed', t[0] === s.lat && t[1] === s.lng);
       b.addEventListener('click', () => showRoute(toiletObj(t), [routeCur.from, routeCur.lbl], alts)); li.append(b); });

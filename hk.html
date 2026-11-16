@@ -2209,10 +2209,15 @@ function open3d(){ if(!styleJson || !window.maplibregl){ toast('3D 지도 불러
     else if(l.type === 'line' && /casing/.test(id)) p['line-color'] = '#55575e';
     else if(l.type === 'line' && /highway|road|bridge|tunnel|street|path|motorway|trunk|primary|secondary|tertiary|minor|service/.test(id)) p['line-color'] = /path|pedestrian/.test(id) ? '#d8d2bf' : '#777a83'; }
   st.layers.push({id:'b3d', type:'fill-extrusion', source:src, 'source-layer':'building', minzoom:13,
-    paint:{'fill-extrusion-color':['match', ['%', ['round', ['*', ['coalesce', ['get', 'render_height'], 8], 3]], 7], 0, '#d9c7a7', 1, '#a9c6e0', 2, '#c97b63', 3, '#efe9da', 4, '#9cbf9e', 5, '#d9a865', '#b8b3ac'], 'fill-extrusion-height':['coalesce', ['get', 'render_height'], 8], 'fill-extrusion-base':['coalesce', ['get', 'render_min_height'], 0], 'fill-extrusion-opacity':1, 'fill-extrusion-vertical-gradient':true}});
+    paint:{'fill-extrusion-pattern':['match', ['%', ['round', ['*', ['coalesce', ['get', 'render_height'], 8], 3]], 7], 0, 'w0', 1, 'w1', 2, 'w2', 3, 'w3', 4, 'w4', 5, 'w5', 'w6'], 'fill-extrusion-height':['coalesce', ['get', 'render_height'], 8], 'fill-extrusion-base':['coalesce', ['get', 'render_min_height'], 0], 'fill-extrusion-opacity':1, 'fill-extrusion-vertical-gradient':true}});
   document.getElementById('v3d').hidden = false; const nx = nextStop(day), c = sel && sel.lat ? sel : nx && nx.lat && !nx.far ? nx : home();
   g3 = new maplibregl.Map({container:'v3dmap', style:st, center:[c.lng, c.lat], zoom:Math.max(16, map.getZoom()), pitch:55, bearing:-45, maxPitch:75, attributionControl:false, pixelRatio:.5, antialias:false,
     localIdeographFontFamily:"'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif"});
+  // wall tiles: a block colour with a grid of dark windows, drawn once per colour
+  const WALL = ['#d9c7a7', '#a9c6e0', '#c97b63', '#efe9da', '#9cbf9e', '#d9a865', '#b8b3ac'];
+  g3.on('styleimagemissing', e => { const i = /^w(\d)$/.exec(e.id); if(!i || g3.hasImage(e.id)) return; const cv = document.createElement('canvas'); cv.width = cv.height = 16; const x = cv.getContext('2d');
+    x.fillStyle = WALL[+i[1]]; x.fillRect(0, 0, 16, 16); x.fillStyle = 'rgba(40,52,70,.55)'; for(const [a, b] of [[2, 3], [9, 3], [2, 10], [9, 10]]) x.fillRect(a, b, 5, 4);
+    g3.addImage(e.id, x.getImageData(0, 0, 16, 16)); });
   for(const s of day.stops.filter(x => x.lat && !x.far && x.kind !== 'plain')){ const e = h('div', 'm3' + (s.kind === 'alt' ? ' alt' : '')); e.append(h('b', null, label(day, s)), h('span', null, s.name));
     new maplibregl.Marker({element:e, anchor:'bottom'}).setLngLat([s.lng, s.lat]).addTo(g3); }
   sylog('3d', {z:Math.round(map.getZoom()), sel:!!sel}); }

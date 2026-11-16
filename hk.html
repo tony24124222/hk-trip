@@ -962,7 +962,7 @@ function restyle(st){
   const wi = st.layers.findIndex(l => l.id === 'water'), w = st.layers[wi];
   st.layers.splice(wi + 1, 0, {id:'water_edge', type:'line', source:w.source, 'source-layer':'water', filter:w.filter,
     paint:{'line-color':PAL.waterEdge, 'line-width':['interpolate', ['linear'], ['zoom'], 10, .6, 16, 2.2]}});
-  for(const l of st.layers){ if(l.id === 'building'){ l.minzoom = 15.5; (l.paint = l.paint || {})['fill-opacity'] = .7; }
+  for(const l of st.layers){ if(l.id === 'building'){ l.minzoom = 15.5; delete l.maxzoom; /* the style hands high zooms to its 3D layer, which is dropped */ (l.paint = l.paint || {})['fill-opacity'] = .7; }
     if(/^highway-name/.test(l.id)) l.minzoom = l.id === 'highway-name-major' ? 14.5 : 15.5;
     // zoomed out = picture map: only big roads, small streets appear from 14.5
     if(/minor|service_track|path_pedestrian/.test(l.id)) l.minzoom = Math.max(l.minzoom || 0, 14.5);

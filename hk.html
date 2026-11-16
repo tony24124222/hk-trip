@@ -88,7 +88,8 @@ button,a,summary,label,select{touch-action:manipulation;-webkit-tap-highlight-co
 .navdir i{display:block;width:0;height:0;border:6px solid transparent;border-top:0;border-bottom:10px solid #fff;filter:drop-shadow(0 0 1px #0b3d91)}
 .navend{white-space:nowrap;font:400 12px var(--display);color:#fff;background:#1a73e8;border:2px solid #fff;border-radius:999px;padding:2px 8px;box-shadow:0 2px 6px rgba(0,0,0,.35);transform:translate(-50%,-100%);display:inline-block}
 html.naving .zoom,html.naving .lay,html.naving .catp,html.naving .abbar{margin-top:56px}
-html.naving .routebox,html.running .routebox{display:none}
+html.naving .routebox{display:none}
+html.running .routebox{opacity:0;transform:translateY(24px);pointer-events:none}
 .abbar span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .abbar button{flex:0 0 auto;width:26px;height:26px;border:0;border-radius:50%;background:rgba(255,255,255,.25);color:#fff;font-size:13px}
 .zoom,.lay{position:absolute;top:var(--ctop);display:flex;flex-direction:column;gap:6px;z-index:500;transition:opacity .15s}
@@ -501,7 +502,7 @@ html.mm .mapinfo>*{pointer-events:auto;margin:0}
 html.mm .mapinfo .gpsmsg,html.mm .mapinfo .trk{align-self:flex-start;background:var(--surface);border:2px solid var(--line);border-radius:999px;padding:4px 10px}
 html.mm .mapinfo .nomap{background:var(--surface)}
 html.mm .routebox{max-height:none}
-html.mm #panel{position:fixed;z-index:20;left:0;right:0;bottom:var(--nav);height:var(--sh,64px);background:var(--bg);border-radius:22px 22px 0 0;box-shadow:0 -6px 24px rgba(60,30,40,.2);display:flex;flex-direction:column;overflow:hidden;transition:height .28s cubic-bezier(.2,.8,.2,1)}
+html.mm #panel{position:fixed;z-index:20;left:0;right:0;bottom:var(--nav);height:var(--sh,64px);background:var(--bg);border-radius:22px 22px 0 0;box-shadow:0 -6px 24px rgba(60,30,40,.2);display:flex;flex-direction:column;overflow:hidden;transition:height .32s cubic-bezier(.32,.72,0,1),transform .32s cubic-bezier(.32,.72,0,1)}
 html.mm #panel.drag{transition:none}
 html.mm #panel>.pstep{display:grid;position:absolute;top:14px;z-index:2}
 html.mm #panel>.pstep[data-d="-1"]{left:10px}
@@ -510,12 +511,19 @@ html.mm .grip{display:flex;flex-direction:column;align-items:center;gap:7px;widt
 .grip i{width:44px;height:5px;border-radius:99px;background:var(--line)}
 .grip span{max-width:100%;font:400 16px var(--display);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 html.mm .pbody{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:2px 14px 28px}
-html.mm #panel[data-st="peek"] .pbody{visibility:hidden}
+html.mm #panel[data-st="peek"] .pbody{visibility:hidden;opacity:0;transition:opacity .12s ease-out,visibility 0s .12s}
+html.mm .pbody{transition:opacity .22s ease-out}
 .hcards{display:none}
+/* swapping between the cards, the detail list and the directions: each slides in from where it lives */
+html.mm .hcards{transition:opacity .22s ease-out,transform .32s cubic-bezier(.32,.72,0,1)}
+html.mm .routebox{transition:opacity .2s ease-out,transform .32s cubic-bezier(.32,.72,0,1)}
+@starting-style{ html.mm #panel[data-st="peek"] .hcards{opacity:0;transform:translateY(10px)} html.mm .routebox{opacity:0;transform:translateY(24px)} }
+.hcb button,.routebox button,#panel .acts button{transition:transform .12s ease-out}
+.hcb button:active,.routebox button:active,#panel .acts button:active{transform:scale(.96)}
 .routebox .rmore{display:none}
 @media (max-width:819px){
  /* directions take the cards' place at the bottom; the steps open on demand */
- html.mm.rt #panel{visibility:hidden}
+ html.mm.rt #panel{transform:translateY(calc(100% + 24px));pointer-events:none}
  html.mm.rt .mapinfo{bottom:calc(var(--nav) + 10px);z-index:1001}
  html.mm .routebox .rmore{display:block;list-style:none;text-align:center;margin-top:6px}
  html.mm .routebox .rmore button{border:0;background:none;font:400 13px var(--display);color:var(--muted);padding:4px 10px}
@@ -527,7 +535,7 @@ html.mm #panel[data-st="peek"] .pbody{visibility:hidden}
  html.mm #panel[data-st="peek"] .peekact,html.mm #panel[data-st="peek"]>.pstep,html.mm #panel[data-st="peek"] #gripsum{display:none!important}
  html.mm #panel[data-st="peek"] .grip{padding:6px 0 8px}
 }
-.hc{flex:0 0 calc(100% - 40px);scroll-snap-align:center;background:var(--surface);border:2px solid var(--line);border-radius:16px;padding:9px 12px;min-width:0}
+.hc{transition:border-color .2s ease,opacity .2s ease;flex:0 0 calc(100% - 40px);scroll-snap-align:center;background:var(--surface);border:2px solid var(--line);border-radius:16px;padding:9px 12px;min-width:0}
 .hc.on{border-color:var(--accent)}
 .hc.dn{opacity:.55}
 .hct{display:flex;align-items:center;gap:6px;font:400 16px var(--display);white-space:nowrap;overflow:hidden}
@@ -552,7 +560,7 @@ html.mm .dayhead .chip{display:none}
   html.mm .lay{left:464px}
   html.mm .catp{left:518px}
 }
-@media (prefers-reduced-motion:reduce){ html.mm #panel{transition:none} }
+@media (prefers-reduced-motion:reduce){ html.mm #panel,html.mm .hcards,html.mm .routebox{transition:none} }
 /* photo viewer */
 .zc{position:fixed;inset:0;z-index:4100;background:#fff;color:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:calc(24px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom));text-align:center;font-family:"PingFang HK","PingFang TC","Microsoft JhengHei","Noto Sans CJK TC",sans-serif}
 .zc[hidden]{display:none}
@@ -2362,11 +2370,14 @@ document.getElementById('pgo').addEventListener('click', () => { if(sel) routeTo
 document.getElementById('pmore').addEventListener('click', () => { if(!sel) return; const id = 'stop-' + sel.id; setSheet('half'); setTimeout(() => { const li = document.getElementById(id); if(li) li.scrollIntoView({block:'start'}); }, 60); });
 document.getElementById('pdone').addEventListener('click', () => { if(!sel) return; done[sel.id] = !done[sel.id]; if(done[sel.id]) noteArr(sel.id); save(); render(); });
 { let gd = null;
-  grip.addEventListener('pointerdown', e => { gd = {y:e.clientY, h:panel.offsetHeight, moved:false}; grip.setPointerCapture(e.pointerId); });
+  grip.addEventListener('pointerdown', e => { if(gd) return; gd = {y:e.clientY, h:panel.offsetHeight, moved:false, t:Date.now()}; grip.setPointerCapture(e.pointerId); });
   grip.addEventListener('pointermove', e => { if(!gd) return; const dy = e.clientY - gd.y; if(Math.abs(dy) > 6) gd.moved = true;
     if(gd.moved){ panel.classList.add('drag'); panel.dataset.st = 'drag'; root.style.setProperty('--sh', Math.max(shH('peek'), Math.min(shH('full'), gd.h - dy)) + 'px'); } });
   const end = () => { if(!gd) return; panel.classList.remove('drag');
-    if(gd.moved){ const now = panel.offsetHeight; setSheet(['peek','half','full'].reduce((a, b) => Math.abs(shH(b) - now) < Math.abs(shH(a) - now) ? b : a)); }
+    if(gd.moved){ const now = panel.offsetHeight, v = (now - gd.h) / Math.max(1, Date.now() - gd.t), ST = ['peek','half','full'];
+      // a flick counts as a step in its direction, however short
+      if(Math.abs(v) > .4){ const i = ST.indexOf(shState); setSheet(ST[Math.max(0, Math.min(2, i + Math.sign(v)))]); }
+      else setSheet(ST.reduce((a, b) => Math.abs(shH(b) - now) < Math.abs(shH(a) - now) ? b : a)); }
     else setSheet(shState === 'peek' ? 'half' : 'peek');
     gd = null; };
   grip.addEventListener('pointerup', end); grip.addEventListener('pointercancel', end);

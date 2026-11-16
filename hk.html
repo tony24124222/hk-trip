@@ -1427,7 +1427,7 @@ function redrawRoute(fitIt){
   const ol = document.getElementById('routesteps'); ol.textContent = '';
   if(opts.length > 1 || leg.cost){ const li = h('li', 'alts cmp');
     opts.forEach((o, n) => { const b = h('button', 'cmpr'); b.type = 'button'; b.setAttribute('aria-pressed', o.mode === leg.mode);
-      b.append(h('span', 'k', (legIcon[o.mode] || '') + ' ' + (MODE[o.mode] || '') + (o.mode === 'bus' ? ' ' + o.bus.no : '')), h('span', 't', o.min + '분'), h('span', 'c', o.mode === 'walk' ? '무료' : (o.wk ? `도보 ${o.wk}분 · ` : '') + (costTxt(o, true) || '–').replace(/HK\$[\d.,]+ \(([^)]+)\)/, '$1')));
+      b.append(h('span', 'k', (legIcon[o.mode] || '') + ' ' + (MODE[o.mode] || '') + (o.mode === 'bus' ? ' ' + o.bus.no : '')), h('span', 't', o.min + '분'), h('span', 'c', o.mode === 'walk' ? '무료' : (o.wk ? `도보 ${o.wk}분 · ` : '') + (costTxt(o, true) || '–').replace(/(HK\$[\d.,]+) \(([^)]+)\)/, '$1 · $2')));
       if(!n && opts.length > 1) b.append(h('span', 'tag next', '추천'));
       b.addEventListener('click', () => { routeCur.mode = o.mode; stopRun(); redrawRoute(true); }); li.append(b); });
     ol.append(li); }

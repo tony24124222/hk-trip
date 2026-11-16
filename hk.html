@@ -94,6 +94,21 @@ html.running .routebox{opacity:0;transform:translateY(24px);pointer-events:none}
 .abbar button{flex:0 0 auto;width:26px;height:26px;border:0;border-radius:50%;background:rgba(255,255,255,.25);color:#fff;font-size:13px}
 .zoom,.lay{position:absolute;top:var(--ctop);display:flex;flex-direction:column;gap:6px;z-index:500;transition:opacity .15s}
 .zoom{right:8px}
+.fxq{position:absolute;top:var(--ctop);left:62px;right:62px;z-index:600;background:var(--surface);border:2px solid var(--line);border-radius:18px;padding:10px 12px 12px;box-shadow:0 6px 18px rgba(58,47,53,.14);display:grid;gap:8px;grid-template-columns:minmax(0,1fr);font-family:var(--display)}
+.fxq[hidden]{display:none}
+@starting-style{.fxq{opacity:0;transform:translateY(-8px)}}
+.fxq{transition:opacity .18s,transform .18s}
+.fxh{display:flex;gap:6px}
+.fxh button{height:32px;min-width:44px;padding:0 10px;border-radius:10px;border:2px solid var(--line);background:var(--bg);color:var(--ink);font:400 14px/1 var(--display)}
+#fxcur{color:var(--accent);margin-right:auto}
+.fxin{display:flex;align-items:center;gap:8px;border-bottom:2px solid var(--line);padding-bottom:4px}
+.fxin span{font-size:16px;color:var(--muted)}
+.fxin input{flex:1;min-width:0;width:100%;border:0;background:none;color:var(--ink);font:400 30px/1.1 var(--display);outline:none;font-variant-numeric:tabular-nums}
+#fxo{font:400 24px/1.2 var(--display);color:var(--alt);font-variant-numeric:tabular-nums;word-break:keep-all}
+.fxc{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.fxc button{height:34px;border-radius:10px;border:2px solid var(--line);background:var(--bg);color:var(--ink);font:400 13px/1 var(--display)}
+.fxq button:active{transform:scale(.96)}
+#fxr{color:var(--muted);font:400 11px/1.2 var(--body)}
 .lay{left:8px;flex-wrap:wrap;align-content:flex-start;max-height:calc(100% - var(--ctop) - 8px)}
 .zoom button,.lay button{width:46px;height:44px;padding:0;border-radius:14px;border:2px solid var(--line);background:var(--surface);color:var(--ink);display:grid;place-items:center;align-content:center;gap:2px;font:400 10px/1 var(--display);box-shadow:0 2px 0 var(--line)}
 .zoom svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
@@ -615,7 +630,9 @@ html.mm .dayhead .chip{display:none}
           <button type="button" id="gps" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4"/></svg><span>내 위치</span></button>
           <button type="button" id="zfit"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="6" r="2.2"/><path d="M8 17c5 0 3-10 8-10" stroke-dasharray="2.5 2.5"/></svg><span>전체</span></button>
           <button type="button" id="zhotel"><b>🏨</b><span>호텔로</span></button>
+          <button type="button" id="zfx" aria-expanded="false" aria-controls="fxq"><b>💱</b><span>환율</span></button>
         </div>
+        <div class="fxq" id="fxq" hidden><div class="fxh"><button type="button" id="fxcur">HK$</button><button type="button" id="fxsw" aria-label="방향 바꾸기">⇅</button><button type="button" id="fxx" aria-label="닫기">✕</button></div><label class="fxin"><span id="fxu1">HK$</span><input id="fxv" type="number" inputmode="decimal" min="0" value="100" aria-label="금액"></label><b id="fxo"></b><div class="fxc" id="fxc"></div><small id="fxr"></small></div>
         <div class="catp" id="catp" hidden></div>
         <div class="lay">
           <button type="button" id="zrec" aria-pressed="true" aria-expanded="false" aria-controls="catp"><b>⭐</b><span>추천</span></button>
@@ -2712,7 +2729,24 @@ function drawCats(){ const box = document.getElementById('catp'); box.textConten
   mk(recCats.size ? '모두 끄기' : '모두 켜기', false, () => { recCats = new Set(recCats.size ? [] : Object.keys(CATS)); });
   showRec = recCats.size > 0; document.getElementById('zrec').setAttribute('aria-pressed', showRec); }
 document.getElementById('zrec').addEventListener('click', () => { const box = document.getElementById('catp'); box.hidden = !box.hidden; document.getElementById('zrec').setAttribute('aria-expanded', !box.hidden); });
-map.on('click', () => { document.getElementById('catp').hidden = true; });
+map.on('click', () => { document.getElementById('catp').hidden = true; fxShow(false); });
+// quick currency card: HK$/MOP <-> 원, rate shared with 정보 탭
+const fxShow = (() => { const q = document.getElementById('fxq'), btn = document.getElementById('zfx'), v = document.getElementById('fxv'), o = document.getElementById('fxo'), u1 = document.getElementById('fxu1'), cur = document.getElementById('fxcur'), cs = document.getElementById('fxc'), rt = document.getElementById('fxr');
+  let mop = false, rev = false, got = false;
+  const r = () => fxRate() / (mop ? 1.03 : 1), sym = () => mop ? 'MOP' : 'HK$';
+  const draw = () => { const n = +v.value || 0; u1.textContent = rev ? '원' : sym(); cur.textContent = sym();
+    o.textContent = rev ? '≈ ' + sym() + ' ' + (Math.round(n / r() * 10) / 10).toLocaleString('ko-KR') : '≈ ' + Math.round(n * r()).toLocaleString('ko-KR') + '원';
+    rt.textContent = `${sym()} 1 = ${r().toFixed(1)}원`;
+    cs.textContent = ''; for(const a of rev ? [10000, 50000, 100000, 500000] : [10, 50, 100, 500]){ const b = document.createElement('button'); b.type = 'button'; b.textContent = rev ? a / 10000 + '만' : a; b.onclick = () => { v.value = a; draw(); }; cs.append(b); } };
+  const show = on => { q.hidden = !on; btn.setAttribute('aria-expanded', on); if(!on) return; draw();
+    if(!got){ got = true; getJ('https://api.frankfurter.dev/v1/latest?base=HKD&symbols=KRW').then(j => { if(j && j.rates && j.rates.KRW > 50 && typeof j.date === 'string'){ try{ localStorage.setItem('hk-fx', JSON.stringify({r:j.rates.KRW, d:j.date})); }catch(e){} draw(); } }).catch(() => {}); } };
+  btn.addEventListener('click', () => show(q.hidden));
+  document.getElementById('fxx').addEventListener('click', () => show(false));
+  cur.addEventListener('click', () => { mop = !mop; draw(); });
+  document.getElementById('fxsw').addEventListener('click', () => { const n = +v.value || 0; v.value = rev ? Math.round(n / r()) : Math.round(n * r() / 100) * 100; rev = !rev; draw(); });
+  v.addEventListener('input', draw);
+  for(const ev of ['click', 'dblclick', 'wheel', 'touchstart', 'pointerdown']) q.addEventListener(ev, e => e.stopPropagation());
+  return show; })();
 drawCats();
 let moreQ = '';
 async function moreSearch(){ const q = document.getElementById('q').value.trim().toLowerCase(); if(q.length < 2 || moreQ === q) return; moreQ = q; clearTimeout(qTimer);

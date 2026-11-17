@@ -2523,11 +2523,12 @@ function gval(v){ const dd = h('dd'), parts = won(v).split(' · '); if(parts.len
       }catch(e){ toast('저장 실패'); }
       b.disabled = false; show(); });
     show(); box.append(b, st); d.append(box); g.append(d); }
-  // packing list, ticks kept on this phone
-  { const d = h('div','gd'), ul = h('ul','pack'); d.dataset.t = '🎒 준비물'; let st = {}; try{ st = JSON.parse(localStorage.getItem('hk-pack') || '{}') || {}; }catch(e){}
+  // packing list, ticks kept in hk-book as p:<item> (the database only takes the five shared names)
+  { const d = h('div','gd'), ul = h('ul','pack'); d.dataset.t = '🎒 준비물'; let st = bookSt();
+    try{ const old = JSON.parse(localStorage.getItem('hk-pack')); if(old){ for(const k in old) if(old[k]) st['p:' + k] = true; localStorage.setItem('hk-book', JSON.stringify(st)); localStorage.removeItem('hk-pack'); } }catch(e){}
     for(const t of ['여권', '옥토퍼스 카드 또는 앱', '영국식 3핀 어댑터 (G형 · 220V)', '현금 HK$ (노포·간식집)', '해외 결제 카드', 'eSIM·로밍', '보조배터리', '얇은 겉옷', '접이식 우산', '편한 신발']){
-      const li = h('li'), lb = h('label'), cb = h('input'); cb.type = 'checkbox'; cb.checked = !!st[t];
-      cb.addEventListener('change', () => { st[t] = cb.checked; try{ localStorage.setItem('hk-pack', JSON.stringify(st)); }catch(e){} }); lb.append(cb, ' ' + t); li.append(lb); ul.append(li); }
+      const li = h('li'), lb = h('label'), cb = h('input'); cb.type = 'checkbox'; cb.checked = !!st['p:' + t]; cb.dataset.p = t;
+      cb.addEventListener('change', () => { const o = bookSt(); o['p:' + t] = cb.checked; try{ localStorage.setItem('hk-book', JSON.stringify(o)); }catch(e){} }); lb.append(cb, ' ' + t); li.append(lb); ul.append(li); }
     d.append(ul); g.append(d); }
   // currency: daily ECB rate, last value kept for offline
   { const d = h('div','gd'), box = h('div','fx'), inp = h('input'), out = h('b'), note = h('small'); d.dataset.t = '💱 환율 계산';
@@ -2798,7 +2799,7 @@ const SY = {plan:PKEY, done:'hk-done', book:'hk-book', spend:'hk-spend', memo:'h
 const lsg = k => { try{ return localStorage.getItem(k); }catch(e){ return null; } }, lss = (k, v) => { try{ if(v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); }catch(e){} };
 // the record for the 기록 button: key names, sizes, timings and statuses only, never the stored values or the code
 const syLog = [], sylog = (ev, o) => { syLog.push(Object.assign({t:new Date().toTimeString().slice(0, 8), ev}, o)); if(syLog.length > 300) syLog.shift(); };
-let syCode = lsg('hk-sync') || '', syEs = null, syState = '', syReady = false, syBase = {}, syAt = {}, syBusy = {}, syWait = {};
+let syCode = lsg('hk-sync') || '', syEs = null, syState = '', syReady = false, syBase = {}, syAt = {}, syBusy = {}, syWait = {}, syPz = {};
 try{ syBase = JSON.parse(lsg('hk-sync-b')) || {}; }catch(e){ syBase = {}; }
 const syKeep = () => lss('hk-sync-b', JSON.stringify(syBase));
 const syDev = lsg('hk-dev') || (() => { const v = Math.random().toString(36).slice(2, 10); lss('hk-dev', v); return v; })();
@@ -2816,15 +2817,17 @@ function syMerge(base, mine, theirs){ let b, m, t; try{ b = JSON.parse(base); }c
 function syApply(name){ try{
     if(name === 'done'){ try{ done = JSON.parse(lsg('hk-done') || '{}') || {}; }catch(e){ done = {}; } }
     if(name === 'plan') applyPlan();
-    if(name === 'book') for(const cb of document.querySelectorAll('.bkp input')) cb.checked = !!bookSt()[cb.dataset.k];
+    if(name === 'book'){ const b = bookSt(); for(const cb of document.querySelectorAll('.bkp input')) cb.checked = !!b[cb.dataset.k]; for(const cb of document.querySelectorAll('.pack input[data-p]')) cb.checked = !!b['p:' + cb.dataset.p]; }
     if(name === 'spend' && spendDraw) spendDraw();
     if(name === 'memo' && memoPull) memoPull();
     if(name !== 'memo' && name !== 'spend') render(); }
   catch(err){ sylog('apply-fail', {k:name, err:String(err).slice(0, 80)}); } }
 function syRecv(name, e){ const k = SY[name]; if(!k || !e || typeof e.v !== 'string') return;
   if(name === 'plan' && editMode){ syWait.plan = e; return; } // not under the hands of someone editing the day
-  const theirs = e.v, mine = lsg(k), base = syBase[name];
+  const theirs = e.v, mine = lsg(k), pz = syPz[name];
   if(mine === theirs){ syBase[name] = theirs; syKeep(); return; }
+  // the other phone wrote at the same moment as this one's last send: merge against what this phone had before sending
+  const base = mine === syBase[name] && pz && e.by !== syDev && Date.now() - pz.at < 15000 ? pz.base : syBase[name];
   let out = theirs;
   if(mine != null && mine !== base){ const mg = syMerge(base, mine, theirs); out = mg != null ? mg : (syAt[name] || 0) > (e.t || 0) ? mine : theirs; }
   syBase[name] = theirs; syKeep(); // a merged copy differs from it, so the next tick sends that up
@@ -2846,10 +2849,10 @@ async function syTick(){ if(!syCode) return;
   if(!syReady) return; // a phone joining merges with what is there before sending anything
   for(const [name, k] of Object.entries(SY)){ const cur = lsg(k); if(cur == null || cur === syBase[name] || syBusy[name]) continue;
     if(!syAt[name]) syAt[name] = Date.now();
-    syBusy[name] = true; const t0 = Date.now();
+    syBusy[name] = true; const t0 = Date.now(), pb = syBase[name];
     try{ const r = await fetch(FBU + syCode + '/' + name + '.json', {method:'PUT', body:JSON.stringify({v:cur, t:Date.now(), by:syDev})});
       sylog('push', {k:name, status:r.status, ms:Date.now() - t0, len:cur.length});
-      if(r.ok){ syBase[name] = cur; syKeep(); delete syAt[name]; } }
+      if(r.ok){ syBase[name] = cur; syKeep(); delete syAt[name]; syPz[name] = {base:pb, at:Date.now()}; } }
     catch(e){ sylog('push-fail', {k:name, err:String(e && e.message || e).slice(0, 60)}); }
     finally{ syBusy[name] = false; } }
   syShow(); }

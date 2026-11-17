@@ -892,6 +892,7 @@ const REC = [
  {id:'kaikai', c:'sweet', n:"카이카이 디저트 · 탕수이", sub:"Kai Kai Dessert · 조던 파크스 스트리트 113", lat:22.30667, lng:114.170831, stay:30, hours:'12:00–01:00', wait:'저녁 줄'},
  {id:'feijie', c:'sweet', n:"페이제 · 꼬치 간식", sub:"Fei Jie · 몽콕 던다스 스트리트 55", lat:22.315736, lng:114.171749, stay:15, hours:'14:00–23:00', wait:'줄 잦음'},
  {id:'kungwo', c:'sweet', n:"공와 두부공장 · 두부푸딩", sub:"Kung Wo · 삼수이포", lat:22.331084, lng:114.163589, stay:20, hours:'07:00–21:00'},
+ {id:'hongs', c:'sweet', n:"홍스 디저트 · 탕수이", sub:"Hong's Dessert 康瑞甜品 · 삼수이포 라이치콕로드 323", lat:22.3286316, lng:114.160172, stay:30},
  {id:'hopyik', c:'sweet', n:"합익타이 · 청펀", sub:"Hop Yik Tai · 삼수이포", lat:22.330483, lng:114.161229, stay:15, hours:'06:30–20:00', wait:'줄 잦음'},
  {id:'luklam', c:'sweet', n:"룩람 디저트 · 망고 사고", sub:"Luk Lam Dessert · 삼수이포", lat:22.332606, lng:114.16268, stay:30, hours:'14:00–24:00', wait:'저녁 줄'},
  {id:'leekeung', c:'sweet', n:"리컹키 · 에그와플", sub:"Lee Keung Kee · 노스포인트 본점", lat:22.291238, lng:114.201632, stay:15, hours:'07:00–23:00', wait:'줄 잦음'},
@@ -2187,12 +2188,12 @@ function drawSheet(){
   const cats = document.getElementById('cats'); cats.textContent = '';
   for(const [k, lbl] of [['all','전체'], ...Object.entries(CATS).map(([k,v]) => [k, v[0]+' '+v[1]])]){
     const b = h('button','chip',lbl); b.type = 'button'; b.setAttribute('aria-pressed', sheetCat===k); b.addEventListener('click', () => { sheetCat = k; drawSheet(); }); cats.append(b); }
-  const ref = refPoint(), q = document.getElementById('q').value.trim().toLowerCase(), nq = q.replace(/\s/g, ''), inDay = new Set(day.stops.map(s => s.rec));
+  const ref = refPoint(), q = document.getElementById('q').value.trim().toLowerCase(), nq = norm(q), inDay = new Set(day.stops.map(s => s.rec));
   const cz = document.getElementById('courses'); cz.textContent = '';
   if(!day.nomap) for(const c of COURSES.filter(c => c.only ? c.only === day.id : day.id !== 'macau' && !!DATES[day.id])){ const b = h('button','chip', `${c.e} ${c.n} · ${c.ids.length}곳 · 약 ${c.min >= 60 ? (c.min / 60) + '시간' : c.min + '분'}`); b.type = 'button';
     b.disabled = c.ids.every(id => inDay.has(id)); b.addEventListener('click', () => addCourse(c)); cz.append(b); }
   const inName = p => p.n.toLowerCase().replace(/\s/g, '').includes(nq);
-  let items = poolFor(day).filter(p => (sheetCat==='all' || p.c===sheetCat) && (!q || (p.n+' '+p.sub).toLowerCase().replace(/\s/g, '').includes(nq)))
+  let items = poolFor(day).filter(p => (sheetCat==='all' || p.c===sheetCat) && (!q || norm(p.n+' '+p.sub).includes(nq)))
     .map(p => [dist(ref.lat,ref.lng,p.lat,p.lng), p]).filter(x => q || x[0] < 30000).sort((a,b) => (q ? inName(b[1]) - inName(a[1]) : 0) || a[0]-b[0]);
   if(q) items = items.concat(searchRes.filter(p => !items.some(x => x[1].n===p.n)).map(p => [dist(ref.lat,ref.lng,p.lat,p.lng), p]));
   document.getElementById('sref').textContent = '거리·시간 기준: ' + (ref === me ? '내 위치' : ref === sel ? shortName(sel.name) : ref === home() ? ref.name : shortName(ref.name || '이 날 첫 장소'));

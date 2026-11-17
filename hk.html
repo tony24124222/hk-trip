@@ -808,9 +808,15 @@ const DATES = {day1:'2026-11-16', day2:'2026-11-17', day3:'2026-11-18', macau:'2
 const STAY = {apt:30, sci:0, icon1:20, icon2:0, mcot:45, peak:90, esc:30, soho:40, pmq:45, icon2b:90, hkma:60, oms:90, icon3:0, adc:45, north:90, wynn:0};
 const BEST = {esc:[600,1410], hkma:[1020,1140]};
 const LEGMIN = {icon1:['apt',45]};
-const CATS = {food:['🍜','맛집'], sweet:['🍡','간식·디저트'], shop:['🛍️','쇼핑'], sight:['🏛️','명소'], hot:['✨','핫플'], bar:['🍸','바·전망'], go:['⛴️','마카오행'], photo:['📸','사진'], event:['🎆','이벤트']};
+const CATS = {food:['🍜','맛집'], sweet:['🍡','간식·디저트'], shop:['🛍️','쇼핑'], sight:['🏛️','명소'], hot:['✨','핫플'], bar:['🍸','바·전망'], go:['⛴️','마카오행'], photo:['📸','사진'], event:['🎆','이벤트'], med:['🏥','병원']};
 // coords: OSM (Macau shops approx); hours/closed only where well known
 const REC = [
+ {id:'qeh', c:'med', n:'퀸엘리자베스 병원 · 응급실', sub:'Queen Elizabeth Hospital · 조던 가스코인로드 30', lat:22.308913, lng:114.174316, stay:120, hours:'24시간', wait:'공립 응급 · 외국인 HK$1,000 이상'},
+ {id:'kwh', c:'med', n:'광화 병원 · 응급실', sub:'Kwong Wah Hospital · 야우마테이 워털루로드 25', lat:22.314991, lng:114.172238, stay:120, hours:'24시간', wait:'공립 응급'},
+ {id:'stteresa', c:'med', n:'성 테레사 병원 · 사립', sub:"St. Teresa's Hospital · 프린스에드워드로드 웨스트 327", lat:22.326162, lng:114.184834, stay:90, wait:'사립 외래'},
+ {id:'virtus', c:'med', n:'버투스 메디컬 · 일반 진료', sub:'Virtus Medical · 침사추이 한코우로드 28', lat:22.297441, lng:114.17122, stay:60, wait:'사립 클리닉 · 영어·보통화'},
+ {id:'kiangwu', c:'med', n:'킹우 병원 · 마카오 사립', sub:'Kiang Wu Hospital · 마카오', lat:22.199139, lng:113.542638, stay:90, hours:'24시간 응급'},
+ {id:'chcsj', c:'med', n:'콘데 상 자누아리오 병원 · 마카오 공립', sub:'Conde S. Januário Hospital · 마카오', lat:22.193892, lng:113.546633, stay:90, hours:'24시간 응급'},
  {id:'timho', c:'food', n:'팀호완 · 딤섬', sub:'Tim Ho Wan · 홍콩역', lat:22.28449, lng:114.158146, stay:50, wait:'식사 시간 줄 · 번호표'},
  {id:'tsimchai', c:'food', n:'침차이키 · 완탕면', sub:'Tsim Chai Kee · 센트럴', lat:22.282968, lng:114.154481, stay:30, hours:'11:00–21:30', wait:'회전 빠름'},
  {id:'kaukee', c:'food', n:'카우키 · 소고기 안심국수', sub:'Kau Kee · 센트럴', lat:22.284229, lng:114.152537, stay:40, hours:'12:30–22:30', closed:'일', wait:'줄 30분+ 흔함'},

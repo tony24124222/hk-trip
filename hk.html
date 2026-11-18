@@ -637,6 +637,7 @@ html.mm .dayhead .chip{display:none}
         <div class="fxq" id="fxq" hidden><div class="fxh"><button type="button" id="fxcur">HK$</button><button type="button" id="fxsw" aria-label="방향 바꾸기">⇅</button><button type="button" id="fxx" aria-label="닫기">✕</button></div><label class="fxin"><span id="fxu1">HK$</span><input id="fxv" type="number" inputmode="decimal" min="0" value="100" aria-label="금액"></label><b id="fxo"></b><div class="fxc" id="fxc"></div><small id="fxr"></small></div>
         <div class="catp" id="catp" hidden></div>
         <div class="lay">
+          <button type="button" id="zq"><b>🔍</b><span>검색</span></button>
           <button type="button" id="zrec" aria-pressed="true" aria-expanded="false" aria-controls="catp"><b>⭐</b><span>추천</span></button>
           <button type="button" id="ztoilet" aria-pressed="false"><b>🚻</b><span>화장실</span></button>
           <button type="button" id="zrt"><b>🚏</b><span>실시간</span></button>
@@ -2692,6 +2693,7 @@ document.getElementById('dstart').addEventListener('change', e => { if(!e.target
 document.getElementById('bedit').addEventListener('click', () => { editMode = !editMode; render(); });
 document.getElementById('bopt').addEventListener('click', optimizeDay);
 document.getElementById('badd').addEventListener('click', () => { sheetOpen = !sheetOpen; render(); });
+document.getElementById('zq').addEventListener('click', () => { tidy(); sheetOpen = true; render(); if(mm) setSheet('full'); const q = document.getElementById('q'); setTimeout(() => { q.scrollIntoView({block:'center'}); q.focus(); }, 80); });
 document.getElementById('breset').addEventListener('click', () => { if(!confirm('이 날 일정을 처음 상태로 되돌릴까요?')) return;
   day.stops = JSON.parse(ORIG[day.id]); day.edited = false; day.newer = false; delete day.base; sel = null; savePlan(); render(); });
 let pinPop = null;

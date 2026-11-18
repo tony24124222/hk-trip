@@ -2713,6 +2713,7 @@ document.getElementById('dstart').addEventListener('change', e => { if(!e.target
 document.getElementById('bedit').addEventListener('click', () => { editMode = !editMode; render(); });
 document.getElementById('bopt').addEventListener('click', optimizeDay);
 document.getElementById('badd').addEventListener('click', () => { sheetOpen = !sheetOpen; render(); });
+const OSMK = {tram_stop:'🚋 트램 정류장', subway_entrance:'🚇 MTR 출구', station:'🚉 역', bus_stop:'🚌 버스 정류장', ferry_terminal:'⛴️ 페리', taxi:'🚕 택시 승차장', primary:'도로', secondary:'도로', tertiary:'도로', trunk:'도로', residential:'도로', pedestrian:'보행로'};
 // map search: results as numbered pins on the map, tap one for its card (route / add / Google)
 { const box = document.getElementById('msq'), inp = document.getElementById('mq'), ul = document.getElementById('mres'), msLayer = L.layerGroup().addTo(map); let res = [], busy = false, t = 0, seq = 0;
   const pid = r => 'pz' + Math.round(r.lat * 1e5) + '_' + Math.round(r.lng * 1e5);
@@ -2734,13 +2735,14 @@ document.getElementById('badd').addEventListener('click', () => { sheetOpen = !s
     if(res.length > 1) map.fitBounds(L.latLngBounds(res.map(p => [p.lat, p.lng])), fitOpt(40, {maxZoom:17})); else if(res.length === 1) centerOn(res[0].lat, res[0].lng, 17); };
   const run = async () => { const q = inp.value.trim(), my = ++seq; res = []; if(q.length < 2){ busy = false; draw(); return; }
     const nq = norm(q), o = originNear()[0], out = poolFor(day).filter(p => norm(p.n + ' ' + p.sub).includes(nq)).slice(0, 6);
-    const add = arr => { for(const p of arr) if(!out.some(x => x.n === p.n || dist(x.lat, x.lng, p.lat, p.lng) < 15)) out.push(p); };
+    const add = arr => { for(const p of arr) if(!out.some(x => dist(x.lat, x.lng, p.lat, p.lng) < (x.n === p.n ? 40 : 15))) out.push(p); };
     busy = true; res = out.slice(); draw(false);
     const jobs = [];
     if(/https?:\/\/|\n/.test(q) || addrCands(q).length) jobs.push(pasteFind(q).then(r => r && [{id:pid(r), c:'search', n:r.n, sub:r.src, lat:+r.lat.toFixed(6), lng:+r.lng.toFixed(6), stay:45}]).catch(() => null));
     if(!/https?:\/\//.test(q)){
-      jobs.push(getJ(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&lat=${o.lat}&lon=${o.lng}&limit=8&bbox=113.5,22.05,114.45,22.6`).then(r => r.features.filter(f => f.properties.name).map(f => ({id:'osm' + f.properties.osm_id, c:'search', n:f.properties.name,
-        sub:[f.properties.street && (f.properties.housenumber ? f.properties.housenumber + ' ' : '') + f.properties.street, f.properties.locality || f.properties.district].filter(Boolean).join(' · '), lat:f.geometry.coordinates[1], lng:f.geometry.coordinates[0], stay:45}))).catch(() => null));
+      const tram = /\btram\b|트램|딩딩/i.test(q), pq = tram ? q.replace(/\b(tram|stop|station)\b|트램|딩딩|정류장|타는\s*곳/gi, ' ').trim() || 'tram' : q;
+      jobs.push(getJ(`https://photon.komoot.io/api/?q=${encodeURIComponent(pq)}&lat=${o.lat}&lon=${o.lng}&limit=8&bbox=113.5,22.05,114.45,22.6` + (tram ? '&osm_tag=railway:tram_stop' : '')).then(r => r.features.filter(f => f.properties.name).map(f => ({id:'osm' + f.properties.osm_id, c:'search', n:f.properties.name,
+        sub:[OSMK[f.properties.osm_value], f.properties.street && (f.properties.housenumber ? f.properties.housenumber + ' ' : '') + f.properties.street, f.properties.locality || f.properties.district].filter(Boolean).join(' · '), lat:f.geometry.coordinates[1], lng:f.geometry.coordinates[0], stay:45}))).catch(() => null));
       if(/[가-힣]/.test(q)) jobs.push(getJ('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=6&viewbox=113.5,22.6,114.45,22.05&bounded=1&accept-language=ko&q=' + encodeURIComponent(q)).then(r => r.filter(f => f.name).map(f => ({id:'osm' + f.osm_id, c:'search', n:f.name, sub:f.display_name.split(', ').slice(1, 3).join(' · '), lat:+f.lat, lng:+f.lon, stay:45}))).catch(() => null)); }
     const got = await Promise.all(jobs); if(my !== seq) return;
     for(const r of got) if(r) add(r);

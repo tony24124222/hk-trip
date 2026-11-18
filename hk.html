@@ -134,6 +134,7 @@ html.running .routebox{opacity:0;transform:translateY(24px);pointer-events:none}
 .mres li>span:last-child{margin-left:auto;color:var(--muted);font-size:12px;white-space:nowrap}
 .mres li.m{cursor:default;color:var(--muted)}
 .mres a{color:var(--accent);text-decoration:none}
+.pop .ubr{display:block;margin:6px 0 2px;padding:9px 0;border-radius:12px;background:#111;color:#fff;text-align:center;text-decoration:none;font:400 15px/1 var(--display)}
 .msk{width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--accent);border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35);display:grid;place-items:center}
 .msk i{transform:rotate(45deg);font-style:normal;color:#fff;font:400 13px/1 var(--display)}
 @media (pointer:fine){ .lay,.catp{top:calc(var(--ctop) + 78px)} .lay{max-height:calc(100% - var(--ctop) - 86px)} }
@@ -1373,7 +1374,7 @@ function originFor(s){
 function showRoute(s, o, alts){ pendingRoute = null; noSheets(); loadBus(); if(mm && !wide() && shState !== 'peek') setSheet('peek'); const [from, lbl] = o || originFor(s); routeCur = {s, from:{lat:from.lat, lng:from.lng}, lbl, alts, nt:{}}; redrawRoute(true); }
 // shortcut: route is drawn from where you are when tapped; tap again to refresh as you walk
 function uberUrl(from, to, lbl){ const q = [['action', 'setPickup']], pt = (k, o, n) => q.push([k + '[latitude]', o.lat.toFixed(6)], [k + '[longitude]', o.lng.toFixed(6)], [k + '[nickname]', n]);
-  if(me && dist(me.lat, me.lng, from.lat, from.lng) < 80) q.push(['pickup', 'my_location']); else pt('pickup', from, lbl || '출발');
+  if(!from || me && dist(me.lat, me.lng, from.lat, from.lng) < 80) q.push(['pickup', 'my_location']); else pt('pickup', from, lbl || '출발');
   pt('dropoff', to, to.name || '도착'); return 'https://m.uber.com/ul/?' + q.map(x => x.map(encodeURIComponent).join('=')).join('&'); }
 // ---- follow mode for walking: the foot route from where I am, arrows along it, the destination flagged, the map keeps me centred
 let nav = null;
@@ -2046,7 +2047,7 @@ function drawMap(){
     m.on('popupopen', () => { recOpen = p.id; previewRoute(p); }).on('popupclose', () => { if(recOpen === p.id) recOpen = null; if(routeCur && routeCur.preview) clearRoute(); if(geoDirty && !recOpen){ geoDirty = false; setTimeout(drawMap, 0); } });
     mkList.push({m, pri:LM[p.id] ? 30 : p.c === 'food' ? 40 : 50, name:nm, ph:!!pid, r:LM[p.id] ? 20 : 13});
     m.bindPopup(() => { const box = h('div','pop'); if(pid) box.append(phBox(pid, p.n)); box.append(h('b',null,p.n)); const o = fromHere(p); { const lg = legOf(o[0], p), others = legOpts(o[0], p, true).filter(x => x.mode !== lg.mode).slice(0, 3).map(x => optText(x)); box.append(h('div','rt1', legShort(lg) + ' · ' + shortName(o[1]) + '에서')); if(others.length) box.append(h('div','m', others.join(' · '))); } const inf = INFO[p.id]; if(inf && inf.d) box.append(h('div','d',inf.d)); { const t = kv(placeRows(p, p.id)); if(t) box.append(t); }
-      { const ln = h('div', 'plinks'), ol = orLink(p.id); ln.append(gmLink({id:p.id, n:p.n, sub:p.sub, lat:p.lat, lng:p.lng})); if(ol) ln.append(ol); box.append(ln); }
+      { const ln = h('div', 'plinks'), ol = orLink(p.id); ln.append(gmLink({id:p.id, n:p.n, sub:p.sub, lat:p.lat, lng:p.lng})); if(ol) ln.append(ol); if(!inMacau(p)){ const ub = h('a', null, '🚕 우버'); ub.href = uberUrl(null, {lat:p.lat, lng:p.lng, name:p.n}); ub.target = '_blank'; ub.rel = 'noopener'; ln.append(ub); } box.append(ln); }
       if(ZH[p.id]){ const zb = h('button', 'zhb', '🀄 ' + ZH[p.id]); zb.type = 'button'; zb.addEventListener('click', () => showZh({rec:p.id, name:p.n})); box.append(zb); }
       const row = h('div','prow'), go = h('button','ghost','🧭 길찾기'), b = h('button',null,'＋ '+day.tab.replace(/^\S+\s/,'')); go.type = b.type = 'button';
       go.addEventListener('click', () => { showRoute({id:'rec-' + p.id, name:p.n, lat:p.lat, lng:p.lng}, fromHere(p)); map.closePopup(); });
@@ -2720,7 +2721,8 @@ document.getElementById('badd').addEventListener('click', () => { sheetOpen = !s
     const ln = h('div','plinks'); ln.append(gmLink({id:p.id, n:p.n, sub:p.sub, lat:p.lat, lng:p.lng})); b.append(ln);
     const row = h('div','prow'), go = h('button','ghost','🧭 길찾기'), ad = h('button', null, has ? '일정에 있음' : '＋ ' + day.tab.replace(/^\S+\s/,'')); go.type = ad.type = 'button'; ad.disabled = has;
     go.addEventListener('click', () => { map.closePopup(); showRoute({id:'rec-' + p.id, name:p.n, lat:p.lat, lng:p.lng}, fromHere(p)); });
-    ad.addEventListener('click', () => { map.closePopup(); addPlace(p); }); row.append(go, ad); b.append(row); return b; };
+    ad.addEventListener('click', () => { map.closePopup(); addPlace(p); });
+    if(!inMacau(p)){ const ub = h('a', 'ubr', '🚕 우버 부르기'); ub.href = uberUrl(null, {lat:p.lat, lng:p.lng, name:p.n}); ub.target = '_blank'; ub.rel = 'noopener'; b.append(ub); } row.append(go, ad); b.append(row); return b; };
   const pick = i => { const p = res[i]; ul.textContent = ''; inp.blur(); centerOn(p.lat, p.lng, 17); const mk = msLayer.getLayers()[i]; if(mk) setTimeout(() => mk.openPopup(), 80); };
   const draw = fit => { msLayer.clearLayers(); ul.textContent = ''; const q = inp.value.trim(); if(q.length < 2) return; const o = originNear()[0];
     res.forEach((p, i) => { L.marker([p.lat, p.lng], {icon:L.divIcon({className:'', html:`<div class="msk"><i>${i + 1}</i></div>`, iconSize:[30,30], iconAnchor:[15,34]}), zIndexOffset:1500, title:p.n}).bindPopup(() => pop(p), popOpt()).addTo(msLayer);

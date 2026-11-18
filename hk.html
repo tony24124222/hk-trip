@@ -379,7 +379,7 @@ html.mm .popin{max-height:40vh}
 .rec button{border:0;background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:6px 12px;font-family:var(--display);font-weight:400;font-size:13px}
 .pop button{border:2px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:6px 12px;font-family:var(--display);font-weight:400;font-size:13px}
 .rec button:disabled{background:var(--done)}
-.more{list-style:none;padding:6px 0}.more button{border:1px solid var(--line);background:none;color:inherit;border-radius:999px;padding:8px 14px;font:inherit;font-size:13px}
+.more{list-style:none;padding:6px 0}.more button,.more a{display:inline-block;text-decoration:none;border:1px solid var(--line);background:none;color:inherit;border-radius:999px;padding:8px 14px;font:inherit;font-size:13px}
 .pop{display:flex;flex-direction:column;gap:4px;min-width:170px}
 .pop b{font:400 15px var(--display)}
 .pop .d{font-size:13px;line-height:1.45}
@@ -687,7 +687,7 @@ html.mm .dayhead .chip{display:none}
       <div class="sheet" id="sheet" hidden>
         <div class="cats" id="courses"></div>
         <div class="cats" id="cats"></div>
-        <input type="search" id="q" name="q" aria-label="장소 검색" placeholder="장소 이름 검색…" autocomplete="off">
+        <input type="search" id="q" name="q" aria-label="장소 검색" placeholder="장소 이름·주소·구글맵 링크" autocomplete="off">
         <div class="sref" id="sref"></div>
         <ul class="recs" id="recs"></ul>
       </div>
@@ -2207,6 +2207,8 @@ function drawSheet(){
     ul.append(li); }
   const ko = /[가-힣]/.test(q);
   if(!items.length) ul.append(h('li','m', q ? '검색 결과 없음' + (ko && moreQ === q ? ' · 영어 이름으로 검색' : '') : '없음'));
+  if(q.length >= 2 && !/https?:/.test(q)){ const li = h('li','more'), g = h('a', null, '🗺️ 구글 지도에서 찾기'); g.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q + ' Hong Kong'); g.target = '_blank'; g.rel = 'noopener';
+    g.title = '구글 지도에서 공유 → 복사한 문구를 이 칸에 붙여넣기'; li.append(g); ul.append(li); }
   if(ko && q.length >= 2 && moreQ !== q){ const li = h('li','more'), b = h('button', null, '🔎 지도에서 더 찾기'); b.type = 'button'; b.addEventListener('click', moreSearch); li.append(b); ul.append(li); }
 }
 function drawEvents(){
@@ -2782,14 +2784,39 @@ async function moreSearch(){ const q = document.getElementById('q').value.trim()
       searchRes.push({id:'osm'+f.osm_id, c:'search', n:f.name, sub:f.display_name.split(', ').slice(1, 3).join(' · '), lat:+f.lat, lng:+f.lon, stay:45}); }
   }catch(err){ moreQ = ''; toast('검색 실패'); }
   drawSheet(); }
+// Google Maps link or share text: pin coordinates from the URL, else the address in the text, else the name (the short maps.app.goo.gl link alone cannot be read from a page)
+function gmLink(t){ const m = t.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/) || t.match(/[?&](?:q|query|ll|destination|center)=(-?\d+\.\d+),\s*(-?\d+\.\d+)/) || t.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+  const nm = t.match(/maps\/place\/([^/@?]+)/); let n = ''; try{ n = nm ? decodeURIComponent(nm[1].replace(/\+/g, ' ')) : ''; }catch(e){}
+  return m ? {lat:+m[1], lng:+m[2], n} : null; }
+function addrCands(t){ const out = [], z = t.match(/([\u4e00-\u9fff]{2,}[道街路里坊徑])\s*(\d+[A-Z]?)\s*[號号]/); if(z) out.push(z[2] + ' ' + z[1]);
+  const e = t.replace(/\b(Shop|Unit|Flat|Room|Rm|Kiosk)\s*[\w-]+,?/gi, '').replace(/\b(G|LG|UG|\d+)\/F\.?,?/gi, '').replace(/\bRd\b\.?/gi, 'Road').replace(/\bSt\b\.?/gi, 'Street').replace(/\bAve\b\.?/gi, 'Avenue');
+  const m = e.match(/(\d+[A-Z]?)(?:-\d+)?\s+([A-Z][A-Za-z' ]*?(?:Road|Street|Avenue|Lane|Path|Terrace|Square|Drive|Circuit))/); if(m) out.push(m[1] + ' ' + m[2]);
+  return out; }
+async function photon1(q){ const r = await getJ('https://photon.komoot.io/api/?limit=1&bbox=113.5,22.05,114.45,22.6&q=' + encodeURIComponent(q)); const f = r.features[0];
+  return f ? {lat:f.geometry.coordinates[1], lng:f.geometry.coordinates[0], n:f.properties.name || ''} : null; }
+async function pasteFind(t){ const lk = gmLink(t), lines = t.replace(/https?:\/\/\S+/g, '\n').split(/\n/).map(x => x.trim()).filter(Boolean);
+  const name = (lk && lk.n) || (lines[0] && !/^\d/.test(lines[0]) ? lines[0] : '');
+  if(lk) return {n:name || '구글 링크 위치', lat:lk.lat, lng:lk.lng, src:'구글 링크'};
+  for(const a of addrCands(lines.join(', '))){ try{ const r = await photon1(a); if(r) return {n:name || a, lat:r.lat, lng:r.lng, src:a}; }catch(e){} }
+  if(name){ try{ const r = await photon1(name); if(r) return {n:name, lat:r.lat, lng:r.lng, src:r.n}; }catch(e){} }
+  return null; }
+async function pasteSearch(t){ const el = document.getElementById('q'); clearTimeout(qTimer); searchRes = []; drawSheet();
+  const r = await pasteFind(t); if(!r){ toast(/goo\.gl/.test(t) ? '주소까지 같이 붙여넣기' : '위치 못 찾음'); return; }
+  el.value = r.n; searchRes = [{id:'pz' + Math.round(r.lat * 1e5) + '_' + Math.round(r.lng * 1e5), c:'search', n:r.n, sub:r.src, lat:+r.lat.toFixed(6), lng:+r.lng.toFixed(6), stay:45}];
+  drawSheet(); centerOn(r.lat, r.lng, 17); }
+document.getElementById('q').addEventListener('paste', e => { const t = (e.clipboardData || window.clipboardData).getData('text');
+  if(/https?:\/\/|\n/.test(t) || addrCands(t).length){ e.preventDefault(); pasteSearch(t); } });
 document.getElementById('q').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); moreSearch(); } });
 document.getElementById('q').addEventListener('input', () => {
   clearTimeout(qTimer); const q = document.getElementById('q').value.trim(); searchRes = []; moreQ = ''; drawSheet(); if(q.length < 2) return;
+  if(/https?:\/\//.test(q)){ qTimer = setTimeout(() => pasteSearch(q), 300); return; }
+  if(addrCands(q).length){ qTimer = setTimeout(async () => { const r = await pasteFind(q).catch(() => null); if(!r || document.getElementById('q').value.trim() !== q) return;
+    searchRes.unshift({id:'pz' + Math.round(r.lat * 1e5) + '_' + Math.round(r.lng * 1e5), c:'search', n:r.n, sub:'주소 · ' + r.src, lat:+r.lat.toFixed(6), lng:+r.lng.toFixed(6), stay:45}); drawSheet(); }, 500); }
   qTimer = setTimeout(async () => { const ref = refPoint();
     try{ const r = await getJ(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&lat=${ref.lat}&lon=${ref.lng}&limit=8&bbox=113.5,22.05,114.45,22.6`);
       if(document.getElementById('q').value.trim() !== q) return;
-      searchRes = r.features.filter(f => f.properties.name).map(f => ({id:'osm'+f.properties.osm_id, c:'search', n:f.properties.name,
-        sub:[f.properties.street, f.properties.locality || f.properties.district].filter(Boolean).join(' · '), lat:f.geometry.coordinates[1], lng:f.geometry.coordinates[0], stay:45}));
+      searchRes = searchRes.filter(p => p.id.startsWith('pz')).concat(r.features.filter(f => f.properties.name).map(f => ({id:'osm'+f.properties.osm_id, c:'search', n:f.properties.name,
+        sub:[f.properties.street, f.properties.locality || f.properties.district].filter(Boolean).join(' · '), lat:f.geometry.coordinates[1], lng:f.geometry.coordinates[0], stay:45})));
       drawSheet(); }catch(err){ toast('검색 실패'); } }, 450);
 });
 window.addEventListener('resize', () => { if(mm) setSheet(shState); map.invalidateSize(); });
